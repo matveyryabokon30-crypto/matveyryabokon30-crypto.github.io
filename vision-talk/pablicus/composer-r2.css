@@ -1,0 +1,217 @@
+/* Designer R2: exact 24-unit masters, 44 / 32 / 20 controls and Noto Sans. */
+@font-face{font-family:'Pablicus Noto';src:url('fonts/NotoSans-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Pablicus Noto';src:url('fonts/NotoSans-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap}
+body,button,input,textarea,select{font-family:'Pablicus Noto',sans-serif;font-synthesis:none;letter-spacing:0}
+svg[data-pablicus-icon]{width:20px!important;height:20px!important;min-width:20px;stroke-width:1.5!important;fill:none!important;flex-shrink:0;pointer-events:none}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon]))){display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:44px!important;height:44px!important;min-width:44px;min-height:44px!important;padding:12px!important;border:0!important;border-radius:var(--radius-pill)!important;background:transparent!important;color:var(--r2-ink)!important;flex:0 0 auto;box-shadow:none!important;line-height:20px;font-size:14px;font-weight:400;isolation:isolate}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon])))::before{content:''!important;position:absolute!important;inset:var(--r2-icon-inset,6px)!important;width:auto!important;height:auto!important;transform:none!important;border:var(--r2-icon-border,1px solid var(--r2-border))!important;border-radius:var(--radius-pill)!important;background:var(--r2-icon-background,var(--r2-surface))!important;z-index:-1}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon])))::after{content:none!important}
+:is(#composer,.workspaceEditor,.botComposer,.r2Panel) .r2LabelButton{width:auto!important;padding-inline:18px!important;gap:8px}
+.r2LabelButton svg:last-child:not(:first-child){width:16px!important;height:16px!important;min-width:16px}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon]))):hover::before{background:var(--r2-shell)!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon]))):active:not(.r2GroupedAction)::before{background:var(--r2-pressed)!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon])))[aria-expanded='true']:not(.r2GroupedAction)::before,
+:is(#composer,.workspaceEditor,.botComposer) :is(#send,.r2Send):not(:disabled):not(.r2GroupedAction)::before,
+:is(#composer,.workspaceEditor,.botComposer) .richVoice[aria-pressed='true']:not(.r2GroupedAction)::before{background:var(--r2-accent)!important;border-color:var(--r2-accent)!important}
+:is(#composer,.workspaceEditor,.botComposer) :is(#send,.r2Send):not(:disabled),.r2IconButton[aria-expanded='true'],.r2LabelButton[aria-expanded='true'],.richVoice[aria-pressed='true']{color:#202124!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon]))):disabled{color:var(--r2-disabled)!important;opacity:1;cursor:default}
+:is(.r2Composer,.r2Panel) button:focus-visible,.r2Panel[data-keyboard-focus] button:focus{outline:2px solid var(--r2-ink)!important;outline-offset:2px}
+#composer{padding-inline:12px!important;background:transparent;max-width:744px;margin-inline:auto;width:100%;box-sizing:border-box}
+#composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer{position:relative;display:flex!important;flex-direction:column;gap:0;box-sizing:border-box;width:100%;max-width:720px;margin-inline:auto;min-height:64px;padding:0!important;border:1px solid var(--r2-border)!important;border-radius:20px!important;background:var(--r2-shell)!important;color:var(--r2-ink);overflow:visible;box-shadow:none!important;container-type:inline-size}
+.r2Composer #fullTitle,.r2Composer #hideKey,.r2Composer #modeBar,.r2Composer #workspaceQuick,.r2Composer>.workspaceEditorToolbar{display:none!important}
+.r2Toolbar{display:flex;align-items:center;gap:4px;height:62px;min-height:62px;padding:0 5px;box-sizing:border-box;order:3}
+.r2ToolbarSpace{flex:1;min-width:0}
+:is(#composer,.workspaceEditor,.botComposer) .r2Toolbar .r2AI{width:96px!important}
+.r2ComposerHeader{display:none;align-items:center;justify-content:space-between;height:44px;min-height:44px;padding-inline:10px;order:0}
+.r2ComposerTitle{font-size:14px;line-height:20px;color:var(--r2-secondary)}
+#composer #editor.r2ComposerBody,.r2Composer .r2ComposerBody{box-sizing:border-box;order:1;min-height:24px;max-height:240px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:0 15px!important;flex:none;scrollbar-width:thin}
+#composer #editor.r2ComposerBody .richText,.r2Composer .r2ComposerBody textarea{display:block;box-sizing:border-box;width:100%;min-height:24px!important;max-height:var(--composer-input-cap,144px)!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:var(--r2-ink);font:400 1rem/1.5 'Pablicus Noto',sans-serif;resize:none;overflow-y:auto!important;overflow-wrap:anywhere;box-shadow:none!important;outline:none}
+.r2Composer textarea::placeholder{color:var(--r2-secondary)!important}
+#composer #composeBox.r2Composer:not(.r2Open) #editor,.r2Composer:not(.r2Open) .r2ComposerBody{position:absolute;top:19px;left:56px;right:102px;padding:0!important;height:24px!important}
+.r2Composer:not(.r2Open) .r2Toolbar :is(.r2AI,.r2Desktop){display:none!important}
+.r2Composer.r2Open .r2ComposerHeader{display:flex}
+.r2Composer.r2Open .r2Toolbar{height:56px;min-height:56px;padding-bottom:12px;padding-top:0}
+.r2Composer .workspaceEditorNotice{order:4;margin:0 16px 8px;font-size:12px;line-height:16px}
+.r2Composer .r2Desktop{display:none!important}
+@container (min-width:600px){.r2Composer .r2Toolbar .r2Desktop{display:inline-flex!important}}
+/* Keep the complete keyboard viewport owned by the existing shell. */
+#app.composer-fullscreen #composer{max-width:none;padding-inline:12px!important}
+#app.composer-fullscreen #composeBox.r2Composer,.workspaceEditor.r2Composer.is-expanded,.botComposer.r2Composer.r2Fullscreen{height:100%;min-height:0;border-radius:0!important}
+.r2Composer.r2Fullscreen .r2ComposerHeader{height:56px;min-height:56px}
+#app.composer-fullscreen #editor.r2ComposerBody,.r2Composer.r2Fullscreen .r2ComposerBody{flex:1;min-height:0!important;max-height:none!important;height:auto!important}
+.r2Composer.r2Fullscreen .r2ComposerBody textarea{max-height:none!important}
+.r2Panel{position:fixed;inset:auto;margin:0;box-sizing:border-box;padding:0;border:1px solid var(--r2-border);border-radius:20px;background:var(--r2-surface);color:var(--r2-ink);box-shadow:0 12px 40px #0002;overflow:auto;overscroll-behavior:contain;z-index:2000;font:400 14px/20px 'Pablicus Noto',sans-serif}
+.r2Panel[hidden]{display:none!important}
+.r2PanelHead{display:flex;align-items:center;gap:4px;padding:8px 9px;position:sticky;top:0;background:var(--r2-surface);z-index:1}
+.r2PanelHead h2{font:700 18px/24px 'Pablicus Noto',sans-serif;margin:0;flex:1;padding-left:6px}
+.r2PanelHead button[hidden]{display:none!important}
+.r2PanelBody{padding:0 8px 8px;overflow-wrap:anywhere}
+.r2MenuRow{display:flex;align-items:center;width:100%;min-height:48px;gap:12px;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;font:400 14px/20px 'Pablicus Noto',sans-serif;flex-wrap:wrap}
+.r2MenuLabel{flex:1;min-width:100px}.r2MenuRow small{flex-basis:100%;padding-left:32px;font-size:12px;line-height:16px}.r2MenuRow:hover{background:var(--r2-shell)}.r2MenuRow:disabled{color:var(--r2-secondary);opacity:.7}.r2MenuRow[aria-pressed='true']{background:var(--r2-shell)}
+.r2PanelStatus{margin:8px 16px 16px;font-size:12px;line-height:16px}.r2PanelBody>p{margin:8px}
+.r2ActionPair{display:flex;gap:8px;padding:16px 8px}.r2Action{min-height:44px;padding:10px 16px;border:1px solid var(--r2-border);border-radius:8px;background:var(--r2-surface);color:var(--r2-ink);font:400 14px/20px 'Pablicus Noto',sans-serif}.r2ActionPair .r2Action{flex:1}.r2Action[data-primary='true']{background:var(--r2-accent);border-color:var(--r2-accent);color:#202124}
+.r2Comparison{padding:12px 8px}.r2Comparison small{font-size:12px;line-height:16px;color:var(--r2-secondary)}.r2Comparison p{white-space:pre-wrap;margin:8px 0}.r2RequestLabel{display:block;margin:12px 8px}.r2RequestLabel textarea{box-sizing:border-box;width:100%;margin-top:8px;font:400 16px/24px 'Pablicus Noto',sans-serif;background:var(--r2-surface);color:var(--r2-ink);border:1px solid var(--r2-border);border-radius:8px;padding:8px}
+#composer #editor.r2ComposerBody .richMedia,.r2Composer .richMedia{display:flex;flex-wrap:wrap;align-items:center;position:relative;gap:0 12px;min-height:56px;padding:0!important;margin:0 0 8px!important;border:0!important;border-radius:8px;background:var(--r2-shell)}
+.r2Composer .richMediaHead{display:flex;align-items:center;min-width:0;flex:1;min-height:56px;order:1}.r2Composer .richMediaName{font:400 14px/20px 'Pablicus Noto',sans-serif!important;overflow-wrap:anywhere;flex:1;padding-left:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.r2Composer .richMediaDetails{font:400 12px/16px 'Pablicus Noto',sans-serif!important;padding:0 8px 4px!important;color:var(--r2-secondary);order:2;width:100%}
+#composer #editor.r2ComposerBody .richImage,.r2Composer .richImage{width:40px;height:40px;object-fit:cover;order:0;border-radius:8px;margin-left:8px}
+.r2Composer .richMedia video{max-height:120px;max-width:100%;order:2}.r2Composer .richMedia audio{display:none!important}.r2AudioPreview{display:flex;align-items:center;order:2;width:100%}.r2AudioTime,.r2Composer .richRecordingTime{font:400 16px/24px 'Pablicus Noto',sans-serif;font-variant-numeric:tabular-nums;width:64px;min-width:64px;display:inline-block;color:var(--r2-ink)!important}.r2Composer .richRecordingState{order:2;padding:0 8px 8px;font-size:12px}
+.botComposer.r2Composer{margin-block:8px}.botComposer.r2Fullscreen{position:fixed;top:var(--bot-editor-top,0);height:var(--bot-editor-height,100dvh)!important;left:0;right:0;width:100%;z-index:1000}.botComposer.r2Fullscreen::backdrop{background:var(--r2-shell)}
+@media(prefers-contrast:more){svg[data-pablicus-icon]{stroke-width:2!important}}
+@media(prefers-reduced-motion:no-preference){.r2Panel{animation:r2Reveal 180ms ease-out}@keyframes r2Reveal{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}}
+.r2Composer.r2LargeText.r2Open .r2Toolbar{height:auto;min-height:112px;flex-wrap:wrap}.r2Composer.r2LargeText.r2Open .r2Toolbar .r2AI{order:-1;margin-right:calc(100% - 110px);width:auto!important;min-width:96px}.r2Composer.r2LargeText textarea{max-height:var(--composer-input-cap,288px)!important}.r2Composer.r2LargeText:not(.r2Open) .r2ComposerBody{height:48px!important}.r2Composer.r2LargeText:not(.r2Open){min-height:88px}
+
+.r2Tooltip{position:fixed;z-index:9999;background:var(--r2-ink);color:var(--r2-surface);border-radius:8px;padding:6px 10px;font:400 12px/16px "Pablicus Noto",sans-serif;pointer-events:none;max-width:260px}
+#composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer{align-items:stretch}
+.r2Composer .r2Toolbar,.r2Composer .r2ComposerHeader,.r2Composer .r2ComposerBody{width:100%;align-self:stretch}
+.r2Composer:not(.r2Open) .r2ComposerBody{width:auto}
+
+#app #composer #composeBox.r2Composer .r2Desktop{display:none!important}
+@container (min-width:600px){#app #composer #composeBox.r2Composer.r2Open .r2Toolbar .r2Desktop{display:inline-flex!important}}
+#app #composer #composeBox.r2Composer:not(.r2Open) .r2AI{display:none!important}
+#app #composer #composeBox.r2Composer .r2IconButton::after{content:none!important}
+
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .r2LabelButton{width:auto!important;padding-inline:18px!important;gap:8px}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .r2Toolbar .r2AI{width:96px!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon])))[aria-expanded="true"]:not(.r2GroupedAction)::before,:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(#send,.r2Send):not(:disabled):not(.r2GroupedAction)::before,:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .richVoice[aria-pressed="true"]:not(.r2GroupedAction)::before{background:var(--r2-accent)!important;border-color:var(--r2-accent)!important}
+
+.workspaceEditor.r2Composer.is-expanded{position:fixed!important;top:var(--workspace-editor-top,0)!important;height:var(--workspace-editor-height,100dvh)!important;left:0;right:0;margin:0 auto!important;padding-top:env(safe-area-inset-top)!important;padding-bottom:env(safe-area-inset-bottom)!important}
+
+#app #composer #composeBox.r2Composer:not(.r2Open) #editor,.r2Composer:not(.r2Open) .r2ComposerBody{top:53px;height:44px!important}
+#app #composer #composeBox.r2Composer:not(.r2Open) .richText,.r2Composer:not(.r2Open) .r2ComposerBody textarea{height:44px!important;min-height:44px!important;max-height:44px!important;padding:10px 0!important}
+
+.r2Composer.r2Open::before{content:'';position:absolute;inset:50px 6px 6px;border-radius:14px;background:var(--r2-surface);pointer-events:none;z-index:0}
+.r2Composer>*{z-index:1}
+
+/* Focus the dialog itself on entry; keyboard navigation still highlights buttons. */
+.r2Panel:focus{outline:none}
+.r2Panel .r2SourceSearch{display:block;appearance:none;-webkit-appearance:none;margin:0 12px 6px;box-sizing:border-box;width:calc(100% - 24px);min-width:0;min-height:32px;height:32px;border:1px solid transparent;border-radius:9px;padding:3px 9px;font:400 16px/24px 'Pablicus Noto',sans-serif;background:var(--r2-shell);color:var(--r2-ink);outline:none;box-shadow:none}
+.r2Panel .r2SourceSearch:focus{outline:none;box-shadow:none;border-color:var(--r2-accent)}
+.r2Panel .r2SourceSearch::placeholder{color:var(--r2-secondary);opacity:1}
+
+#app #composer #composeBox.r2Fullscreen .r2ComposerBody textarea{max-height:none!important}
+
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .r2LabelButton{font-size:.875rem;line-height:1.428572}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer).r2LargeText .r2LabelButton{height:56px!important;min-height:56px!important}
+
+:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon])){position:relative}
+.r2IconButton,.r2LabelButton{position:relative}
+
+/* The compact text field overlaps the toolbar spacer, never its buttons. */
+#app #composer #composeBox.r2Composer:not(.r2Open) #editor,.r2Composer:not(.r2Open) .r2ComposerBody{z-index:2}
+
+/* Shared function rail: compact framed labels over the message surface. */
+.r2FunctionRail{display:flex;align-items:center;gap:2px;order:-1;flex:none;height:44px;box-sizing:border-box;padding:0 8px;border-radius:19px 19px 0 0;background:var(--r2-shell);border-bottom:1px solid var(--r2-border)}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2FunctionPill{display:flex;align-items:center;justify-content:center;width:auto;min-width:44px;min-height:44px;height:44px;padding:0 2px;border:0;background:transparent;color:var(--r2-secondary);font:400 .75rem/1.3334 'Pablicus Noto',sans-serif;cursor:pointer;box-shadow:none;flex:0 1 auto}
+.r2PillFrame{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;padding:5px 7px;border:1px solid var(--r2-border);border-radius:9px;background:var(--r2-surface);white-space:nowrap}
+.r2FunctionRail svg[data-pablicus-icon]{width:14px!important;height:14px!important;min-width:14px}
+.r2FunctionPill[aria-expanded='true']{color:var(--r2-ink)}
+.r2FunctionPill[aria-expanded='true'] .r2PillFrame{background:var(--r2-surface);border-color:var(--r2-accent);box-shadow:0 0 0 1px var(--r2-accent)}
+.r2FunctionPill:disabled{opacity:.5;cursor:default}
+.r2PillCount{border-radius:4px;background:var(--r2-accent);color:#202124;min-width:14px;text-align:center;font-size:10px;line-height:14px}
+.r2Composer.r2LargeText .r2FunctionRail{overflow-x:auto;overscroll-behavior-x:contain;height:56px;min-height:56px}
+.r2Composer.r2LargeText .r2FunctionPill{flex-shrink:0;min-height:56px;height:56px}
+.r2Composer.r2LargeText.r2Open::before{top:62px}
+.r2Panel:not([hidden]){display:flex;flex-direction:column;overflow:hidden}
+.r2PanelHead{position:relative;flex:none;min-height:60px}
+.r2PanelHead h2{min-width:0;overflow-wrap:anywhere}
+.r2PanelBody{min-height:0;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;scrollbar-width:thin;padding:0 12px 12px}
+/* Exclude pinch zoom at the surface and nested native scroll containers. */
+.r2Composer,.r2Composer textarea,.r2ComposerBody,.r2FunctionRail,.r2Panel{touch-action:pan-x pan-y}
+.r2PanelStatus,.r2SourceSearch{flex:none}
+.r2MenuRow{border-radius:12px;flex-wrap:nowrap;margin:2px 0;padding:10px 8px;gap:10px}
+.r2MenuLabel{display:flex;flex-direction:column;gap:3px;min-width:0}
+.r2RowTitle{font-size:14px;line-height:20px}
+.r2MenuRow small.r2RowDescription{padding:0;font-size:12px;line-height:17px;color:var(--r2-secondary);font-weight:400}
+.r2RowBadge{font-size:10px;line-height:16px;padding:2px 5px;border-radius:6px;background:var(--r2-shell);color:var(--r2-secondary)}
+.r2CardIntro{display:flex;gap:12px;align-items:flex-start;margin:4px 0 12px;padding:14px 12px;border:1px solid var(--r2-border);border-radius:12px;background:var(--r2-shell)}
+.r2CardIntro>svg{color:var(--r2-ink);margin-top:2px}
+.r2CardIntro strong{font-size:14px;line-height:20px}
+.r2CardIntro p{font-size:12px;line-height:18px;color:var(--r2-secondary);margin:5px 0 0}
+.r2SectionLabel{font-size:12px;line-height:18px;color:var(--r2-secondary);margin:16px 8px 8px;font-weight:400}
+@container(max-width:350px){.r2PillFrame{padding-inline:5px;gap:3px}.r2FunctionRail{padding-inline:5px;gap:0}}
+.r2Composer:not(.r2Open) .r2Toolbar{background:var(--r2-surface);border-radius:0 0 19px 19px}
+@container(max-width:350px){.r2FunctionRail svg[data-pablicus-icon]{display:none}}
+
+/* Reference refinement: two lifted surfaces, with no divider between them. */
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer){
+ background:var(--r2-surface)!important;
+ border-radius:28px!important;
+ border-color:var(--r2-border)!important;
+ box-shadow:0 2px 12px rgb(25 31 38 / .08)!important;
+}
+.r2Composer .r2FunctionRail{background:transparent;border:0;padding-inline:10px}
+.r2Composer .r2PillFrame{padding:2px 8px;border-radius:999px;border-color:rgb(255 255 255 / .58);background:rgb(255 255 255 / .86);box-shadow:0 1px 3px rgb(33 39 45 / .12),inset 0 1px 0 rgb(255 255 255 / .8)}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2FunctionPill{font-size:.6875rem;line-height:1.272728;color:#41474D}
+.r2Composer .r2FunctionRail svg[data-pablicus-icon]{width:12px!important;height:12px!important;min-width:12px}
+.r2Composer::before,.r2Composer.r2Open::before{content:'';position:absolute;inset:44px 6px 6px;border-radius:28px;background:var(--r2-surface);box-shadow:none!important;pointer-events:none;z-index:0}
+.r2Composer:not(.r2Open) .r2Toolbar{background:transparent;border-radius:0}
+.r2Composer.r2LargeText::before,.r2Composer.r2LargeText.r2Open::before{top:56px}
+.r2Composer.r2LargeText .r2FunctionPill{font-size:.75rem;line-height:1.3334}
+.r2Composer .r2PillCount{border-radius:999px}
+html[data-theme='dark'] .r2Composer,body[data-theme='dark'] .r2Composer{--r2-composer-base:#363B41;--r2-composer-base-top:#50565D}
+html[data-theme='dark'] .r2Composer .r2PillFrame,body[data-theme='dark'] .r2Composer .r2PillFrame{background:#24292E;border-color:rgb(255 255 255 / .16);color:#E8EBEE;box-shadow:0 1px 3px #0003,inset 0 1px 0 #ffffff0d}
+html[data-theme='dark'] .r2Composer::before,body[data-theme='dark'] .r2Composer::before{box-shadow:0 2px 3px #0003,0 5px 12px #0004,inset 0 1px 0 #ffffff12}
+@media(prefers-color-scheme:dark){html:not([data-theme=light]) .r2Composer{--r2-composer-base:#363B41;--r2-composer-base-top:#50565D}html:not([data-theme=light]) .r2Composer .r2PillFrame{background:#24292E;border-color:rgb(255 255 255 / .16);color:#E8EBEE;box-shadow:0 1px 3px #0003,inset 0 1px 0 #ffffff0d}html:not([data-theme=light]) .r2Composer::before{box-shadow:0 2px 3px #0003,0 5px 12px #0004,inset 0 1px 0 #ffffff12}}
+
+.r2Composer .r2FunctionPill[aria-expanded='true'] .r2PillFrame{border-color:var(--r2-accent);box-shadow:0 0 0 1px var(--r2-accent),0 1px 3px #0002}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer).r2LargeText .r2FunctionPill{flex-shrink:0}
+
+/* Compact, content-sized function cards following the supplied uiux.build reference. */
+.r2Panel{border-radius:14px;border-color:color-mix(in srgb,var(--r2-border) 65%,transparent);box-shadow:0 2px 4px #0000000d,0 8px 24px #00000014;font-size:.8125rem;line-height:1.384616}
+.r2PanelHead{min-height:0;padding:2px 4px;gap:0;border-radius:14px 14px 0 0}
+.r2PanelHead h2{font-size:.9375rem;line-height:1.333334;font-weight:600;padding-left:8px}
+.r2PanelHead svg[data-pablicus-icon]{width:18px!important;height:18px!important;min-width:18px}
+.r2PanelBody{padding:0 8px 8px}
+.r2MenuRow{min-height:44px;padding:6px;gap:8px;margin:0;border-radius:8px}
+.r2MenuLabel{gap:2px;max-width:30ch}
+.r2RowTitle{font-size:.8125rem;line-height:1.384616}
+.r2MenuRow small.r2RowDescription{font-size:.75rem;line-height:1.333334;max-width:28ch}
+.r2PanelBody .r2MenuRow>svg[data-pablicus-icon]{width:18px!important;height:18px!important;min-width:18px}
+.r2CardIntro{display:block;margin:0 6px 6px;padding:0;border:0;border-radius:0;background:transparent}
+.r2CardIntro>svg,.r2CardIntro strong{display:none}
+.r2CardIntro p{font-size:.75rem;line-height:1.333334;margin:0;max-width:29ch}
+.r2SectionLabel{font-size:.6875rem;line-height:1.454546;margin:10px 6px 4px}
+.r2PanelStatus{margin:6px 14px 10px;font-size:.75rem;line-height:1.333334}
+.r2Panel .r2ActionPair{padding:8px 0;gap:6px;flex-wrap:wrap}
+.r2Panel .r2Action{position:relative;isolation:isolate;box-sizing:border-box;min-height:44px;width:max-content;flex:0 1 auto;font-size:.8125rem;line-height:1.384616;padding:12px 10px;border:0;background:transparent;max-width:100%;overflow-wrap:anywhere}
+.r2Panel .r2Action::before{content:'';position:absolute;inset:7px 0;border:1px solid var(--r2-border);border-radius:8px;background:var(--r2-surface);z-index:-1}
+.r2Panel .r2Action[data-primary='true']::before{background:var(--r2-accent);border-color:var(--r2-accent)}
+.r2Panel .r2Action:disabled{color:var(--r2-disabled)}
+.r2Panel .r2Action:disabled::before{background:var(--r2-shell);border-color:var(--r2-border)}
+
+/* Compact draft attachments. Preserve document order and wrap adjacent cards. */
+#app #composer #editor.r2ComposerBody.richHasMedia,.r2Composer .r2ComposerBody.richHasMedia{display:flex;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;gap:6px}
+.r2Composer .r2ComposerBody.richHasMedia textarea{flex:0 0 100%;min-width:0}
+#app #composer #editor.r2ComposerBody .richMedia,.r2Composer .r2ComposerBody .richMedia{display:inline-flex!important;align-items:center;flex-wrap:nowrap;flex:0 1 auto;gap:4px;box-sizing:border-box;width:max-content;max-width:100%;min-height:48px;height:48px;margin:0!important;padding:2px 0 2px 6px!important;border-radius:14px;background:var(--r2-shell)}
+.r2Composer .r2ComposerBody .richMediaHead{display:flex!important;min-height:44px!important;gap:2px!important;flex:0 1 auto;min-width:0}
+.r2Composer .r2ComposerBody .richMediaName{font-size:12px!important;line-height:16px!important;padding:0;max-width:110px;min-width:0;white-space:nowrap;text-overflow:ellipsis;display:block;overflow:hidden}
+.r2Composer .r2ComposerBody .richMediaDetails{display:none!important}
+#app #composer #editor.r2ComposerBody .richImage,.r2Composer .r2ComposerBody .richMedia :is(img,video){order:0;display:block;width:32px!important;height:32px!important;max-height:32px!important;min-width:32px;object-fit:cover;border-radius:8px;margin:0;cursor:pointer}
+.r2Composer .r2ComposerBody .richMedia :is(img,video):focus-visible{outline:2px solid var(--r2-accent);outline-offset:2px}
+.r2Composer .richMedia .richFileIcon{margin-inline:3px}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .richMedia .richAction::before{inset:13px!important;border:0!important;border-radius:50%!important;background:var(--r2-border)!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .richMedia .richAction svg{width:14px!important;height:14px!important;min-width:14px}
+.r2Composer .richMedia .r2AudioPreview{order:0;width:auto;flex:none}
+.r2Composer .richMedia .r2AudioTime{font-size:12px;line-height:16px;width:38px;min-width:38px}
+.r2Composer .richMedia-audio:has(.r2AudioPreview) .richMediaName{display:none}
+.r2Composer .r2ComposerBody .richMedia:has(.richRecordingState),.r2Composer .r2ComposerBody .richMissing{height:auto;flex-wrap:wrap;max-width:260px}
+.r2Composer .richMedia .workspaceEditorFileLink{position:absolute;inset:0 44px 0 0;font-size:0;color:transparent;border-radius:14px}
+.r2Composer .richMedia .workspaceEditorFileLink:focus-visible{outline:2px solid var(--r2-accent)}
+.r2Panel .r2Comparison{padding:6px}
+
+/* Full upper curve with fuller lower corners around the action row. */
+.r2Composer:not(.r2Open)::before{border-radius:28px}
+
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Open){border-radius:54px 54px 28px 28px!important}
+.r2Composer:not(.r2Open) .r2FunctionRail{padding-inline:20px}
+
+/* Shared action tray. The movable cyan surface selects; native buttons activate. */
+.r2ActionGroup{position:relative;isolation:isolate;display:flex;flex:0 0 auto;gap:0;height:44px;border-radius:999px;background:var(--r2-shell);touch-action:none;user-select:none}
+.r2ActionGroup::before{content:'';position:absolute;inset:0;pointer-events:none;border:1px solid var(--r2-border);border-radius:999px}
+.r2ActionAccent{position:absolute;left:6px;top:6px;width:32px;height:32px;border-radius:999px;background:var(--r2-accent);pointer-events:none;z-index:0;transition:transform .16s ease}
+.r2ActionGroup[data-dragging] .r2ActionAccent{transition:none}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ActionGroup .r2GroupedAction{position:relative!important;z-index:1;--r2-icon-border:0px;--r2-icon-background:transparent}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ActionGroup .r2GroupedAction::before{border:0!important;background:transparent!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ActionGroup .r2GroupedAction[data-action-active=true]:not(:disabled){color:#202124!important}
+#app #composer #composeBox.r2Composer:not(.r2Open) #editor,.r2Composer[data-r2-action-count='3']:not(.r2Open) .r2ComposerBody{right:146px}
+@media(prefers-reduced-motion:reduce){.r2ActionAccent{transition:none}}
