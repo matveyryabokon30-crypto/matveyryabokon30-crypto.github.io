@@ -206,12 +206,19 @@ html[data-theme='dark'] .r2Composer::before,body[data-theme='dark'] .r2Composer:
 .r2Composer:not(.r2Open) .r2FunctionRail{padding-inline:20px}
 
 /* Shared action tray. The movable cyan surface selects; native buttons activate. */
-.r2ActionGroup{position:relative;isolation:isolate;display:flex;flex:0 0 auto;gap:0;height:44px;border-radius:999px;background:var(--r2-shell);touch-action:none;user-select:none}
+.r2ActionGroup{position:relative;isolation:isolate;display:flex;flex:0 0 auto;gap:0;height:44px;margin-inline-end:6px;border-radius:999px;background:var(--r2-shell);touch-action:none;user-select:none}
 .r2ActionGroup::before{content:'';position:absolute;inset:0;pointer-events:none;border:1px solid var(--r2-border);border-radius:999px}
 .r2ActionAccent{position:absolute;left:6px;top:6px;width:32px;height:32px;border-radius:999px;background:var(--r2-accent);pointer-events:none;z-index:0;transition:transform .16s ease}
 .r2ActionGroup[data-dragging] .r2ActionAccent{transition:none}
 :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ActionGroup .r2GroupedAction{position:relative!important;z-index:1;--r2-icon-border:0px;--r2-icon-background:transparent}
 :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ActionGroup .r2GroupedAction::before{border:0!important;background:transparent!important}
 :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ActionGroup .r2GroupedAction[data-action-active=true]:not(:disabled){color:#202124!important}
-#app #composer #composeBox.r2Composer:not(.r2Open) #editor,.r2Composer[data-r2-action-count='3']:not(.r2Open) .r2ComposerBody{right:146px}
+/* Match the plus frame's 6px inset and keep the compact text clear of the tray. */
+#app #composer #composeBox.r2Composer:not(.r2Open) #editor,.r2Composer[data-r2-action-count='3']:not(.r2Open) .r2ComposerBody{right:152px}
+.r2Composer{--r2-toolbar-ink:#000}
+html[data-theme='dark'] .r2Composer,body[data-theme='dark'] .r2Composer{--r2-toolbar-ink:var(--r2-ink)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .r2Composer{--r2-toolbar-ink:var(--r2-ink)}}
+.r2Composer .r2Toolbar svg[data-pablicus-icon]{color:var(--r2-toolbar-ink)!important;opacity:1!important}
+.r2Composer .r2Toolbar [data-action-active=true] svg[data-pablicus-icon]{color:#000!important}
+@container(max-width:300px){.r2Composer .r2Toolbar{gap:2px}}
 @media(prefers-reduced-motion:reduce){.r2ActionAccent{transition:none}}
