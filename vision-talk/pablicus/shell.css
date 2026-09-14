@@ -248,3 +248,6 @@ html,body{background:var(--bg)!important;color:var(--text);margin:0;width:100%;h
 #home .homeHeader>#profileSettings{right:12px}#home .homeHeader>#profileBack{left:12px}
 #home .homeHeader :is(#profileSettings,#profileBack) svg{width:24px;height:24px}
 #home[data-page='profile'] #screenContent{padding:0 12px 28px}
+
+#home[data-page='profile'] #workspace{overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y pinch-zoom;min-width:0}
+#home[data-page='profile'] #screenContent{box-sizing:border-box;min-width:0;width:100%;max-width:100%;overflow-x:clip}
