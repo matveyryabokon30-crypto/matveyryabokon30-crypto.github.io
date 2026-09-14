@@ -222,3 +222,14 @@ html[data-theme='dark'] .r2Composer,body[data-theme='dark'] .r2Composer{--r2-too
 .r2Composer .r2Toolbar [data-action-active=true] svg[data-pablicus-icon]{color:#000!important}
 @container(max-width:300px){.r2Composer .r2Toolbar{gap:2px}}
 @media(prefers-reduced-motion:reduce){.r2ActionAccent{transition:none}}
+
+/* Chat function chips float above the compact input surface. */
+#app #composer{padding-top:48px!important;background:transparent!important;border:0!important}
+#app #composer #composeBox.r2Composer>.r2FunctionRail{position:absolute;left:0;right:0;top:-48px;height:44px;padding-inline:10px;gap:2px;background:transparent}
+#app #composer #composeBox.r2Composer .r2FunctionPill{height:44px;min-height:44px}
+#app #composer #composeBox.r2Composer .r2PillFrame{background:color-mix(in srgb,var(--r2-surface) 65%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-color:color-mix(in srgb,var(--r2-border) 45%,transparent)}
+#app #composer #composeBox.r2Composer::before{content:none}
+#app #composer #composeBox.r2Composer:not(.r2Open){min-height:56px;border-radius:999px!important}
+#app #composer #composeBox.r2Composer:not(.r2Open) .r2Toolbar{height:54px;min-height:54px}
+#app #composer #composeBox.r2Composer:not(.r2Open) #editor{top:5px}
+#app.composer-fullscreen #composer{padding-top:calc(48px + var(--safe-area-top))!important}

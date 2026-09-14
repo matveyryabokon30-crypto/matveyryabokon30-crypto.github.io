@@ -251,3 +251,15 @@ html,body{background:var(--bg)!important;color:var(--text);margin:0;width:100%;h
 
 #home[data-page='profile'] #workspace{overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y pinch-zoom;min-width:0}
 #home[data-page='profile'] #screenContent{box-sizing:border-box;min-width:0;width:100%;max-width:100%;overflow-x:clip}
+
+/* History fills the viewport and scrolls beneath softly fading controls. */
+#app .chatEdgeFade{display:none}
+#app #chatViewTabs{display:none!important}
+#app:not(.canvas-active):not(.composer-fullscreen)>.stage{position:absolute!important;inset:0;grid-row:auto;min-height:0;padding:0!important;z-index:0}
+#app:not(.canvas-active):not(.composer-fullscreen)>header{position:absolute!important;top:var(--safe-area-top);left:0;right:0;z-index:12;isolation:isolate;background:transparent!important;backdrop-filter:none;-webkit-backdrop-filter:none}
+#app:not(.canvas-active):not(.composer-fullscreen)>header>.chatEdgeFade{display:block;position:absolute;inset:calc(-1 * var(--safe-area-top)) 0 -24px;z-index:-1;pointer-events:none;background:linear-gradient(to bottom,var(--bg),color-mix(in srgb,var(--bg) 65%,transparent) 65%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);mask-image:linear-gradient(#000 55%,transparent);-webkit-mask-image:linear-gradient(#000 55%,transparent)}
+#app:not(.canvas-active):not(.composer-fullscreen) #composer{position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:10;isolation:isolate}
+#app:not(.canvas-active):not(.composer-fullscreen) #composer>.chatEdgeFade{display:block;position:absolute;inset:-16px calc((100vw - 100%)/-2) 0;pointer-events:none;z-index:-1;background:linear-gradient(to bottom,transparent,var(--bg));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);mask-image:linear-gradient(transparent,#000 65%);-webkit-mask-image:linear-gradient(transparent,#000 65%)}
+#app:not(.canvas-active) #new{bottom:calc(var(--chat-bottom-inset,110px) + 8px)}
+#app.canvas-active{grid-template-rows:58px 0 0 minmax(0,1fr) auto!important}
+@media(prefers-reduced-transparency:reduce){#app:not(.canvas-active)>header>.chatEdgeFade,#app:not(.canvas-active) #composer>.chatEdgeFade{backdrop-filter:none;-webkit-backdrop-filter:none}}

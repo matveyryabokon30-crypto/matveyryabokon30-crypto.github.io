@@ -29,10 +29,15 @@ function makeMessage(i){return{id:'m'+i,number:i,mine:i%3!==0,text:textFor(i),im
 function dataset(start,n){return Array.from({length:n},(_,i)=>makeMessage(start+i))}
 const svgData='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="#385168"/><path d="M0 440L190 160L350 340L460 230L640 440" fill="#86b7a7"/><circle cx="480" cy="100" r="48" fill="#edcf90"/><text x="320" y="455" fill="white" text-anchor="middle" font-size="28">LOCAL TEST IMAGE</text></svg>');
 function baseNodeFor(m){const row=document.createElement('article');row.className='row'+(m.mine?' mine':'');row.dataset.id=m.id;const bubble=document.createElement('div');bubble.className='bubble';const text=document.createElement('div');text.className='text';if(m.text.startsWith('https://')){const a=document.createElement('a');a.href=m.text;a.textContent=m.text;a.onclick=e=>e.preventDefault();text.append(a)}else text.textContent=m.text;bubble.append(text);if(m.image){const slot=document.createElement('div');slot.className='mediaSlot';if(m.imageReady){const img=new Image();img.alt='Локальная тестовая картинка';img.src=svgData;slot.append(img)}else slot.textContent='Место под картинку';bubble.append(slot)}const meta=document.createElement('div');meta.className='meta';meta.textContent='#'+m.number+' · локальный тест';bubble.append(meta);row.append(bubble);row.dataset.rev=m.revision;return row}
+function historyInsets(){
+if(app.classList.contains('composer-fullscreen')||app.classList.contains('canvas-active'))return {top:0,bottom:0};
+const view=vp.getBoundingClientRect(),head=app.querySelector(':scope>header').getBoundingClientRect(),composer=$('composer').getBoundingClientRect();
+return {top:Math.max(0,head.bottom-view.top+8),bottom:Math.max(0,view.bottom-composer.top+8)};
+}
 class NaturalList {
 constructor(messages){
 this.messages=messages; this.heights=new Map(); this.revisions=new Map(); this.nodes=new Map();
-this.offsets=[];this.index=new Map();this.width=vp.clientWidth;this.height=vp.clientHeight;
+this.offsets=[];this.index=new Map();this.width=vp.clientWidth;this.height=vp.clientHeight;this.insets=historyInsets();
 this.follow=true;this.lastAnchor=null;this.frame=0;this.destroyed=false;this.busy=false;this.fault='';
 this.measureBox=document.createElement('div');this.measureBox.className='measureBox';
 this.measureBox.setAttribute('aria-hidden','true');app.append(this.measureBox);
@@ -53,10 +58,11 @@ if(this.destroyed||this.resizeFrame)return;
 this.resizeFrame=requestAnimationFrame(()=>{
 this.resizeFrame=0;
 if(this.destroyed||this.busy||vp.clientWidth<2||vp.clientHeight<2)return;
-if(Math.abs(vp.clientWidth-this.width)>.5||Math.abs(vp.clientHeight-this.height)>.5)
+const insets=historyInsets();
+if(Math.abs(vp.clientWidth-this.width)>.5||Math.abs(vp.clientHeight-this.height)>.5||Math.abs(insets.top-this.insets.top)>.5||Math.abs(insets.bottom-this.insets.bottom)>.5)
 this.sync(this.lastAnchor,this.follow,'viewport-size');
 });
-});this.observer.observe(vp);
+});this.observer.observe(vp);this.observer.observe($('composer'));this.observer.observe(app.querySelector(':scope>header'));
 counters.active_lists++;counters.created++;
 this.measureMissing();this.rebuild();
 }
@@ -86,18 +92,19 @@ const m=this.messages[i];this.index.set(m.id,i);
 const h=this.heights.get(m.id);if(!h)throw Error('Unmeasured row: '+m.id);
 this.offsets.push(this.offsets[i]+h);
 }
-this.total=this.offsets.at(-1)||0;this.pad=Math.max(0,this.height-this.total);
-canvas.style.height=Math.ceil(this.total+this.pad)+'px';
+this.total=this.offsets.at(-1)||0;this.pad=this.insets.top+Math.max(0,this.height-this.insets.top-this.insets.bottom-this.total);
+app.style.setProperty('--chat-bottom-inset',this.insets.bottom+'px');
+canvas.style.height=Math.ceil(this.total+this.pad+this.insets.bottom)+'px';
 }
 at(y){let lo=0,hi=this.messages.length;while(lo<hi){const mid=(lo+hi)>>>1;if(this.offsets[mid+1]<=y-this.pad)lo=mid+1;else hi=mid}return Math.max(0,Math.min(lo,this.messages.length-1))}
-bottomDistance(){return Math.max(0,Math.ceil(this.total+this.pad)-this.height-vp.scrollTop)}
+bottomDistance(){return Math.max(0,Math.ceil(this.total+this.pad+this.insets.bottom)-this.height-vp.scrollTop)}
 capture(withFollow=true){
 if(withFollow&&this.follow)return{end:true};
 const top=vp.scrollTop,i=this.at(top+1),m=this.messages[i];
 return m?{id:m.id,offset:this.offsets[i]+this.pad-top}:null;
 }
 writeScroll(value,reason){
-const max=Math.max(0,Math.ceil(this.total+this.pad)-this.height);
+const max=Math.max(0,Math.ceil(this.total+this.pad+this.insets.bottom)-this.height);
 const target=Math.max(0,Math.min(max,value));
 if(Math.abs(vp.scrollTop-target)<.51)return;
 scrollEvidence.programmatic_writes++;
@@ -107,7 +114,7 @@ vp.scrollTop=target;
 }
 restore(a,follow,reason='mutation'){
 if(this.fault==='skip-anchor')return;
-if(follow)this.writeScroll(Math.ceil(this.total+this.pad)-this.height,reason);
+if(follow)this.writeScroll(Math.ceil(this.total+this.pad+this.insets.bottom)-this.height,reason);
 else if(a?.id&&this.index.has(a.id))this.writeScroll(this.offsets[this.index.get(a.id)]+this.pad-a.offset,reason);
 }
 scheduleRender(){if(this.frame||this.destroyed)return;this.frame=requestAnimationFrame(()=>{this.frame=0;this.render()})}
@@ -137,7 +144,7 @@ this.busy=true;
 try{
 const width=vp.clientWidth;
 if(Math.abs(width-this.width)>.5){this.width=width;this.heights.clear();this.revisions.clear();}
-this.height=vp.clientHeight;
+this.height=vp.clientHeight;this.insets=historyInsets();
 this.measureMissing();this.rebuild();this.restore(anchor,follow,reason);this.render();
 this.follow=follow;this.lastAnchor=this.capture(false);
 }finally{this.busy=false}
@@ -153,7 +160,7 @@ const label=this.pendingBelow?'К последнему сообщению. Но�
 if(button.getAttribute('aria-label')!==label)button.setAttribute('aria-label',label);
 }
 bottom(){this.pendingBelow=0;this.follow=true;this.sync({end:true},true,'explicit-bottom');}
-go(i){if(!this.messages.length)return;i=Math.max(0,Math.min(i,this.messages.length-1));this.follow=false;this.sync({id:this.messages[i].id,offset:0},false,'explicit-navigation');}
+go(i){if(!this.messages.length)return;i=Math.max(0,Math.min(i,this.messages.length-1));this.follow=false;this.sync({id:this.messages[i].id,offset:this.insets.top},false,'explicit-navigation');}
 prepend(items){const a=this.capture(),f=this.follow;this.messages=items.concat(this.messages);this.sync(a,f,'prepend');}
 append(m,force=false){const a=this.capture(),f=force||this.follow;if(!f)this.pendingBelow++;this.messages.push(m);this.sync(a,f,'append');}
 edit(id,suffix){const a=this.capture(),f=this.follow,m=this.messages[this.index.get(id)];if(!m)return;m.text+=suffix;m.revision++;this.sync(a,f,'edit');}

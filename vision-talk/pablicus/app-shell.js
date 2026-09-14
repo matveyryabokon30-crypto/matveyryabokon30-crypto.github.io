@@ -3,6 +3,11 @@
  'use strict';
  if(root.PablicusShell)throw Error('DUPLICATE_SHELL_OWNER');
  const $=id=>document.getElementById(id);
+ // Real decorative elements keep backdrop blur composited in Safari as well.
+ for(const host of [$('app')?.querySelector(':scope>header'),$('composer')])if(host){
+  const fade=document.createElement('div');fade.className='chatEdgeFade';fade.setAttribute('aria-hidden','true');host.prepend(fade);
+ }
+
  function project(state){
   const section=root.PablicusUI.rootSection(state.section),nav=$('mainNav');
   if(nav)for(const button of nav.querySelectorAll('button[data-page]')){
