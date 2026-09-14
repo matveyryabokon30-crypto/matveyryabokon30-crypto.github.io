@@ -20,3 +20,20 @@
 .pablicusMessageMenu button:focus-visible{outline:2px solid var(--accent,#363a3e);outline-offset:-2px;background:var(--soft,#f0f1f2)}
 @media(hover:hover){.pablicusMessageMenu button:hover{background:var(--soft,#f0f1f2)}}
 @media(prefers-reduced-motion:no-preference){.pablicusMessageMenu:popover-open{animation:pmmAppear 100ms ease-out}@keyframes pmmAppear{from{opacity:0}to{opacity:1}}}
+
+/* Long press lifts a static copy above a blurred, non-interactive chat. */
+.pablicusMessageMenu.pmmSpotlight{display:block;max-width:none;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;overflow:hidden;isolation:auto}
+.pmmSpotlight .pmmBackdrop{position:absolute;inset:0;background:rgba(145,149,157,.38);touch-action:none}
+.pmmSpotlight .pmmPreview{position:absolute;overflow:auto;overscroll-behavior:contain;border-radius:16px;scrollbar-width:none}
+.pmmSpotlight .pmmReactions{position:absolute;box-sizing:border-box;display:flex;gap:0;margin:0;padding:4px;border:1px solid rgba(255,255,255,.65);border-radius:28px;background:var(--glass,rgba(255,255,255,.9));box-shadow:0 8px 30px #0000000a;overflow:hidden;min-height:48px}
+.pmmSpotlight .pmmReactions[hidden]{display:none}
+.pmmSpotlight .pmmReaction{flex:1 1 0;min-width:0;min-height:40px;font-size:27px;border-radius:50%;padding:0}
+.pmmSpotlight .pmmMore{color:var(--text);background:rgba(120,130,145,.16)}
+.pmmSpotlight .pmmExpanded{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));max-height:220px;overflow-y:auto}
+.pmmSpotlight .pmmActions{position:absolute;box-sizing:border-box;padding:8px;border:1px solid rgba(255,255,255,.65);border-radius:28px;background:var(--glass,rgba(255,255,255,.9));box-shadow:0 12px 40px #00000012}
+.pmmSpotlight .pmmAction{min-height:44px;font-size:16px;padding:10px 12px;border-radius:12px}
+#canvas .bubble,#canvas .bubble :is(img,video,button,a){-webkit-touch-callout:none}
+#canvas .bubble{user-select:none;-webkit-user-select:none}
+
+/* Explicit background blur also covers WebKit top-layer backdrop limitations. */
+#app .pmmSourceHidden,#app .pmmSourceHidden *{visibility:hidden!important}

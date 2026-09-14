@@ -89,25 +89,76 @@
     const root = node('div', 'pablicusMessageMenu');
     root.hidden = true; root.setAttribute('aria-label','Действия с сообщением');
     root.setAttribute('popover','manual');
+    const backdrop = node('div','pmmBackdrop'), preview = node('div','pmmPreview');
+    backdrop.hidden = preview.hidden = true; preview.setAttribute('aria-hidden','true');
     const reactions = node('div', 'pmmReactions');
     reactions.setAttribute('role','group'); reactions.setAttribute('aria-label','Реакция на сообщение');
     const list = node('div', 'pmmActions'); list.setAttribute('role','menu'); list.setAttribute('aria-label','Действия с сообщением');
     const content = node('div','pmmContent'); content.hidden = true;
-    root.append(reactions,content,list); document.body.append(root);
+    root.append(backdrop,reactions,preview,content,list); document.body.append(root);
     let config = null, previousFocus = null, destroyed = false, opened = false, positionFrame = 0;
-    let anchorAria = null, pointOffset = null;
+    let anchorAria = null, pointOffset = null, oldOverflow = null, blurStyle = null;
     const viewport = () => {
       const vv = scope.visualViewport;
       return {left:vv?.offsetLeft || 0,top:vv?.offsetTop || 0,width:vv?.width || scope.innerWidth,height:vv?.height || scope.innerHeight};
     };
-    const enabledButtons = () => [...root.querySelectorAll('button:not(:disabled)')];
+    const enabledButtons = () => [...root.querySelectorAll('button:not(:disabled)')].filter(b=>!b.closest('[hidden],.pmmPreview'));
+    // A static visual copy keeps the selected message crisp above the backdrop.
+    // It has no IDs, focus targets or live media, and cannot trigger content actions.
+    function snapshot(anchor) {
+      const original = anchor;
+      const copy = original.cloneNode(true);
+      const sources = [original,...original.querySelectorAll('*')];
+      const copies = [copy,...copy.querySelectorAll('*')];
+      sources.forEach((source,i)=>{
+        const target=copies[i], style=scope.getComputedStyle(source);
+        for(const name of style) target.style.setProperty(name,style.getPropertyValue(name),'important');
+        target.removeAttribute('id'); target.removeAttribute('autofocus'); target.removeAttribute('popover');
+        target.removeAttribute('srcset'); target.tabIndex=-1;
+        target.style.setProperty('pointer-events','none','important');
+        target.style.setProperty('animation','none','important');
+        target.style.setProperty('transition','none','important');
+        if(source.tagName==='VIDEO'){
+          const canvas=document.createElement('canvas');canvas.width=source.videoWidth||1;canvas.height=source.videoHeight||1;
+          canvas.style.cssText=target.style.cssText;
+          try{canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height)}catch{}
+          target.replaceWith(canvas);
+        }else if(source.tagName==='AUDIO'){target.removeAttribute('src');target.replaceChildren()}
+      });
+      // Reset both logical and physical geometry; copied percentages otherwise
+      // resolve against the narrower preview and shrink the message a second time.
+      for(const [name,value] of Object.entries({position:'relative',inset:'auto',margin:'0',width:'100%','inline-size':'100%','max-width':'none','max-inline-size':'none','min-width':'0','min-inline-size':'0',height:'auto','block-size':'auto',transform:'none'}))copy.style.setProperty(name,value,'important');
+      preview.replaceChildren(copy);
+    }
+    function positionSpotlight(box,bounds) {
+      const gap=8, width=Math.min(380,box.width-24), right=!!config.anchor.closest('.mine')||bounds.left+bounds.width/2>box.left+box.width/2;
+      root.style.cssText=`left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px;max-height:none`;
+      reactions.style.width=width+'px';list.style.width=Math.min(230,width)+'px';
+      const reactionHeight=reactions.hidden?0:reactions.getBoundingClientRect().height;
+      list.style.maxHeight=Math.max(100,box.height-reactionHeight-100)+'px';
+      const actionHeight=list.getBoundingClientRect().height;
+      const previewHeight=Math.max(40,Math.min(bounds.height,box.height-reactionHeight-actionHeight-48));
+      const original=config.previewTarget||config.anchor;
+      const rowBounds=original.getBoundingClientRect();
+      preview.style.width=Math.min(rowBounds.width,box.width-24)+'px';preview.style.maxHeight=previewHeight+'px';
+      const ph=Math.min(preview.getBoundingClientRect().height,previewHeight);
+      const total=reactionHeight+ph+actionHeight+gap*2;
+      const top=Math.max(12,Math.min(bounds.top-box.top-reactionHeight-gap,box.height-total-12));
+      const x=right?box.width-12-width:12;
+      reactions.style.left=x+'px';reactions.style.top=top+'px';
+      preview.style.left=Math.max(12,Math.min(rowBounds.left-box.left,box.width-12-preview.getBoundingClientRect().width))+'px';
+      preview.style.top=(top+reactionHeight+gap)+'px';
+      list.style.left=(right?box.width-12-list.getBoundingClientRect().width:12)+'px';
+      list.style.top=(top+reactionHeight+gap+ph+gap)+'px';
+    }
     function position() {
       positionFrame = 0;
       if (!opened || !config) return;
       if (!config.anchor?.isConnected) { close({restoreFocus:false}); return; }
       const box = viewport(), gap = 8;
-      const bounds = config.anchor.getBoundingClientRect();
+      const bounds = (config.previewTarget||config.anchor).getBoundingClientRect();
       if(bounds.bottom < box.top || bounds.top > box.top+box.height) { close({restoreFocus:false}); return; }
+      if(config.spotlight){positionSpotlight(box,bounds);return}
       const px = pointOffset ? bounds.left+pointOffset.x : null;
       const py = pointOffset ? bounds.top+pointOffset.y : null;
       const width = Math.max(0, Math.min(config.content ? 300 : 220, box.width - gap*2));
@@ -135,6 +186,12 @@
       positionFrame = 0;
       if (typeof root.hidePopover === 'function' && root.matches(':popover-open')) root.hidePopover();
       root.hidden = true;
+      if(oldOverflow!==null){document.body.style.overflow=oldOverflow;oldOverflow=null}
+      blurStyle?.remove();blurStyle=null;
+      (config.previewTarget||anchor)?.classList.remove('pmmSourceHidden');
+      root.classList.remove('pmmSpotlight');root.removeAttribute('style');
+      for(const n of [reactions,list,preview])n.removeAttribute('style');
+      preview.replaceChildren();backdrop.hidden=preview.hidden=true;
       anchor?.classList.remove('pablicusMessageMenuAnchor');
       if (anchor && anchorAria) {
         for (const [key, value] of Object.entries(anchorAria)) {
@@ -142,7 +199,7 @@
         }
       }
       config = null; previousFocus = null; anchorAria = null; pointOffset = null;
-      root.replaceChildren(reactions,content,list); reactions.replaceChildren(); content.replaceChildren(); content.hidden = true; list.replaceChildren();
+      root.replaceChildren(backdrop,reactions,preview,content,list); reactions.replaceChildren();reactions.classList.remove('pmmExpanded'); content.replaceChildren(); content.hidden = true; list.replaceChildren();
       if (restoreFocus) {
         const target = focus?.isConnected ? focus : anchor?.isConnected ? anchor : null;
         target?.focus?.({preventScroll:true});
@@ -166,16 +223,24 @@
       next.anchor.setAttribute('aria-haspopup','menu'); next.anchor.setAttribute('aria-expanded','true');
       next.anchor.classList.add('pablicusMessageMenuAnchor');
       const onError = next.onError || options.onError;
-      for (const item of Array.isArray(next.reactions) ? next.reactions : []) {
-        if (typeof next.onReaction !== 'function') break;
+      const addReaction = item => {
+        if (typeof next.onReaction !== 'function') return;
         const value = typeof item === 'string' ? {id:item,emoji:item,label:item} : item;
-        if (!value || typeof value.emoji !== 'string') continue;
+        if (!value || typeof value.emoji !== 'string') return;
         const button = node('button','pmmReaction'); button.type = 'button'; button.textContent = value.emoji;
         button.dataset.reactionId = String(value.id ?? value.emoji);
         button.setAttribute('aria-label',value.label || value.emoji);
         button.setAttribute('aria-pressed',value.selected ? 'true' : 'false');
         button.onclick = () => invoke(next.onReaction,value.id ?? value.emoji,onError);
         reactions.append(button);
+      };
+      for(const item of next.reactions||[])addReaction(item);
+      if(next.moreReactions?.length){
+        const more=node('button','pmmReaction pmmMore');more.type='button';more.append(icon('plus'));more.setAttribute('aria-label','Ещё реакции');more.setAttribute('aria-expanded','false');
+        more.onclick=()=>{const expanded=more.getAttribute('aria-expanded')==='true';more.setAttribute('aria-expanded',String(!expanded));reactions.classList.toggle('pmmExpanded',!expanded);
+          if(expanded)reactions.querySelectorAll('[data-extra]').forEach(n=>n.remove());
+          else for(const item of next.moreReactions){addReaction(item);reactions.lastElementChild.dataset.extra=''}
+          position();};reactions.append(more);
       }
       reactions.hidden = !reactions.childElementCount;
       if (next.content?.nodeType === 1) { content.append(next.content); content.hidden = false; }
@@ -193,14 +258,21 @@
       if (!list.childElementCount && !reactions.childElementCount && !content.childElementCount) {
         opened = true; close({restoreFocus:false}); return;
       }
+      if(next.spotlight){root.classList.add('pmmSpotlight');backdrop.hidden=preview.hidden=false;oldOverflow=document.body.style.overflow;document.body.style.overflow='hidden';snapshot(next.previewTarget||next.anchor);(next.previewTarget||next.anchor).classList.add('pmmSourceHidden');}
       opened = true; root.hidden = false;
       if (typeof root.showPopover === 'function') root.showPopover();
+      if(next.spotlight)scope.setTimeout(()=>{
+        if(!opened||config!==next)return;
+        // WebKit needs both the app and its composited children blurred above its glass surfaces.
+        blurStyle=node('style');blurStyle.textContent='#app{filter:blur(16px)!important;transform:translateZ(0)!important}#app>*{filter:blur(12px)!important}#app *,#app *::before,#app *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}';document.head.append(blurStyle);
+      },180);
       position();
       const first = content.querySelector('textarea,input,select,button,[tabindex="0"]') || list.querySelector('button') || reactions.querySelector('button');
       first?.focus({preventScroll:true});
       schedulePosition();
     }
     function onPointerDown(event) {
+      if(opened && (event.target===backdrop || event.target===root && config.spotlight)){event.preventDefault();event.stopPropagation();close({restoreFocus:false});return}
       if (opened && !root.contains(event.target)) close({restoreFocus:false});
     }
     function onKeyDown(event) {

@@ -1,7 +1,8 @@
 /* Message actions are explicit user operations. Immutable delivery payloads stay untouched. */
 (function(scope){
  'use strict';
- const EMOJIS=['👍','❤️','🔥','😂','😮','😢','🙏'];
+ const EMOJIS=['🔥','❤️','👌','👍','😁','🙏','🤝'];
+ const MORE_EMOJIS=['😂','😮','😢','🥰','😍','🎉','👏','💯','🤔','👀','🤗','😎','😊','😱','🤩','💔','😭','😡','🤯','💪','✅','⭐','⚡','🍀'];
  const FIELDS=['message_revision','edited_body','edited_content','edited_at','deleted_at'];
  const clone=value=>value==null?value:structuredClone(value);
  function effective(raw){
@@ -105,21 +106,21 @@
    if(mediaOf(m,blockId).length)actions.push({id:'download',label:'Скачать',onSelect:()=>download(m,anchor,blockId)});
    if(m.sender_id===c.userId)actions.push({id:'delete',label:'Удалить',danger:true,onSelect:()=>confirmDelete([m],anchor)});
    actions.push({id:'select',label:'Выбрать',separator:true,onSelect:()=>select(m)});
-   const reactions=EMOJIS.map(emoji=>({id:emoji,emoji,label:emoji,selected:!!state.get(m.id)?.reactions?.some(r=>r.emoji===emoji&&r.mine)}));menu.open({anchor,point,actions,reactions,onReaction:emoji=>setReaction(m,emoji),onError:error=>notify(error,c)});
+   const reactions=EMOJIS.map(emoji=>({id:emoji,emoji,label:emoji,selected:!!state.get(m.id)?.reactions?.some(r=>r.emoji===emoji&&r.mine)}));menu.open({anchor,point,actions,reactions,moreReactions:MORE_EMOJIS,spotlight:true,previewTarget:blockId?[...anchor.querySelectorAll('[data-block-id]')].find(n=>n.dataset.blockId===blockId):anchor,onReaction:emoji=>setReaction(m,emoji),onError:error=>notify(error,c)});
   }
   function decorate(row,bubble,raw){
    if(raw.deleted_at){bubble.classList.add('deletedMessage');return}
-   bubble.tabIndex=0;bubble.setAttribute('aria-haspopup','menu');bubble.setAttribute('aria-label','Сообщение. Нажмите, чтобы открыть действия');
+   bubble.tabIndex=0;bubble.setAttribute('aria-haspopup','menu');bubble.setAttribute('aria-label','Сообщение. Удерживайте, чтобы открыть действия');
    bubble.addEventListener('keydown',event=>{if(event.target!==bubble)return;if(event.key==='Enter'||event.key===' '){event.preventDefault();open(raw,{anchor:bubble})}});
    const mark=node('span','messageSelectMark');mark.hidden=!selected.has(raw.id);mark.append(icon('check'));mark.setAttribute('aria-hidden','true');row.append(mark);row.classList.toggle('messageSelected',selected.has(raw.id));
    const metadata=state.get(raw.id);if(metadata?.reactions?.length){const reactions=node('div','messageReactions');for(const r of metadata.reactions){const react=node('button','messageReaction',r.emoji+' '+r.count);react.type='button';react.dataset.emoji=r.emoji;react.setAttribute('aria-label',r.emoji+' · '+r.count);react.setAttribute('aria-pressed',r.mine?'true':'false');react.onclick=event=>{event.stopPropagation();setReaction(raw,r.emoji).catch(options.onError)};reactions.append(react)}bubble.append(reactions)}
    if(raw.edited_at){const meta=bubble.querySelector('.meta');if(meta&&!meta.querySelector('.messageEdited'))meta.append(node('span','messageEdited',' · изм.'))}
    let timer=0,start=null,suppressUntil=0;const blockFor=event=>raw.type==='rich'?event.target.closest('[data-block-id]')?.dataset.blockId||null:null;
    const cancel=()=>{if(timer)scope.clearTimeout(timer);timer=0;start=null};
-   bubble.addEventListener('contextmenu',event=>{event.preventDefault();event.stopPropagation();open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})});
-   bubble.addEventListener('pointerdown',event=>{if(event.pointerType==='mouse'||event.button!==0||event.target.closest('button,input,a,video,audio,textarea'))return;cancel();start={x:event.clientX,y:event.clientY};timer=scope.setTimeout(()=>{timer=0;if(!bubble.isConnected)return;suppressUntil=Date.now()+900;open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})},500)});
+   bubble.addEventListener('contextmenu',event=>{event.preventDefault();event.stopPropagation();cancel();if(bubble.getAttribute('aria-expanded')==='true')return;suppressUntil=Date.now()+900;open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})});
+   bubble.addEventListener('pointerdown',event=>{if(event.button!==0||event.isPrimary===false||event.target.closest('input,textarea,select'))return;cancel();start={x:event.clientX,y:event.clientY};timer=scope.setTimeout(()=>{timer=0;if(!bubble.isConnected)return;suppressUntil=Date.now()+900;open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})},500)});
    bubble.addEventListener('pointermove',event=>{if(start&&Math.hypot(event.clientX-start.x,event.clientY-start.y)>10)cancel()});for(const name of['pointerup','pointercancel','pointerleave'])bubble.addEventListener(name,cancel);
-   bubble.addEventListener('click',event=>{if(Date.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation();return}if(selected.size){event.preventDefault();event.stopImmediatePropagation();try{select(raw)}catch(error){options.onError?.(error)}return}if(event.target.closest('button,input,a,video,audio,textarea,.richMedia-audio,.richInlineVideo')||scope.getSelection?.().toString())return;open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})},true);
+   bubble.addEventListener('click',event=>{if(Date.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation();return}if(selected.size){event.preventDefault();event.stopImmediatePropagation();try{select(raw)}catch(error){options.onError?.(error)}return}/* A short tap belongs to the content: links, media and audio keep their own actions. */},true);
   }
   function destroy(){clear();destroyed=true;menu.destroy()}
   return Object.freeze({open,decorate,revision,sync,dismiss,clear,destroy,effective,get selected(){return [...selected]}});

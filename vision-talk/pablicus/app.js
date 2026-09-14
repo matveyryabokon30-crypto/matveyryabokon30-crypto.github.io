@@ -596,12 +596,14 @@
  }
  async function loadOlder(){if(!current||olderBusy||!navigator.onLine||!rows.length)return;const first=+rows[0].server_seq;if(first<=1)return;olderBusy=true;const d=current,ep=epoch;try{const r=await sb.from('messages').select('*').eq('conversation_id',d.id).lt('server_seq',first).order('server_seq',{ascending:false}).limit(100);if(r.error)throw r.error;if(ep!==epoch||current?.id!==d.id)return;const older=(r.data||[]).reverse();if(older.length){rows=[...older,...rows];PablicusChat.prepend(older.map(mapped))}}catch(e){if(navigator.onLine)console.warn('history')}finally{olderBusy=false}}
  async function signedUrl(path){const old=signed.get(path);if(old&&old.until>Date.now())return old.url;const r=await sb.storage.from(BUCKET).createSignedUrl(path,300);if(r.error)throw r.error;signed.set(path,{url:r.data.signedUrl,until:Date.now()+240000});return r.data.signedUrl}
- async function viewAttachment(r,isCurrent=()=>true){if(['image','video'].includes(r.type))return mediaViewer.open([{type:r.type,path:r.attachment_path,localAssetId:r.localAssetId,name:r.attachment_metadata?.name||'Вложение',mime:r.attachment_metadata?.mime_type}],0);const md=r.attachment_metadata||{},c=dialog(PablicusRichMessage.attachmentLabel({type:r.type,name:md.name}));const pending=el('p','','Открываю…');c.append(pending);const uid=user?.id,u=r.localAssetId?PablicusChat.localAssetUrl(r.localAssetId):await signedUrl(r.attachment_path);if(user?.id!==uid||!isCurrent()||!pending.isConnected||!$('productDialog').open)return;c.replaceChildren();
-  if(r.type==='image'){const im=el('img','viewerImage');im.src=u;im.alt='Фотография';c.append(im)}
-  else if((md.mime_type||'').startsWith('audio/')){const a=el('audio');a.controls=true;a.src=u;c.append(a)}
-  else if(r.type==='video'){const v=el('video','viewerVideo');v.controls=true;v.playsInline=true;v.preload='metadata';v.src=u;v.onerror=()=>{if(v.isConnected)c.prepend(el('p','muted','Браузер не смог воспроизвести это видео. Откройте или сохраните файл ниже.'))};c.append(v)}
-  else if(md.mime_type==='application/pdf'){const f=el('iframe','pdfFrame');f.title=PablicusRichMessage.attachmentLabel({type:'document',name:md.name});f.src=u;f.setAttribute('sandbox','');c.append(f)}
-  const a=el('a','setting','Открыть / сохранить файл');a.href=u;a.target='_blank';a.rel='noopener noreferrer';c.append(a);
+ async function viewAttachment(r,isCurrent=()=>true){
+  if(['image','video'].includes(r.type))return mediaViewer.open([{type:r.type,path:r.attachment_path,localAssetId:r.localAssetId,name:r.attachment_metadata?.name||'Вложение',mime:r.attachment_metadata?.mime_type}],0);
+  // Reserve the browser viewer during the tap so async signed URLs are not blocked as popups.
+  const uid=user?.id,viewer=window.open('about:blank','_blank');if(viewer)viewer.opener=null;
+  try{const u=r.localAssetId?PablicusChat.localAssetUrl(r.localAssetId):await signedUrl(r.attachment_path);
+   if(user?.id!==uid||!isCurrent()){viewer?.close();return}
+   if(viewer)viewer.location.replace(u);else{const link=el('a');link.href=u;link.target='_blank';link.rel='noopener noreferrer';document.body.append(link);link.click();link.remove()}
+  }catch(error){viewer?.close();throw error}
  }
  $('productDialog').addEventListener('close',()=>{$('dialogContent').querySelectorAll('video,audio').forEach(m=>{m.pause();m.removeAttribute('src');m.load()})});
  function acceptFile(f){if(f.size===0){toast('Пустой файл не добавлен');return false}if(f.size>25*1024*1024){toast('В этом кандидате вложения до 25 МБ. Файл не был добавлен.');return false}return true}
