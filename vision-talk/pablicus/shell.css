@@ -242,3 +242,9 @@ html,body{background:var(--bg)!important;color:var(--text);margin:0;width:100%;h
 #app>header .chatHeaderActions :is(#chatLibraryOpen,#reportBtn)::before{border:0!important;background:transparent!important;inset:0!important}
 #app>header #chatBack{--r2-icon-inset:0px}
 #app>header #chatBack::before{inset:0!important}
+
+/* Profile header actions share the application shell geometry. */
+#home .homeHeader>#profileSettings,#home .homeHeader>#profileBack{position:absolute;top:7px;width:44px;height:44px;min-width:44px;min-height:44px;padding:10px;display:grid;place-items:center;border:1px solid var(--r2-border,var(--line));border-radius:50%;background:var(--surface);color:var(--text)}
+#home .homeHeader>#profileSettings{right:12px}#home .homeHeader>#profileBack{left:12px}
+#home .homeHeader :is(#profileSettings,#profileBack) svg{width:24px;height:24px}
+#home[data-page='profile'] #screenContent{padding:0 12px 28px}

@@ -1,0 +1,54 @@
+/* The profile uses the same white/cyan surfaces and thin circular controls as chat. */
+.youPage{width:100%;max-width:720px;margin:0 auto;color:var(--text);text-align:left;--you-line:var(--r2-border,var(--line));--you-accent:var(--r2-accent,#1db9c4)}
+.youPage *, .youQrCard *{box-sizing:border-box}
+.youPage .youButton,.youQrCard .youButton{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:9px 17px;border:1px solid var(--you-line,var(--line));border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;line-height:20px;text-align:center;box-shadow:none;cursor:pointer;max-width:100%}
+.youPage .youButton::before,.youQrCard .youButton::before{content:none!important}
+.youPage .youButton svg,.youQrCard .youButton svg{width:20px;height:20px;flex-shrink:0;stroke-width:1.5}
+.youPage button:disabled{opacity:.5;cursor:default}
+.youPage .youPrimary,.youQrCard .youPrimary{background:var(--you-accent,#1db9c4);border-color:transparent;color:#14383b}
+.youPage .youIconOnly{width:44px;height:44px;padding:10px;flex-shrink:0}.youIconOnly>span{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden}
+.youHero{text-align:center;padding:26px 16px 24px}
+.youPage .youAvatarButton{padding:0;border:0;border-radius:50%;display:block;width:104px;height:104px;margin:0 auto;background:transparent}
+.youAvatar{position:relative;width:104px;height:104px;border-radius:50%;background:color-mix(in srgb,var(--you-accent,#1db9c4) 12%,var(--surface));color:var(--text);display:grid;place-items:center;overflow:hidden;font-size:38px;line-height:1;flex-shrink:0;margin:auto}
+.youAvatar img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.youName{margin:16px 0 5px;font-size:26px;line-height:1.25;letter-spacing:-.5px;overflow-wrap:anywhere;font-weight:700}
+.youHandle{margin:0;color:var(--muted);font-size:15px;line-height:22px}
+.youHeroActions{display:flex;gap:8px;justify-content:center;margin-top:18px}
+.youInfo{border:1px solid var(--you-line);border-radius:26px;background:var(--surface);padding:4px 18px;margin-bottom:24px}
+.youInfoRow{padding:14px 0;text-align:left}.youInfoRow+.youInfoRow{border-top:1px solid var(--line)}
+.youInfoLabel{display:block;font-size:12px;line-height:18px;color:var(--muted);margin-bottom:4px}
+.youInfoValue{font-size:16px;line-height:24px;white-space:pre-wrap;overflow-wrap:anywhere}
+.youPage .youTextAction{justify-content:flex-start;min-height:28px;padding:0;border:0;border-radius:0;background:transparent;color:var(--text);font-size:16px;text-align:left}
+.youPage .youTextAction>span{overflow-wrap:anywhere}
+.youPublicationsHeader{display:flex;align-items:center;gap:10px;position:sticky;top:-1px;z-index:2;background:var(--bg);padding:8px 0}
+.youTabs{display:flex;flex:1;border:1px solid var(--you-line);border-radius:999px;padding:3px;background:var(--surface);min-width:0}
+.youPage .youTabs .youButton{flex:1;border:0;background:transparent;padding:8px 10px;min-height:36px}
+.youPage .youTabs [aria-selected='true']{background:color-mix(in srgb,var(--you-accent) 15%,var(--surface));color:var(--text)}
+.youAlbumFilters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:8px 0 16px}
+.youPage .youAlbumFilters .youButton{flex-shrink:0;white-space:nowrap;min-height:34px;padding:6px 12px;font-size:12px;max-width:240px}.youAlbumFilters .youButton span{overflow:hidden;text-overflow:ellipsis}
+.youPage .youAlbumFilters [aria-pressed='true']{border-color:var(--you-accent);background:var(--surface)}
+.youGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.youPage .youTile{position:relative;min-width:0;width:100%;aspect-ratio:3/4;border:0;border-radius:16px;padding:0;overflow:hidden;background:color-mix(in srgb,var(--you-accent) 12%,var(--surface));display:block}
+.youTile>img,.youTile>video{display:block;width:100%;height:100%;object-fit:cover;border-radius:16px;pointer-events:none}
+.youTextTile{font-size:13px;line-height:19px;padding:12px;margin:0;text-align:left;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
+.youMediaBadge,.youMediaCount{position:absolute;bottom:8px;left:8px;border-radius:999px;padding:2px 7px;background:#0008;color:white;font-size:11px;line-height:16px}.youMediaCount{left:auto;right:8px;top:8px;bottom:auto}
+.youMediaError{position:absolute;inset:0;display:grid;place-items:center;background:var(--surface);font-size:12px;padding:12px}
+.youEmpty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:245px;padding:26px 20px;border-radius:26px;background:var(--surface);gap:12px}
+.youEmpty>svg{width:32px;height:32px;color:var(--you-accent)}.youEmpty h2{font-size:18px;line-height:24px;margin:0}.youEmpty p{max-width:300px;margin:0 0 6px}
+.youMuted{color:var(--muted);font-size:13px;line-height:20px}.youLoading{text-align:center;padding:30px}
+.youForm{display:flex;flex-direction:column;gap:16px;padding:20px 6px 28px;text-align:left;max-width:560px;margin:auto}
+.youForm .youAvatar{margin-bottom:4px}
+.youField{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:13px;line-height:20px;color:var(--muted);text-align:left}
+.youPage .youField :is(input,textarea,select),#dialogContent .youField :is(input,textarea,select){display:block;box-sizing:border-box;min-width:0;width:100%;min-height:48px;border:1px solid var(--you-line,var(--line));border-radius:24px;background:var(--surface);color:var(--text);font:inherit;font-size:16px;line-height:24px;padding:12px 16px;text-align:left}
+.youPage .youField textarea{min-height:110px;resize:vertical;border-radius:22px}
+.youField input[type=file]{font-size:13px!important;line-height:22px!important;padding:10px!important}.youField input::file-selector-button{border:0;border-radius:999px;background:var(--bg);color:var(--text);padding:6px 10px;margin-right:8px}
+.youForm .youPrimary{width:100%;min-height:48px;margin-top:2px}.youError{color:var(--danger,#ac3048);font-size:14px;line-height:20px;margin:0}
+.youUploadPreviews{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.youUploadPreview{min-width:0}.youUploadPreview :is(img,video){width:100%;height:120px;object-fit:cover;border-radius:16px}.youUploadPreview span{display:block;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.youPost{padding:16px 0}.youPostText{font-size:16px;line-height:25px;white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 4px 20px}
+.youPage .youPostMedia{display:block;width:100%;padding:0;border:0;border-radius:18px;margin-bottom:8px;overflow:hidden;background:transparent}.youPostMedia :is(img,video){display:block;width:100%;max-height:75vh;object-fit:contain;border-radius:18px}
+.youPostActions{display:flex;flex-direction:column;gap:18px;margin-top:24px}.youPostActions .youField{width:100%}
+.youQrCard{background:var(--surface);border-radius:24px;text-align:center;padding:18px 8px;display:flex;flex-direction:column;align-items:center;gap:14px}.youQrCard h2{font-size:20px;margin:0;overflow-wrap:anywhere}.youQrCard .youAvatar{position:relative;width:80px;height:80px;font-size:30px}
+.youQr{display:block;background:#fff;width:min(100%,280px);aspect-ratio:1;shape-rendering:crispEdges;border-radius:20px}.youQrUsername{font-size:18px;font-weight:700;overflow-wrap:anywhere;margin:0 0 8px}
+.youPage .profileCard{padding:16px 8px}.youPage .profileCard h2{text-align:left}
+@media(min-width:700px){.youHero{padding-top:32px}.youGrid{gap:8px}.youPage .youTile{border-radius:20px}.youTextTile{font-size:16px;line-height:24px;padding:20px}.youInfo{padding:4px 24px}}
+@media(prefers-reduced-motion:reduce){.youPage *{scroll-behavior:auto}}

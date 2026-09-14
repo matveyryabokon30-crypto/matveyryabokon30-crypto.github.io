@@ -16,6 +16,8 @@
   const chats=state.screen==='home'&&state.section==='chats';
   for(const id of ['searchChats','chatFilters'])if($(id))$(id).hidden=!chats;
   if($('newChat'))$('newChat').hidden=!chats||!state.sessionUserId||!!nav?.hidden;
+  if($('profileSettings'))$('profileSettings').hidden=!(state.screen==='home'&&state.section==='profile'&&state.sessionUserId&&!nav?.hidden);
+  if($('profileBack'))$('profileBack').hidden=true;
   if($('openBots'))$('openBots').hidden=!state.sessionUserId||!!nav?.hidden;
   if($('screenContent')){
    $('screenContent').classList.toggle('bots-active',state.screen==='bots');
@@ -26,8 +28,9 @@
  function authentication(signedIn){
   if($('loginPane'))$('loginPane').hidden=signedIn;
   for(const id of ['workspace','mainNav'])if($(id))$(id).hidden=!signedIn;
-  if(!signedIn)for(const id of ['newChat','openBots'])if($(id))$(id).hidden=true;
+  if(!signedIn)for(const id of ['newChat','openBots','profileSettings','profileBack'])if($(id))$(id).hidden=true;
  }
+ function profileTitle(text){if($('brandTitle'))$('brandTitle').textContent=text||'Вы';}
  function conversationTitle(text){if($('chatTitle'))$('chatTitle').textContent=text||'Разговор';}
  function conversationReady(ready){const app=$('app');if(app){app.style.visibility=ready?'':'hidden';app.inert=!ready;}}
  function conversationMode(canvas){
@@ -44,5 +47,5 @@
   app.classList.toggle('keyboard-open',keyboardOpen);
   app.style.transform='translate3d('+left+'px,'+top+'px,0)';app.style.width=width+'px';app.style.height=height+'px';
  }
- root.PablicusShell=Object.freeze({project,show,authentication,conversationTitle,conversationReady,conversationMode,viewport});
+ root.PablicusShell=Object.freeze({project,show,authentication,profileTitle,conversationTitle,conversationReady,conversationMode,viewport});
 })(window);
