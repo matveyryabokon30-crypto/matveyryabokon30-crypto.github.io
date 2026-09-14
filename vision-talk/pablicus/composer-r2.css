@@ -21,7 +21,7 @@ svg[data-pablicus-icon]{width:20px!important;height:20px!important;min-width:20p
 .r2Composer #fullTitle,.r2Composer #hideKey,.r2Composer #modeBar,.r2Composer #workspaceQuick,.r2Composer>.workspaceEditorToolbar{display:none!important}
 .r2Toolbar{display:flex;align-items:center;gap:4px;height:62px;min-height:62px;padding:0 5px;box-sizing:border-box;order:3}
 .r2ToolbarSpace{flex:1;min-width:0}
-:is(#composer,.workspaceEditor,.botComposer) .r2Toolbar .r2AI{width:96px!important}
+:is(#composer,.workspaceEditor,.botComposer) .r2Toolbar .r2AI{width:44px!important}
 .r2ComposerHeader{display:none;align-items:center;justify-content:space-between;height:44px;min-height:44px;padding-inline:10px;order:0}
 .r2ComposerTitle{font-size:14px;line-height:20px;color:var(--r2-secondary)}
 #composer #editor.r2ComposerBody,.r2Composer .r2ComposerBody{box-sizing:border-box;order:1;min-height:24px;max-height:240px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:0 15px!important;flex:none;scrollbar-width:thin}
@@ -58,7 +58,7 @@ svg[data-pablicus-icon]{width:20px!important;height:20px!important;min-width:20p
 .botComposer.r2Composer{margin-block:8px}.botComposer.r2Fullscreen{position:fixed;top:var(--bot-editor-top,0);height:var(--bot-editor-height,100dvh)!important;left:0;right:0;width:100%;z-index:1000}.botComposer.r2Fullscreen::backdrop{background:var(--r2-shell)}
 @media(prefers-contrast:more){svg[data-pablicus-icon]{stroke-width:2!important}}
 @media(prefers-reduced-motion:no-preference){.r2Panel{animation:r2Reveal 180ms ease-out}@keyframes r2Reveal{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}}
-.r2Composer.r2LargeText.r2Open .r2Toolbar{height:auto;min-height:112px;flex-wrap:wrap}.r2Composer.r2LargeText.r2Open .r2Toolbar .r2AI{order:-1;margin-right:calc(100% - 110px);width:auto!important;min-width:96px}.r2Composer.r2LargeText textarea{max-height:var(--composer-input-cap,288px)!important}.r2Composer.r2LargeText:not(.r2Open) .r2ComposerBody{height:48px!important}.r2Composer.r2LargeText:not(.r2Open){min-height:88px}
+.r2Composer.r2LargeText.r2Open .r2Toolbar{height:auto;min-height:112px;flex-wrap:wrap}.r2Composer.r2LargeText.r2Open .r2Toolbar .r2AI{order:-1;margin-right:calc(100% - 58px);width:auto!important;min-width:44px}.r2Composer.r2LargeText textarea{max-height:var(--composer-input-cap,288px)!important}.r2Composer.r2LargeText:not(.r2Open) .r2ComposerBody{height:48px!important}.r2Composer.r2LargeText:not(.r2Open){min-height:88px}
 
 .r2Tooltip{position:fixed;z-index:9999;background:var(--r2-ink);color:var(--r2-surface);border-radius:8px;padding:6px 10px;font:400 12px/16px "Pablicus Noto",sans-serif;pointer-events:none;max-width:260px}
 #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer{align-items:stretch}
@@ -71,7 +71,7 @@ svg[data-pablicus-icon]{width:20px!important;height:20px!important;min-width:20p
 #app #composer #composeBox.r2Composer .r2IconButton::after{content:none!important}
 
 :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .r2LabelButton{width:auto!important;padding-inline:18px!important;gap:8px}
-:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .r2Toolbar .r2AI{width:96px!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .r2Toolbar .r2AI{width:44px!important}
 :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon])))[aria-expanded="true"]:not(.r2GroupedAction)::before,:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(#send,.r2Send):not(:disabled):not(.r2GroupedAction)::before,:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .richVoice[aria-pressed="true"]:not(.r2GroupedAction)::before{background:var(--r2-accent)!important;border-color:var(--r2-accent)!important}
 
 .workspaceEditor.r2Composer.is-expanded{position:fixed!important;top:var(--workspace-editor-top,0)!important;height:var(--workspace-editor-height,100dvh)!important;left:0;right:0;margin:0 auto!important;padding-top:env(safe-area-inset-top)!important;padding-bottom:env(safe-area-inset-bottom)!important}
@@ -233,3 +233,12 @@ html[data-theme='dark'] .r2Composer,body[data-theme='dark'] .r2Composer{--r2-too
 #app #composer #composeBox.r2Composer:not(.r2Open) .r2Toolbar{height:54px;min-height:54px}
 #app #composer #composeBox.r2Composer:not(.r2Open) #editor{top:5px}
 #app.composer-fullscreen #composer{padding-top:calc(48px + var(--safe-area-top))!important}
+
+/* Unframed chat controls: retain hit targets, color selection and focus cues. */
+#app #composer #composeBox.r2Composer{border-color:transparent!important;box-shadow:none!important}
+#app #composer #composeBox.r2Composer>.r2ComposerHeader{display:none}
+#app #composer #composeBox.r2Composer.r2Open{padding-top:12px!important}
+#app #composer #composeBox.r2Composer .r2Toolbar :is(.r2IconButton,.r2LabelButton)::before{border:0!important;background:transparent!important;box-shadow:none!important}
+#app #composer #composeBox.r2Composer .r2ActionGroup{background:transparent;margin-inline-end:0}
+#app #composer #composeBox.r2Composer .r2ActionGroup::before{content:none}
+#app #composer #composeBox.r2Composer .r2PillFrame{border-color:transparent;box-shadow:none}

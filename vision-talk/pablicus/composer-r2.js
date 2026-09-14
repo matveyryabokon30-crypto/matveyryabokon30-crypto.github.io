@@ -7,8 +7,8 @@ function create(o){
  o.ai=o.ai||global.PablicusAI?.edit;o.agents=o.agents||(()=>global.PablicusAI.catalog().then(r=>r.agents));o.runAgent=o.runAgent||global.PablicusAI?.run;
  const id='composer-r2-'+(++serial),life=new AbortController();let destroyed=false,opened=null,trigger=null,entry=null,panelEpoch=0,controller=null,context=[],draftId=crypto.randomUUID(),full=false,disabled=false,popoverShown=false,undoPatch=null,historyGuard=false,historyPending=false,panelHome='add',contextScroll=0;
  root.classList.add('r2Composer');root.dataset.composerVersion='R2';body.classList.add('r2ComposerBody');
- const toolbar=el('div','r2Toolbar'),header=el('div','r2ComposerHeader'),title=el('span','r2ComposerTitle',o.title||'Черновик');
- const ai=icons.button('ai','Помощь ИИ',()=>open('ai',ai),{text:'ИИ',chevron:true});ai.classList.add('r2AI');
+ const toolbar=el('div','r2Toolbar'),header=el('div','r2ComposerHeader'),title=el('span','r2ComposerTitle',o.title||'');
+ const ai=icons.button('ai','Помощь ИИ',()=>open('ai',ai));ai.classList.add('r2AI');
  const rail=el('div','r2FunctionRail');rail.setAttribute('role','group');rail.setAttribute('aria-label','Функции сообщения');
  function pill(kind,label,icon){const b=el('button','r2FunctionPill');b.type='button';b.dataset.r2Function=kind;b.setAttribute('aria-label',label);b.setAttribute('aria-haspopup','dialog');const frame=el('span','r2PillFrame');frame.append(icons.icon(icon),el('span','',label));b.append(frame);b.onclick=()=>open(kind,b);return b;}
  const agent=pill('agent','Агент','agent'),services=pill('services','Возможности','capabilities'),ctx=pill('context','Контекст','context');rail.append(agent,services,ctx);
