@@ -670,7 +670,7 @@
   if(isCurrent()&&current?.id===state.conversationId)await mountCanvasView(params.sourceMessage,params.canvasOptions||{},isCurrent);
   return()=>{};
  });
- window.PablicusController.setServices({...window.PablicusController.getServices(),beforeNavigate:appNavigationAllowed,openConversation,getDialogs:()=>dialogs,getUser:()=>user,notify:toast});
+ window.PablicusController.setServices({...window.PablicusController.getServices(),beforeNavigate:appNavigationAllowed,openConversation,getDialogs:()=>dialogs,getUser:()=>user,getProfile:()=>profile,notify:toast});
 }
  async function composerSources(){
   const uid=user?.id,cid=current?.id;if(!uid)return[];
