@@ -88,7 +88,7 @@
   document.addEventListener('visibilitychange',schedule,{signal:lifetime.signal});
   root.addEventListener('online',schedule,{signal:lifetime.signal});root.addEventListener('pageshow',schedule,{signal:lifetime.signal});root.addEventListener('focus',schedule,{signal:lifetime.signal});
   return{
-   mount(row){const node=row.querySelector('.chatMain .avatar'),id=row.dataset.conversationId;if(!node||!uuid.test(id||''))return;
+   mount(row){const node=row.querySelector('.avatar'),id=row.dataset.conversationId;if(!node||!uuid.test(id||''))return;
     const old=bindings.get(node);if(old)cancelImage(old);bindings.set(node,{node,row,id,initial:node.textContent,version:0,path:null,url:null,image:null});schedule();},
    refresh,resetRows,
    destroy(){if(disposed)return;disposed=true;root.clearInterval(timer);lifetime.abort();resetRows();metadata.clear();urls.clear();pendingUrls.clear();}
@@ -122,7 +122,7 @@
   function start(x,y,target,id){
    if(!isActive()||target.closest('input,textarea,select,a,[contenteditable="true"]')||x<18||x>innerWidth-18)return;
    const row=target.closest('.chatCard'),entry=rows.get(row);
-   if(target.closest('button')&&!target.closest('.chatMain'))return;
+   if(target.closest('button')&&!target.closest('.chatMain,.contactAvatarTrigger'))return;
    tracking={x,y,id,row:entry?row:null,initialX:entry?.x||0,initialPanel:panelOpen,initialHeight:panelHeight,atTop:workspace.scrollTop<=1,axis:null,dx:0,dy:0};
   }
   function move(x,y,event){
@@ -176,7 +176,7 @@
   root.addEventListener('resize',()=>{end(true);closeRow();settlePanel(panelOpen);},{signal});
   settlePanel(false);
   return {
-   decorate(row,face,before,after){rows.set(row,{face,before,after,x:0});paintRow(row,0);avatars.mount(row);},
+   decorate(row,face,before,after){rows.set(row,{face,before,after,x:0});paintRow(row,0);avatars.mount(row);root.PablicusContacts?.decorate(row);},
    close:closeRow,
    isTracking:()=>!!tracking,
    snapshot:()=>openRow?{id:openRow.dataset.conversationId,side:Math.sign(rows.get(openRow)?.x||0)}:null,
