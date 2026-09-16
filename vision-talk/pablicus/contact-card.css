@@ -48,3 +48,7 @@
 #screenContent .contactAvatarTrigger .avatar{pointer-events:none}
 @media(min-width:760px){.contactHero{padding-top:22px}.contactFace{width:128px;height:128px}.contactTop{max-width:740px;margin:auto}.contactName{font-size:34px}}
 @media(prefers-reduced-motion:reduce){.contactPage *{scroll-behavior:auto!important}}
+
+/* Explicitly retain the app typeface in read-only fields and the private editor. */
+.contactPage .contactBody,.contactPage .contactEditForm{font-family:inherit;font-style:normal}
+.contactPage .contactLabel,.contactPage .contactValue,.contactPage .contactField,.contactPage .contactTextButton,.contactPage .contactField input,.contactPage .contactField textarea{font-family:inherit;font-style:normal;font-weight:400}
