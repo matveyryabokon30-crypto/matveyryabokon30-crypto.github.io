@@ -1,54 +1,10 @@
-/* Stationary toolbar; native scroll animations. The scroll container never changes height per frame. */
+/* Contact card R5: sticky toolbar only; hero is normal-flow content and can never cover posts. */
 .contactPage{padding-top:0;overflow-x:hidden;overflow-anchor:none;overscroll-behavior-y:none;outline:0;height:100%;scroll-behavior:auto}
-/* Prevent first-frame scrolling until the contact masthead has stable geometry. This avoids an iOS race where the user can scroll the unmounted hero before motion initialization. */
-.contactPage:has(> .contactHero):not(.contactMotionReady),.contactPage.contactMotionInitializing{overflow-y:hidden!important;-webkit-overflow-scrolling:auto}
-.contactPage.contactMotionReady{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.contactPage:has(> .contactHero):not(.contactMotionReady),.contactPage.contactMotionInitializing{overflow-y:hidden!important;-webkit-overflow-scrolling:auto}.contactPage.contactMotionReady{overflow-y:auto;-webkit-overflow-scrolling:touch}
 .contactPage .contactTop{height:calc(60px + env(safe-area-inset-top,0px));min-height:calc(60px + env(safe-area-inset-top,0px));max-width:none;margin:0;padding:calc(8px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 8px max(14px,env(safe-area-inset-left,0px));border:0!important;box-shadow:none!important;background:transparent!important;backdrop-filter:none;-webkit-backdrop-filter:none;isolation:isolate}
-.contactPage .contactTop::before,.contactPage .contactEdgeFade{content:'';position:absolute;inset:0 0 -26px;pointer-events:none;border:0;box-shadow:none;background:linear-gradient(to bottom,var(--bg,#fafafa),color-mix(in srgb,var(--bg,#fafafa) 45%,transparent) 62%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);mask-image:linear-gradient(#000 48%,transparent);-webkit-mask-image:linear-gradient(#000 48%,transparent);z-index:-1}
-.contactPage .contactTop>.contactButton{flex:none;background:color-mix(in srgb,var(--surface,#fff) 76%,transparent);font-size:16px;position:relative;z-index:3;box-shadow:none}
-.contactPage .contactTop .contactBackIcon{width:44px;height:44px;min-width:44px;min-height:44px;padding:10px;border-radius:50%}
-.contactPage .contactBackIcon>span{display:none}
-.contactPage .contactBackIcon>svg{display:block;width:24px;height:24px;margin:0;stroke-width:1.85}
-.contactMotion{scroll-padding-top:calc(var(--contact-bar-height,60px) + 12px)}
-.contactMasthead{position:sticky;top:0;z-index:5;isolation:isolate;pointer-events:none}
-.contactMasthead .contactTop{position:relative;top:auto;z-index:3;pointer-events:none;transform:none!important}
-.contactMasthead .contactTop::before{content:none}
-.contactMasthead .contactTop>.contactButton{pointer-events:auto}
-.contactMasthead .contactEdgeFade{inset:0 0 auto;height:calc(var(--contact-bar-height,60px) + 26px);z-index:0}
-.contactMasthead .contactHero{position:relative;z-index:1;pointer-events:none;padding:12px 16px 20px}
-.contactPage .contactHero .contactFace{width:118.8px;height:118.8px}
-.contactPage .contactHero .contactPhotoButton{display:flex;width:max-content;line-height:1;margin:0 auto}
-.contactMasthead .contactPhotoButton{pointer-events:auto;will-change:transform,opacity;transform-origin:center}
-.contactMasthead .contactName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal;max-width:100%;width:max-content;margin:8px auto 4px;transform-origin:center;will-change:transform;position:relative;z-index:2}
-.contactMasthead .contactHandle{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:max-content;max-width:100%;height:22px;line-height:22px;margin:0 auto 8px;transform-origin:center;will-change:transform;position:relative;z-index:2}
-.contactMasthead .contactActions{position:relative;height:68px;pointer-events:auto;will-change:transform,opacity;transform-origin:center;margin-top:18px}
-.contactPage .contactMasthead .contactActions .contactButton{height:68px;position:relative;isolation:isolate;border:0;background:transparent;box-shadow:none}
-.contactPage .contactMasthead .contactActions .contactButton::before{content:'';position:absolute;inset:0;background:color-mix(in srgb,var(--surface,#fff) 90%,transparent);border:1px solid var(--line,#e1e3e6);border-radius:19px;transform:scaleY(var(--contact-action-y,1));transform-origin:center;z-index:-1}
-.contactMasthead .contactActions .contactButton>svg{transform-origin:center;will-change:transform}
-.contactMasthead .contactActions .contactButton>span{opacity:var(--contact-label-opacity,1)}
-.contactMotion .contactBody{position:relative;z-index:0;min-height:calc(100svh - var(--contact-bar-height,60px) - env(safe-area-inset-bottom,0px))}
-/* The two explanatory privacy paragraphs were not part of the requested contact UI. */
-.contactBody>.contactHint,.contactBody>.contactInfo>.contactHint{display:none!important}
-.contactPage .contactPosts{scroll-margin-top:12px}
-.contactNativeTimeline{scroll-timeline-name:--contact-scroll;scroll-timeline-axis:block}
-.contactNativeTimeline .contactName{animation:contact-name linear both;animation-timeline:--contact-scroll;animation-range:0px calc(var(--contact-collapse-range)*.78)}
-.contactNativeTimeline .contactHandle{animation:contact-status linear both;animation-timeline:--contact-scroll;animation-range:0px calc(var(--contact-collapse-range)*.78)}
-.contactNativeTimeline .contactPhotoButton{animation:contact-photo linear both;animation-timeline:--contact-scroll;animation-range:0px calc(var(--contact-collapse-range)*.70)}
-.contactNativeTimeline .contactActions{animation:contact-actions linear both;animation-timeline:--contact-scroll;animation-range:0px var(--contact-collapse-range)}
-.contactNativeTimeline .contactActions .contactButton::before{animation:contact-tile linear both;animation-timeline:--contact-scroll;animation-range:0px var(--contact-collapse-range)}
-.contactNativeTimeline .contactActions .contactButton>svg{animation:contact-icon linear both;animation-timeline:--contact-scroll;animation-range:0px var(--contact-collapse-range)}
-.contactNativeTimeline .contactActions .contactButton>span{animation:contact-label linear both;animation-timeline:--contact-scroll;animation-range:0px calc(var(--contact-collapse-range)*.60)}
-@keyframes contact-name{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(0,var(--contact-name-y),0) scale(var(--contact-name-scale))}}
-@keyframes contact-status{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(0,var(--contact-status-y),0) scale(var(--contact-status-scale))}}
-@keyframes contact-photo{0%{transform:translate3d(0,0,0) scale(1);opacity:1;visibility:visible}100%{transform:translate3d(0,var(--contact-photo-y),0) scale(.32);opacity:0;visibility:hidden}}
-@keyframes contact-actions{0%{transform:translate3d(0,0,0);opacity:1;visibility:visible}50%{opacity:1}88%{opacity:0;visibility:hidden}100%{transform:translate3d(0,var(--contact-actions-y),0);opacity:0;visibility:hidden}}
-@keyframes contact-tile{to{transform:scaleY(.34)}}
-@keyframes contact-icon{to{transform:translateY(9px) scale(.76)}}
-@keyframes contact-label{to{opacity:0}}
-@media(min-width:760px){.contactPage .contactHero .contactFace{width:140.8px;height:140.8px}}
-@supports not (backdrop-filter:blur(1px)){.contactPage .contactTop::before,.contactPage .contactEdgeFade{background:linear-gradient(var(--bg,#fafafa) 50%,transparent)}}
-@media(prefers-reduced-transparency:reduce){.contactPage .contactTop::before,.contactPage .contactEdgeFade{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg,#fafafa);mask-image:none;-webkit-mask-image:none}.contactPage .contactTop>.contactButton{background:var(--surface,#fff)}}
-@media(prefers-reduced-motion:reduce){.contactMasthead .contactName{font-size:17px;max-width:calc(100vw - 160px)}.contactMasthead .contactHandle{font-size:12px;max-width:calc(100vw - 160px)}.contactNativeTimeline .contactName{animation-name:contact-name-reduced}.contactNativeTimeline .contactHandle{animation-name:contact-status-reduced}.contactNativeTimeline .contactPhotoButton{animation-name:contact-photo-reduced}.contactNativeTimeline .contactActions .contactButton::before,.contactNativeTimeline .contactActions .contactButton>svg{animation:none}.contactMotion{scroll-behavior:auto!important}}
-@keyframes contact-name-reduced{to{transform:translate3d(0,var(--contact-name-y),0)}}
-@keyframes contact-status-reduced{to{transform:translate3d(0,var(--contact-status-y),0)}}
-@keyframes contact-photo-reduced{to{transform:translate3d(0,var(--contact-photo-y),0);opacity:0;visibility:hidden}}
+.contactPage .contactTop>.contactButton{flex:none;background:color-mix(in srgb,var(--surface,#fff) 76%,transparent);font-size:16px;position:relative;z-index:3;box-shadow:none}.contactPage .contactTop .contactBackIcon{width:44px;height:44px;min-width:44px;min-height:44px;padding:10px;border-radius:50%}.contactPage .contactBackIcon>span{display:none}.contactPage .contactBackIcon>svg{display:block;width:24px;height:24px;margin:0;stroke-width:1.85}
+.contactMasthead{position:sticky;top:0;z-index:20;height:var(--contact-bar-height,60px);isolation:isolate;pointer-events:none}.contactMasthead .contactTop{position:absolute;inset:0;z-index:3;pointer-events:none;transform:none!important}.contactMasthead .contactTop::before{content:none}.contactMasthead .contactTop>.contactButton{pointer-events:auto}.contactMasthead .contactEdgeFade{position:absolute;inset:0 0 -28px;pointer-events:none;background:linear-gradient(to bottom,var(--bg,#fafafa),color-mix(in srgb,var(--bg,#fafafa) 58%,transparent) 68%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);mask-image:linear-gradient(#000 55%,transparent);-webkit-mask-image:linear-gradient(#000 55%,transparent);z-index:0}
+.contactCompact{position:absolute;z-index:2;left:82px;right:82px;top:calc(env(safe-area-inset-top,0px) + 9px);height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;will-change:opacity,transform}.contactCompactName{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:700;line-height:20px}.contactCompactStatus{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:15px;color:var(--muted,#73777f)}
+.contactMotion>.contactHero{position:relative!important;z-index:1!important;pointer-events:auto;padding:12px 16px 20px;transform:none!important}.contactPage .contactHero .contactFace{width:118.8px;height:118.8px}.contactPage .contactHero .contactPhotoButton{display:flex;width:max-content;line-height:1;margin:0 auto;transform-origin:center;will-change:transform,opacity}.contactMotion>.contactHero .contactName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal;max-width:100%;width:max-content;margin:8px auto 4px;position:relative;z-index:2;will-change:opacity}.contactMotion>.contactHero .contactHandle{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:max-content;max-width:100%;height:22px;line-height:22px;margin:0 auto 8px;position:relative;z-index:2;will-change:opacity}.contactMotion>.contactHero .contactActions{position:relative;height:68px;pointer-events:auto;margin-top:18px;will-change:opacity}.contactPage .contactActions .contactButton{height:68px;position:relative;isolation:isolate;border:0;background:color-mix(in srgb,var(--surface,#fff) 90%,transparent);box-shadow:none;border-radius:19px}
+.contactMotion .contactBody{position:relative;z-index:0;min-height:calc(100svh - var(--contact-bar-height,60px) - env(safe-area-inset-bottom,0px))}.contactBody>.contactHint,.contactBody>.contactInfo>.contactHint{display:none!important}.contactPage .contactPosts{scroll-margin-top:calc(var(--contact-bar-height,60px) + 12px)}
+@media(min-width:760px){.contactPage .contactHero .contactFace{width:140.8px;height:140.8px}}@supports not (backdrop-filter:blur(1px)){.contactMasthead .contactEdgeFade{background:linear-gradient(var(--bg,#fafafa) 58%,transparent)}}@media(prefers-reduced-transparency:reduce){.contactMasthead .contactEdgeFade{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg,#fafafa);mask-image:none;-webkit-mask-image:none}.contactPage .contactTop>.contactButton{background:var(--surface,#fff)}}@media(prefers-reduced-motion:reduce){.contactMotion>.contactHero .contactPhotoButton{transform:none!important}.contactCompact{transform:none!important}}
