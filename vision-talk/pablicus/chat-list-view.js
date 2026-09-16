@@ -8,10 +8,98 @@
   const frag=document.createDocumentFragment();for(const item of next){const n=byId.get(item.id);if(n)frag.append(n)}container.append(frag);return{changed:true,nodes:next.map(x=>byId.get(x.id)).filter(Boolean)};
  }
 
+ // Avatars are a list-owned, read-only projection of profiles.avatar_url.
+ // Resolve peers by membership IDs, never by a display name or chat title.
+ function createAvatars({client=root.PablicusController?.getServices()?.client,getIdentity=()=>root.PablicusController?.state(),isActive=()=>true,pollMs=15000,now=()=>Date.now()}={}){
+  const identity=getIdentity()||{},owner=identity.sessionUserId,generation=identity.sessionGeneration;
+  const lifetime=new AbortController(),bindings=new Map(),metadata=new Map(),urls=new Map(),pendingUrls=new Map();
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let disposed=false,busy=false,queued=false,again=false;
+  const current=()=>{const i=getIdentity()||{};return !disposed&&!!owner&&i.sessionUserId===owner&&i.sessionGeneration===generation;};
+  const visible=()=>current()&&!!client&&!document.hidden&&root.navigator.onLine!==false&&isActive();
+  const live=b=>current()&&bindings.get(b.node)===b&&b.node.isConnected&&b.row.dataset.conversationId===b.id;
+  function cancelImage(b){++b.version;if(b.image){b.image.onload=null;b.image.onerror=null;b.image.removeAttribute('src');b.image=null;}}
+  function fallback(b,status='none'){cancelImage(b);b.url=null;b.node.replaceChildren(document.createTextNode(b.initial));b.node.dataset.avatarState=status;}
+  function safeAvatar(value,person){
+   if(typeof value!=='string'||!value.trim())return null;
+   const path=value.trim();
+   if(/^https:\/\//i.test(path)){try{const u=new root.URL(path);return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;}catch{return null;}}
+   return uuid.test(person||'')&&path.startsWith(person+'/')&&!path.includes('..')&&/^[a-z0-9_/-]+\.(?:jpe?g|png|webp|gif)$/i.test(path)?path:null;
+  }
+  async function read(query){const r=await(query.abortSignal?query.abortSignal(lifetime.signal):query);if(!current())throw Error('Avatar account changed');if(r.error)throw r.error;return r.data||[];}
+  async function resolve(path){
+   if(/^https:\/\//i.test(path))return path;
+   const cached=urls.get(path);if(cached&&cached.until>now())return cached.url;
+   if(pendingUrls.has(path))return pendingUrls.get(path);
+   const request=(async()=>{const r=await client.storage.from('profile-media').createSignedUrl(path,300);if(!current())throw Error('Avatar account changed');if(r.error)throw r.error;
+    const value=r.data?.signedUrl;if(typeof value!=='string'||!/^https:\/\//i.test(value))throw Error('Avatar URL unavailable');
+    urls.set(path,{url:value,until:now()+240000});return value;
+   })();
+   pendingUrls.set(path,request);try{return await request;}finally{if(pendingUrls.get(path)===request)pendingUrls.delete(path);}
+  }
+  function paint(b,record){
+   if(!live(b))return;
+   const path=safeAvatar(record?.path,record?.person);
+   if(!path){b.path=null;fallback(b,record?.unavailable?'unavailable':'none');return;}
+   const cached=urls.get(path),fresh=/^https:\/\//i.test(path)||(cached&&cached.until>now());
+   if(b.path===path&&b.url&&fresh&&b.node.dataset.avatarState==='ready')return;
+   if(b.path===path&&b.node.dataset.avatarState==='loading')return;
+   b.path=path;fallback(b,'loading');const ticket=b.version;
+   resolve(path).then(url=>{
+    if(!live(b)||ticket!==b.version||b.path!==path)return;
+    const img=document.createElement('img');b.image=img;img.alt='';img.setAttribute('aria-hidden','true');img.referrerPolicy='no-referrer';img.draggable=false;img.decoding='async';
+    Object.assign(img.style,{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%',display:'block',pointerEvents:'none'});
+    img.onload=()=>{if(!live(b)||ticket!==b.version||b.path!==path)return;b.url=url;b.node.replaceChildren(img);b.node.dataset.avatarState='ready';};
+    img.onerror=()=>{if(!live(b)||ticket!==b.version)return;urls.delete(path);fallback(b,'unavailable');};
+    img.src=url;
+   }).catch(()=>{if(live(b)&&ticket===b.version)fallback(b,'unavailable');});
+  }
+  async function refresh(){
+   if(!visible())return;if(busy){again=true;return;}busy=true;again=false;
+   try{
+    for(const [node,b]of bindings){if(!node.isConnected){cancelImage(b);bindings.delete(node);}}
+    const ids=[...new Set([...bindings.values()].map(b=>b.id))];
+    for(const b of bindings.values())if(metadata.has(b.id))paint(b,metadata.get(b.id));
+    for(let offset=0;offset<ids.length;offset+=50){
+     if(!visible())break;const batch=ids.slice(offset,offset+50),result=new Map(batch.map(id=>[id,null]));
+     // Read only known direct conversations through existing member RLS.
+     const conversations=await read(client.from('conversations').select('id,type').in('id',batch).eq('type','direct'));
+     const direct=conversations.filter(c=>batch.includes(c.id)&&c.type==='direct').map(c=>c.id);
+     const members=direct.length?await read(client.from('conversation_members').select('conversation_id,user_id').in('conversation_id',direct).range(0,200)):[];
+     if(members.length>=201)throw Error('Incomplete avatar membership result');
+     const peers=new Map();
+     for(const id of direct){const users=[...new Set(members.filter(m=>m.conversation_id===id).map(m=>m.user_id))];
+      if(!users.includes(owner)||users.some(id=>!uuid.test(id))||users.length>2)continue;
+      peers.set(id,users.find(id=>id!==owner)||owner);
+     }
+     const people=[...new Set(peers.values())],profiles=people.length?await read(client.from('profiles').select('id,avatar_url').in('id',people)):[];
+     const byId=new Map(profiles.filter(p=>people.includes(p.id)).map(p=>[p.id,p]));
+     if(!current())return;
+     for(const [id,person]of peers){const p=byId.get(person);result.set(id,{person,path:p?.avatar_url||null,unavailable:!p});}
+     for(const [id,value]of result)metadata.set(id,value);
+     for(const b of bindings.values())if(result.has(b.id)&&isActive()&&!document.hidden)paint(b,result.get(b.id));
+    }
+   }catch{ /* Optional images must not break chats; retry on the next visible refresh. */ }
+   finally{busy=false;if(again&&visible()){again=false;schedule();}}
+  }
+  function schedule(){if(queued||disposed)return;queued=true;queueMicrotask(()=>{queued=false;void refresh();});}
+  function resetRows(){for(const b of bindings.values())cancelImage(b);bindings.clear();}
+  const timer=root.setInterval(()=>{if(visible())schedule();},Math.max(1000,pollMs));
+  document.addEventListener('visibilitychange',schedule,{signal:lifetime.signal});
+  root.addEventListener('online',schedule,{signal:lifetime.signal});root.addEventListener('pageshow',schedule,{signal:lifetime.signal});root.addEventListener('focus',schedule,{signal:lifetime.signal});
+  return{
+   mount(row){const node=row.querySelector('.chatMain .avatar'),id=row.dataset.conversationId;if(!node||!uuid.test(id||''))return;
+    const old=bindings.get(node);if(old)cancelImage(old);bindings.set(node,{node,row,id,initial:node.textContent,version:0,path:null,url:null,image:null});schedule();},
+   refresh,resetRows,
+   destroy(){if(disposed)return;disposed=true;root.clearInterval(timer);lifetime.abort();resetRows();metadata.clear();urls.clear();pendingUrls.clear();}
+  };
+ }
+
  // Each mounted list owns its gesture state and removes listeners on disposal.
  // Native vertical scrolling wins unless a pull starts at the very top.
  function gestures(workspace,{panel,toggle,isActive=()=>true,onIdle=()=>{}}){
   const lifetime=new AbortController(),signal=lifetime.signal,rows=new Map();
+  const avatars=createAvatars({isActive});
   let openRow=null,tracking=null,suppressUntil=0,panelOpen=false,panelHeight=0,idleTimer=0;
   const limit=()=>Math.min(220,panel.firstElementChild?.scrollHeight||120);
   function paintPanel(height,drag=false){
@@ -88,14 +176,14 @@
   root.addEventListener('resize',()=>{end(true);closeRow();settlePanel(panelOpen);},{signal});
   settlePanel(false);
   return {
-   decorate(row,face,before,after){rows.set(row,{face,before,after,x:0});paintRow(row,0);},
+   decorate(row,face,before,after){rows.set(row,{face,before,after,x:0});paintRow(row,0);avatars.mount(row);},
    close:closeRow,
    isTracking:()=>!!tracking,
    snapshot:()=>openRow?{id:openRow.dataset.conversationId,side:Math.sign(rows.get(openRow)?.x||0)}:null,
    restore(saved){if(saved){const row=[...rows.keys()].find(n=>n.dataset.conversationId===saved.id);if(row)reveal(row,saved.side);}},
-   resetRows(){end(true);closeRow();rows.clear();},
-   destroy(){end(true);closeRow();settlePanel(false);clearTimeout(idleTimer);lifetime.abort();rows.clear();}
+   resetRows(){end(true);closeRow();rows.clear();avatars.resetRows();},
+   destroy(){end(true);closeRow();settlePanel(false);clearTimeout(idleTimer);lifetime.abort();rows.clear();avatars.destroy();}
   };
  }
- root.PablicusChatListView={ordered,reconcile,gestures};
+ root.PablicusChatListView={ordered,reconcile,gestures,createAvatars};
 })(window);
