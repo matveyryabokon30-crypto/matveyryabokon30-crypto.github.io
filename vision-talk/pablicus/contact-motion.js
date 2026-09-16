@@ -7,6 +7,8 @@
  function mount(page,bar,hero,options={}){
   const photo=hero.querySelector('.contactPhotoButton'),name=hero.querySelector('.contactName'),status=hero.querySelector('.contactHandle'),actions=hero.querySelector('.contactActions');
   if(!photo||!name||!status||!actions)return null;
+  // Dialog contacts and the owner's tab use this same gesture/geometry engine.
+  const isOpen=()=>options.isOpen ? options.isOpen() : page.open;
   const life=new AbortController(),signal=life.signal,reduced=root.matchMedia('(prefers-reduced-motion: reduce)');
   const mast=document.createElement('div'),space=document.createElement('div'),glass=document.createElement('div'),shade=document.createElement('div');
   mast.className='contactMasthead';space.className='contactHeaderSpace';glass.className='contactEdgeFade';shade.className='contactGalleryShade';
@@ -16,11 +18,11 @@
   const buttons=[...actions.querySelectorAll('button')];
   const px=v=>`${Math.round(v*100)/100}px`;
   const move=(n,x,y,s=1)=>{n.style.transform=`translate3d(${px(x)},${px(y)},0) scale(${s})`;};
-  const gallery=options.client&&options.profile&&root.PablicusProfilePhotos?root.PablicusProfilePhotos.carousel(photo,{client:options.client,profile:options.profile,isCurrent:()=>!dead&&page.open&&options.isCurrent?.()!==false,onActivate:()=>{},onCount:()=>{}}):null;
+  const gallery=options.client&&options.profile&&root.PablicusProfilePhotos?root.PablicusProfilePhotos.carousel(photo,{client:options.client,profile:options.profile,isCurrent:()=>!dead&&isOpen()&&options.isCurrent?.()!==false,onActivate:()=>{},onCount:()=>{}}):null;
   photo.append(shade);photo.setAttribute('aria-label','Фотографии профиля. Потяните вниз, чтобы раскрыть');
   // The visible photo rectangle and its image have the same dimensions. There is no second mask timeline.
   function measure(){
-   if(dead||!page.open)return;
+   if(dead||!isOpen())return;
    const w=page.clientWidth,h=page.clientHeight,barH=bar.offsetHeight||60,safe=Math.max(0,barH-60),d=w>=760?140.8:118.8;
    const photoTop=barH+10,nameTop=photoTop+d+8,statusTop=nameTop+37,actionTop=statusTop+22+18,normalH=actionTop+64+16;
    const fullPhotoH=Math.max(200,Math.min(600,w*1.25,h-112));
@@ -34,9 +36,9 @@
    if(gallery)gallery.controls.style.top=px(safe+8);
    needMeasure=false;
   }
-  function interactive(node,enabled){if(node.inert===!enabled)return;node.inert=!enabled;if(!enabled&&node.contains(document.activeElement))bar.querySelector('.contactBack')?.focus({preventScroll:true});}
+  function interactive(node,enabled){if(node.inert===!enabled)return;node.inert=!enabled;if(!enabled&&node.contains(document.activeElement))(bar.querySelector('.contactBack')||bar.querySelector('button'))?.focus({preventScroll:true});}
   function paint(){
-   frame=0;if(dead||!page.open||!mast.isConnected)return;
+   frame=0;if(dead||!isOpen()||!mast.isConnected)return;
    if(needMeasure||!g)measure();if(!g)return;
    const y=Math.max(0,page.scrollTop),c=clamp(y/g.collapse),dock=smooth(c/.70),e=expanded;
    const headerH=mix(g.normalH,g.fullH,e),visibleH=Math.max(g.barH,headerH-y);
@@ -67,7 +69,7 @@
   function schedule(){if(!dead&&!frame)frame=root.requestAnimationFrame(paint);}
   function stopAnimation(){if(animation)root.cancelAnimationFrame(animation);animation=0;}
   function settle(next){
-   if(dead||!page.open)return;next=next&&options.profile?.avatar_url?1:0;
+   if(dead||!isOpen())return;next=next&&options.profile?.avatar_url?1:0;
    if(next===target&&(animation||Math.abs(expanded-next)<.0001))return;
    stopAnimation();target=next;gallery?.setExpanded(false);
    const start=expanded,begin=performance.now(),duration=reduced.matches?1:350;
@@ -81,7 +83,7 @@
   }
   function expand(){if(!g||page.scrollTop>1||!options.profile?.avatar_url)return;settle(1);}
   function begin(x,y,t,id){
-   if(dead||!page.open)return;
+   if(dead||!isOpen())return;
    const control=!!t.closest('button,a,input,textarea,select,video,[contenteditable="true"]');
    gesture={id,x,y,lastX:x,lastY:y,axis:null,mode:null,atTop:page.scrollTop<=1,album:expanded>.01||target===1,control,moved:false};
   }
@@ -114,7 +116,7 @@
   const ro=root.ResizeObserver?new ResizeObserver(()=>{if(!g||page.clientWidth!==g.w||bar.offsetHeight!==g.barH)resize();}):null;ro?.observe(page);ro?.observe(bar);
   const mo=new MutationObserver(resize);mo.observe(status,{childList:true,characterData:true,subtree:true});mo.observe(name,{childList:true,characterData:true,subtree:true});
   page.scrollTop=0;paint();document.fonts?.ready.then(()=>{if(!dead)resize();});
-  return{expand,collapse:()=>settle(0),get rest(){return 0;},get end(){return g?.collapse||0;},destroy(){if(dead)return;dead=true;life.abort();stopAnimation();ro?.disconnect();mo.disconnect();gallery?.destroy();if(frame)root.cancelAnimationFrame(frame);space.remove();shade.remove();page.classList.remove('contactGestureMotion');page.style.removeProperty('--contact-bar-height');delete page.dataset.profilePresentation;delete page.dataset.albumProgress;}};
+  return{expand,collapse:()=>settle(0),refreshPhotos:()=>gallery?.refresh(),get rest(){return 0;},get end(){return g?.collapse||0;},destroy(){if(dead)return;dead=true;life.abort();stopAnimation();ro?.disconnect();mo.disconnect();gallery?.destroy();if(frame)root.cancelAnimationFrame(frame);space.remove();shade.remove();page.classList.remove('contactGestureMotion');page.style.removeProperty('--contact-bar-height');delete page.dataset.profilePresentation;delete page.dataset.albumProgress;}};
  }
  root.PablicusContactMotion={mount};
 })(window);

@@ -66,3 +66,23 @@ dialog.youQrDialog::backdrop{background:#0006;backdrop-filter:blur(5px)}
 .youQrDialog .youQr{max-height:38dvh;width:auto;max-width:100%;flex-shrink:1;min-height:0}
 .youQrDialog .youQrCard>h2{width:100%}
 @media(max-height:620px){.youQrDialog .youQrCard{padding:12px;gap:8px}.youQrDialog .youAvatar{width:48px;height:48px}.youQrDialog .youQrCard h2{font-size:17px}.youQrDialog .youQrUsername{margin:0;font-size:15px}}
+
+/* The owner's tab uses the contact header engine, within the existing bottom navigation. */
+#home[data-page='profile'].youMotionActive{padding-top:0}
+#home[data-page='profile'].youMotionActive>.homeHeader{display:none!important}
+#home[data-page='profile'].youMotionActive #workspace{overflow:hidden;display:flex;flex-direction:column;min-height:0;position:relative}
+#home[data-page='profile'].youMotionActive #workspace>.workspaceTop{display:none!important}
+#home[data-page='profile'].youMotionActive #screenContent{flex:1;min-height:0;height:100%;padding:0;overflow:hidden;position:relative;display:flex;flex-direction:column}
+#home[data-page='profile'].youMotionActive #mainNav{flex-shrink:0;position:relative;z-index:30}
+.youPage.youMotionPage.contactPage{position:relative;inset:auto;flex:1;min-height:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:none;background:var(--bg);font:inherit;box-sizing:border-box}
+.youPage.youMotionPage .youMotionTop{justify-content:flex-end;box-sizing:border-box}
+.youPage.youMotionPage .youMotionTop>.youMotionSettings{display:grid;place-items:center;min-height:44px;min-width:44px;width:44px;height:44px;padding:10px;border-radius:50%;border:1px solid var(--you-line);pointer-events:auto}
+.youPage.youMotionPage .youMotionSettings>span{display:none}
+.youPage.youMotionPage .youMotionSettings>svg{width:24px;height:24px}
+.youPage.youMotionPage .contactHero .youAvatarButton{min-width:0;min-height:0;max-width:none;max-height:none;line-height:1;box-sizing:border-box}
+.youPage.youMotionPage .contactActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch;justify-content:stretch}
+.youPage.youMotionPage .contactActions>.youButton{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:7px 2px;font:inherit;font-size:12px;line-height:18px;min-width:0;max-width:none;box-sizing:border-box}
+.youPage.youMotionPage .contactActions>.youButton>span{white-space:nowrap}
+.youPage.youMotionPage .contactActions>.youButton>svg{width:23px;height:23px;flex-shrink:0}
+.youPage.youMotionPage .youContent{box-sizing:border-box;width:100%;max-width:720px;margin:0 auto;padding:14px 12px 28px;min-height:calc(100% - var(--contact-bar-height,60px));font:inherit}
+.youPage.youMotionPage .youPublicationsHeader{top:var(--contact-bar-height,60px)}
