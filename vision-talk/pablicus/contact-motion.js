@@ -1,47 +1,4 @@
-/* Coarse last-activity labels. Grammatical form is chosen by the account owner, never inferred. */
-(function(root){
- 'use strict';
- function label(data){
-  const forms={male:['был недавно','был на этой неделе','был в этом месяце','был давно'],female:['была недавно','была на этой неделе','была в этом месяце','была давно'],neutral:['недавно в сети','на этой неделе в сети','в этом месяце в сети','давно не в сети']};
-  const i=['recent','week','month','long_ago'].indexOf(data?.status);return i<0?'Статус активности недоступен':(forms[data?.status_form]||forms.neutral)[i];
- }
- function create(client,controller){
-  const lifetime=new AbortController(),bindings=new Map();let dead=false,owner=null,generation=null,lastTouch=0,form='neutral',touching=null;
-  const snapshot=()=>controller.state(),same=s=>!dead&&s.sessionUserId===snapshot().sessionUserId&&s.sessionGeneration===snapshot().sessionGeneration;
-  const active=()=>!dead&&!!snapshot().sessionUserId&&!document.hidden&&navigator.onLine!==false;
-  async function touch(selected=null){
-   const s=snapshot();if(!active()){if(selected!==null)throw Error('Activity offline');return null;}
-   if(touching){try{await touching;}catch{if(selected===null)return null;}if(!same(s)||!active())return null;if(selected===null)return form;}
-   if(!same(s)||!active())return null;if(selected===null&&Date.now()-lastTouch<45000)return form;
-   const task=(async()=>{const r=await client.rpc('pablicus_touch_activity',{p_status_form:selected});if(!same(s))return null;if(r.error)throw r.error;lastTouch=Date.now();form=['male','female','neutral'].includes(r.data?.status_form)?r.data.status_form:'neutral';return form;})();
-   touching=task;try{return await task;}finally{if(touching===task)touching=null;}
-  }
-  async function refresh(b){
-   if(!active()||!b.node.isConnected||!same(b.identity)||b.busy)return;
-   b.busy=true;try{const r=await client.rpc('pablicus_contact_activity',{p_conversation_id:b.id});if(!same(b.identity)||!b.node.isConnected||bindings.get(b.node)!==b)return;if(r.error)throw r.error;const text=label(r.data);if(b.node.textContent!==text)b.node.textContent=text;b.node.dataset.activityStatus=r.data?.status||'unknown';}catch{if(same(b.identity)&&b.node.isConnected&&bindings.get(b.node)===b){b.node.textContent='Статус активности недоступен';b.node.dataset.activityStatus='unknown';}}finally{b.busy=false;}
-  }
-  function bind(node,id){if(!node)return;const b={node,id,identity:snapshot(),busy:false};bindings.set(node,b);node.textContent='Статус активности недоступен';void refresh(b);}
-  function sweep(){for(const [n,b]of bindings){if(!n.isConnected||!same(b.identity))bindings.delete(n);else void refresh(b);}}
-  function wake(){if(active()){void touch().catch(()=>{});sweep();}}
-  function mountPreference(){
-   const host=document.querySelector('.youForm');if(!host?.querySelector('[name="username"]')||host.querySelector('.activityFormPreference')||!snapshot().sessionUserId)return;
-   const s=snapshot(),wrap=document.createElement('label'),title=document.createElement('span'),select=document.createElement('select'),status=document.createElement('small');
-   wrap.className='youField activityFormPreference';title.textContent='Форма статуса активности';select.setAttribute('aria-label',title.textContent);select.style.cssText='font:inherit;font-size:16px;min-height:44px;width:100%';
-   for(const [value,text]of [['neutral','Без указания — «недавно в сети»'],['male','Мужская — «был недавно»'],['female','Женская — «была недавно»']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
-   select.value=form;status.textContent='Выберите форму для своего аккаунта. Сохраняется отдельно от остальных полей.';status.setAttribute('role','status');wrap.append(title,select,status);host.querySelector('[name="username"]').closest('.youField').after(wrap);
-   select.onchange=async()=>{if(!same(s))return;select.disabled=true;try{const saved=await touch(select.value);if(same(s)&&wrap.isConnected){if(saved===null)throw Error('Activity not saved');status.textContent='Форма статуса сохранена.';}}catch{if(same(s)&&wrap.isConnected){select.value=form;status.textContent='Не удалось сохранить. Повторите выбор при подключении к интернету.';}}finally{select.disabled=false;}};
-   Promise.resolve(touching).then(()=>{if(same(s)&&wrap.isConnected)select.value=form;}).catch(()=>{});
-  }
-  const unsub=controller.subscribe(s=>{if(s.sessionUserId!==owner||s.sessionGeneration!==generation){owner=s.sessionUserId;generation=s.sessionGeneration;lastTouch=0;form='neutral';touching=null;bindings.clear();}wake();});
-  document.addEventListener('visibilitychange',wake,{signal:lifetime.signal});root.addEventListener('online',wake,{signal:lifetime.signal});root.addEventListener('pageshow',wake,{signal:lifetime.signal});
-  const timer=root.setInterval(wake,60000),observer=new MutationObserver(mountPreference);observer.observe(document.body,{childList:true,subtree:true});mountPreference();
-  return{bind,label,destroy(){dead=true;unsub();lifetime.abort();root.clearInterval(timer);observer.disconnect();bindings.clear();}};
- }
- root.PablicusActivity={label,create};
- function boot(){const c=root.PablicusController,client=c?.getServices()?.client;if(c&&client&&!root.PablicusActivityService)root.PablicusActivityService=create(client,c);}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-})(window);
-/* Stationary sticky masthead + native scroll timeline. Presentation only, no counter-scroll transforms. */
+/* Stationary sticky masthead + native scroll timeline. No counter-scroll transforms. */
 (function(root){
  'use strict';
  const clamp=p=>Math.max(0,Math.min(1,p));
@@ -52,11 +9,11 @@
   mast.className='contactMasthead';glass.className='contactEdgeFade';glass.setAttribute('aria-hidden','true');
   page.insertBefore(mast,bar);mast.append(glass,bar,hero);page.classList.add('contactMotion');name.title=name.textContent;
   const lifetime=new AbortController(),signal=lifetime.signal,reduced=root.matchMedia('(prefers-reduced-motion: reduce)');
-  const native=root.CSS?.supports('animation-timeline: scroll()')&&root.CSS?.supports('animation-range: 0px 100px');
-  page.classList.toggle('contactNativeTimeline',!!native);
+  const native=!!(root.CSS?.supports('animation-timeline: scroll()')&&root.CSS?.supports('animation-range: 0px 100px'));
+  page.classList.toggle('contactNativeTimeline',native);
   let dead=false,frame=0,resizeFrame=0,g=null,signature='';
   const nodes=[photo,name,handle,actions],px=n=>n.toFixed(4)+'px';
-  // Offset geometry is independent of animation transforms. Never reset transforms to measure.
+  // Layout offsets do not include animated transforms. Never clear transforms to measure.
   const center=node=>{let y=node.offsetHeight/2;for(let n=node;n&&n!==mast;n=n.offsetParent)y+=n.offsetTop;return y;};
   function measure(){
    if(dead||!page.open||!mast.isConnected)return;
@@ -73,24 +30,24 @@
   }
   function fallback(){
    frame=0;if(dead||!g||!page.open)return;
-   // Older engines animate content only. The toolbar itself NEVER moves with JavaScript.
+   // Legacy engines use rAF only for hero content. The toolbar is never moved by JS.
    const p=clamp(Math.max(0,page.scrollTop)/g.range),t=clamp(p/.78),a=clamp(p/.70);
    const set=(n,y,s=1)=>n.style.transform=`translate3d(0,${px(y)},0) scale(${s})`;
-   set(name,g.name*t,reduced.matches?1:1+(g.ns-1)*t);set(handle,g.handle*t,reduced.matches?1:1+(g.hs-1)*t);
+   set(name,g.name*t,1+(g.ns-1)*t);set(handle,g.handle*t,1+(g.hs-1)*t);
    set(photo,g.photo*a,reduced.matches?1:1-.68*a);photo.style.opacity=String(1-a);photo.style.visibility=a>=1?'hidden':'';
    set(actions,-g.range*p);actions.style.opacity=String(1-clamp((p-.50)/.38));actions.style.visibility=p>=.88?'hidden':'';
-   actions.style.setProperty('--contact-action-y',String(1-.66*p));actions.style.setProperty('--contact-label-opacity',String(1-clamp(p/.60)));
+   actions.style.setProperty('--contact-action-y',String(reduced.matches?1:1-.66*p));actions.style.setProperty('--contact-label-opacity',String(1-clamp(p/.60)));
   }
   function requestMeasure(){if(!dead&&!resizeFrame)resizeFrame=root.requestAnimationFrame(()=>{resizeFrame=0;measure();});}
   if(!native)page.addEventListener('scroll',()=>{if(!frame)frame=root.requestAnimationFrame(fallback);},{passive:true,signal});
-  root.addEventListener('resize',requestMeasure,{passive:true,signal});
-  reduced.addEventListener('change',requestMeasure,{signal});
+  root.addEventListener('resize',requestMeasure,{passive:true,signal});reduced.addEventListener('change',requestMeasure,{signal});
   const observer=root.ResizeObserver?new ResizeObserver(requestMeasure):null;
-  for(const node of [hero,bar,name,handle])observer?.observe(node);
+  for(const n of [hero,bar,name,handle])observer?.observe(n);
   document.fonts?.ready.then(()=>{if(!dead){signature='';requestMeasure();}});
   measure();
   return{mast,hero,destroy(){if(dead)return;dead=true;lifetime.abort();observer?.disconnect();if(frame)root.cancelAnimationFrame(frame);if(resizeFrame)root.cancelAnimationFrame(resizeFrame);
-   for(const node of nodes){node.style.transform='';node.style.opacity='';node.style.visibility='';node.inert=false;}
+   for(const n of nodes){n.style.transform='';n.style.opacity='';n.style.visibility='';n.inert=false;}
+   actions.style.removeProperty('--contact-action-y');actions.style.removeProperty('--contact-label-opacity');
    page.classList.remove('contactMotion','contactNativeTimeline');for(const k of ['--contact-collapse-range','--contact-bar-height','--contact-name-y','--contact-status-y','--contact-photo-y','--contact-name-scale','--contact-status-scale','--contact-actions-y'])page.style.removeProperty(k);
   }};
  }
