@@ -7,7 +7,7 @@
   if(!photo||!name||!handle||!actions)return null;
   const mast=document.createElement('div'),glass=document.createElement('div');
   mast.className='contactMasthead';glass.className='contactEdgeFade';glass.setAttribute('aria-hidden','true');
-  page.insertBefore(mast,bar);mast.append(glass,bar,hero);page.classList.add('contactMotion');name.title=name.textContent;
+  page.classList.add('contactMotionInitializing');page.insertBefore(mast,bar);mast.append(glass,bar,hero);page.classList.add('contactMotion');name.title=name.textContent;
   const lifetime=new AbortController(),signal=lifetime.signal,reduced=root.matchMedia('(prefers-reduced-motion: reduce)');
   const native=!!(root.CSS?.supports('animation-timeline: scroll()')&&root.CSS?.supports('animation-range: 0px 100px'));
   page.classList.toggle('contactNativeTimeline',native);
@@ -18,15 +18,19 @@
   function measure(){
    if(dead||!page.open||!mast.isConnected)return;
    const w=page.clientWidth,toolbar=bar.offsetHeight,h=mast.offsetHeight;
-   const next=[w,toolbar,h,photo.offsetWidth,name.offsetWidth,name.offsetHeight,handle.offsetWidth,handle.offsetHeight,reduced.matches].join(':');
+   const next=[w,toolbar,h,photo.offsetWidth,name.offsetHeight,handle.offsetHeight,reduced.matches].join(':');
    if(next===signature)return;signature=next;
-   const safe=Math.max(0,toolbar-60),range=Math.max(1,h-toolbar),available=Math.max(72,w-160);
+   const safe=Math.max(0,toolbar-60),range=Math.max(1,h-toolbar);
    g={range,name:safe+21-center(name),handle:safe+42-center(handle),photo:safe-18-center(photo),
-    ns:Math.min(17/(parseFloat(getComputedStyle(name).fontSize)||29),available/Math.max(1,name.offsetWidth)),
-    hs:Math.min(12/(parseFloat(getComputedStyle(handle).fontSize)||17),available/Math.max(1,handle.offsetWidth))};
+    ns:17/(parseFloat(getComputedStyle(name).fontSize)||29),
+    hs:12/(parseFloat(getComputedStyle(handle).fontSize)||17)};
    const vars={'--contact-collapse-range':px(range),'--contact-bar-height':px(toolbar),'--contact-name-y':px(g.name),'--contact-status-y':px(g.handle),'--contact-photo-y':px(g.photo),'--contact-name-scale':g.ns,'--contact-status-scale':g.hs,'--contact-actions-y':px(-range)};
    for(const[k,v]of Object.entries(vars))page.style.setProperty(k,String(v));
    if(!native)fallback();
+  }
+  function release(){
+   if(dead||!page.open||!g)return;
+   page.classList.remove('contactMotionInitializing');page.classList.add('contactMotionReady');
   }
   function fallback(){
    frame=0;if(dead||!g||!page.open)return;
@@ -43,12 +47,12 @@
   root.addEventListener('resize',requestMeasure,{passive:true,signal});reduced.addEventListener('change',requestMeasure,{signal});
   const observer=root.ResizeObserver?new ResizeObserver(requestMeasure):null;
   for(const n of [hero,bar,name,handle])observer?.observe(n);
-  document.fonts?.ready.then(()=>{if(!dead){signature='';requestMeasure();}});
-  measure();
+  document.fonts?.ready.then(()=>{if(!dead&&page.scrollTop===0){signature='';requestMeasure();}});
+  measure();root.requestAnimationFrame(()=>{measure();release();});
   return{mast,hero,destroy(){if(dead)return;dead=true;lifetime.abort();observer?.disconnect();if(frame)root.cancelAnimationFrame(frame);if(resizeFrame)root.cancelAnimationFrame(resizeFrame);
    for(const n of nodes){n.style.transform='';n.style.opacity='';n.style.visibility='';n.inert=false;}
    actions.style.removeProperty('--contact-action-y');actions.style.removeProperty('--contact-label-opacity');
-   page.classList.remove('contactMotion','contactNativeTimeline');for(const k of ['--contact-collapse-range','--contact-bar-height','--contact-name-y','--contact-status-y','--contact-photo-y','--contact-name-scale','--contact-status-scale','--contact-actions-y'])page.style.removeProperty(k);
+   page.classList.remove('contactMotion','contactNativeTimeline','contactMotionInitializing','contactMotionReady');for(const k of ['--contact-collapse-range','--contact-bar-height','--contact-name-y','--contact-status-y','--contact-photo-y','--contact-name-scale','--contact-status-scale','--contact-actions-y'])page.style.removeProperty(k);
   }};
  }
  function watch(page){let current=null;
