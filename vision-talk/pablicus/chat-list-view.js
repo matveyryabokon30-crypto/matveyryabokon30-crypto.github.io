@@ -131,7 +131,7 @@
    if(!t.axis){
     if(Math.max(Math.abs(t.dx),Math.abs(t.dy))<9)return;
     if(Math.abs(t.dx)>Math.abs(t.dy)*1.25)t.axis=t.row?'row':'native';
-    else if(Math.abs(t.dy)>Math.abs(t.dx)*1.25)t.axis=t.atTop&&(t.dy>0||t.initialPanel)?'panel':'native';
+    else if(Math.abs(t.dy)>Math.abs(t.dx)*1.25)t.axis=!workspace.dataset.storyShelf&&t.atTop&&(t.dy>0||t.initialPanel)?'panel':'native';
     else return;
     if(t.axis==='row'&&openRow!==t.row)closeRow();
     if(t.axis==='panel')closeRow();

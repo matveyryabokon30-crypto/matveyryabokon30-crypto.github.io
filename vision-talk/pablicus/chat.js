@@ -262,7 +262,7 @@ const owned=active&&(app.contains(active)||(panel&&app.querySelector('[aria-cont
 const editable=active&&owned&&!active.readOnly&&!active.disabled&&active.inputMode!=='none'&&(active.isContentEditable||active.tagName==='TEXTAREA'||(active.tagName==='INPUT'&&['text','search','email','url','tel','password','number'].includes(active.type)));
 return !!(editable&&v&&Math.abs(v.scale-1)<.02&&Math.max(innerHeight,document.documentElement.clientHeight)-v.height>120);
 }
-function applyLayout(){if(simulating)return;const v=window.visualViewport,w=v?.width||innerWidth,h=v?.height||innerHeight,a=list?.lastAnchor,f=list?.follow??true;
+function applyLayout(){if(simulating)return;const v=window.visualViewport;if(v&&Math.abs(v.scale-1)>.02)return;const w=v?.width||innerWidth,h=v?.height||innerHeight,a=list?.lastAnchor,f=list?.follow??true;
 const width=Math.min(w,800),left=(v?.pageLeft??scrollX)+Math.max(0,(w-800)/2),top=v?.pageTop??scrollY;
 const keyboardOpen=keyboardOccludesViewport(v),keyboardChanged=app.classList.contains('keyboard-open')!==keyboardOpen;
 
