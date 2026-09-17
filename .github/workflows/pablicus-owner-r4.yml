@@ -1,0 +1,56 @@
+name: Pablicus owner R4
+on:
+  push:
+    branches: [release/pablicus-owner-r4-20260917]
+    paths: ['.github/workflows/pablicus-owner-r4.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Apply owner R4
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('vision-talk/pablicus')
+          p=root/'avatar-rings.css';s=p.read_text()
+          s=s.replace('border:2px solid transparent!important;padding:3px!important;','border:1px solid transparent!important;padding:2px!important;',1)
+          s=s.replace('padding:3px!important;margin:0!important;border:2px solid transparent!important;','padding:2px!important;margin:0!important;border:1px solid transparent!important;',1)
+          s=s.replace('border-width:3px!important;padding:3px!important;','border-width:1px!important;padding:2px!important;')
+          s+='''\n:root body #app>.storyChatActions,:root body #storyChatAction{display:none!important}\n:root body #home #mainNav:has(#storyHomeAction:not([hidden])){grid-template-columns:repeat(5,minmax(0,1fr))!important}\n:root body #home>.cleanHomeActions>#storyHomeAction{position:relative!important;display:grid!important;place-items:center!important;box-sizing:border-box!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;margin:0!important;border:1px solid var(--ui-glass-line)!important;border-radius:50%!important;background:color-mix(in srgb,var(--surface) 20%,transparent)!important;box-shadow:inset 0 1px 0 #ffffffa6,0 2px 7px #0002!important;backdrop-filter:blur(8px) saturate(1.35)!important;-webkit-backdrop-filter:blur(8px) saturate(1.35)!important}\n:root body #home>.cleanHomeActions>#storyHomeAction svg{width:22px!important;height:22px!important;min-width:22px!important}\n:root body #mainNav>[data-page="profile"].profileAvatarNav{gap:2px!important}\n:root body #mainNav>[data-page="profile"].profileAvatarNav>.profileNavAvatar{display:block!important;box-sizing:border-box!important;width:30px!important;height:30px!important;min-width:30px!important;border:1px solid transparent!important;padding:2px!important;border-radius:50%!important;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(#fff,#fff) border-box!important;box-shadow:0 0 0 1px rgb(20 30 40 / .12)!important;overflow:hidden!important}\n:root body #mainNav>[data-page="profile"].profileAvatarNav>.profileNavAvatar[data-pablicus-story-ring="active"]{background:linear-gradient(#fff,#fff) padding-box,var(--story-ring-active) border-box!important}\n:root body #mainNav>[data-page="profile"].profileAvatarNav>.profileNavAvatar>img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}\n:root body #mainNav>[data-page="profile"].profileAvatarNav>.profileNavLabel{font-size:11px!important;line-height:14px!important;height:14px!important}\n:root body #app>.chatAvatarDock{height:auto!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important}\n:root body #app>.chatAvatarDock>.conversationCallDock{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto}\n:root body #app>.chatAvatarDock>.conversationCallDock>button{display:grid;place-items:center;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid var(--ui-glass-line);border-radius:50%;background:color-mix(in srgb,var(--surface) 20%,transparent);box-shadow:inset 0 1px 0 #ffffffa6,0 2px 7px #0002;backdrop-filter:blur(8px) saturate(1.35);-webkit-backdrop-filter:blur(8px) saturate(1.35)}\n:root body #app>.chatAvatarDock>.conversationCallDock svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}\n'''
+          p.write_text(s)
+          p=root/'glass-ui.js';s=p.read_text();needle="if(!document.getElementById('conversationAvatar')){const avatar=document.createElement('button');avatar.id='conversationAvatar';avatar.type='button';avatar.className='pablicusStoryAvatar';avatar.setAttribute('aria-label','Профиль и сторис собеседника');avatar.addEventListener('click',()=>{const id=global.PablicusController?.state().conversationId;if(id)global.PablicusContacts?.open(id);},{signal:life.signal});chatAvatarDock.append(avatar);}"
+          add=needle+"\n  if(!document.getElementById('conversationCallDock')){const calls=document.createElement('div');calls.id='conversationCallDock';calls.className='conversationCallDock';const make=(id,label,path)=>{const b=document.createElement('button');b.id=id;b.type='button';b.setAttribute('aria-label',label);b.title=label;b.innerHTML='<svg viewBox=\\\"0 0 24 24\\\" aria-hidden=\\\"true\\\">'+path+'</svg>';b.addEventListener('click',()=>{global.dispatchEvent(new CustomEvent('pablicus:call-request',{detail:{kind:id==='audioCallAction'?'audio':'video',conversationId:global.PablicusController?.state().conversationId}}));const t=document.getElementById('toast');if(t){t.textContent='Звонки будут подключены на следующем этапе.';t.hidden=false;setTimeout(()=>t.hidden=true,2600);}},{signal:life.signal});return b;};calls.append(make('audioCallAction','Аудиозвонок','<path d=\\\"M7 4l3 4-2 2c1.6 3 3 4.4 6 6l2-2 4 3-1 3c-.3 1-1.2 1.5-2.2 1.3C9.8 20 4 14.2 2.7 7.2 2.5 6.2 3 5.3 4 5z\\\"/>'),make('videoCallAction','Видеозвонок','<rect x=\\\"3\\\" y=\\\"6\\\" width=\\\"12\\\" height=\\\"12\\\" rx=\\\"3\\\"/><path d=\\\"M15 10l6-3v10l-6-3z\\\"/>'));chatAvatarDock.append(calls);}"
+          assert needle in s;s=s.replace(needle,add);p.write_text(s)
+          p=root/'avatar-stories.js';s=p.read_text();old='''if(nav&&!document.getElementById('storyHomeAction')){const b=btn('Опубликовать сторис',compose,'story-add');b.id='storyHomeAction';b.className='storyHomeAction';b.append(el('span','storyNavLabel','Сторис'));nav.querySelector('[data-page="chats"]')?.after(b);}\n  if(app&&!document.getElementById('storyChatAction')){const bar=el('nav','storyChatActions');bar.setAttribute('aria-label','Публикация сторис');const b=btn('Опубликовать сторис',compose,'story-add');b.id='storyChatAction';b.classList.add('storyChatAction');bar.append(b);app.append(bar);}\n  const b=document.getElementById('storyHomeAction');if(b)b.hidden=!authorized||state().section!=='chats'||state().screen!=='home';\n  const c=document.getElementById('storyChatAction');if(c)c.hidden=!authorized||state().screen!=='conversation'||document.getElementById('app')?.classList.contains('composer-fullscreen');'''
+          new='''const dock=document.querySelector('#home>.cleanHomeActions');if(dock&&!document.getElementById('storyHomeAction')){const b=btn('Опубликовать сторис',compose,'story-add');b.id='storyHomeAction';b.className='storyHomeAction';dock.append(b);}\n  document.querySelector('.storyChatActions')?.remove();document.getElementById('storyChatAction')?.remove();\n  const b=document.getElementById('storyHomeAction');if(b)b.hidden=!authorized||state().section!=='chats'||state().screen!=='home';'''
+          assert old in s;s=s.replace(old,new)
+          marker=' function layout(){\n';fn=''' async function hydrateOwnNav(){\n  const own=services()?.getProfile?.(),nav=document.querySelector('#mainNav>[data-page="profile"]');if(!own||!nav||!UUID.test(own.id||''))return;\n  owners.add(own.id);nav.classList.add('profileAvatarNav');let a=nav.querySelector('.profileNavAvatar');if(!a){a=el('span','profileNavAvatar');nav.replaceChildren(a,el('span','profileNavLabel','Вы'));}\n  ring(a,own.id);const snapshot=state(),url=await avatarUrl(own,snapshot);if(!live(snapshot)||!a.isConnected)return;\n  const stamp=own.id+'|'+(url||'');if(a.dataset.avatarStamp===stamp)return;a.dataset.avatarStamp=stamp;a.replaceChildren();\n  if(url){const img=el('img');img.alt='Ваш профиль';img.src=url;img.onload=()=>{if(a.isConnected&&a.dataset.avatarStamp===stamp)a.replaceChildren(img);};}else a.textContent=Array.from(own.display_name||own.username||'Я')[0]?.toUpperCase()||'Я';ring(a,own.id);\n }\n'''
+          assert marker in s;s=s.replace(marker,fn+marker,1);s=s.replace('const own=services()?.getProfile?.();if(own){owners.add(own.id);','const own=services()?.getProfile?.();void hydrateOwnNav();if(own){owners.add(own.id);');p.write_text(s)
+          p=root/'sw.js';p.write_text(p.read_text().replace('pablicus-shell-storage-recovery-20260917-r1','pablicus-shell-avatar-nav-calls-20260917-r1'))
+          PY
+          node --check vision-talk/pablicus/avatar-stories.js
+          node --check vision-talk/pablicus/glass-ui.js
+          node --check vision-talk/pablicus/sw.js
+      - name: Verify owner R4 invariants
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          a=Path('vision-talk/pablicus/avatar-stories.js').read_text();c=Path('vision-talk/pablicus/avatar-rings.css').read_text();g=Path('vision-talk/pablicus/glass-ui.js').read_text()
+          assert "nav.querySelector('[data-page=\"chats\"]')?.after(b)" not in a
+          assert "document.querySelector('#home>.cleanHomeActions')" in a
+          assert "document.querySelector('.storyChatActions')?.remove()" in a
+          assert 'hydrateOwnNav' in a and 'profileNavAvatar' in a
+          assert 'audioCallAction' in g and 'videoCallAction' in g
+          assert 'border-width:1px!important;padding:2px!important' in c
+          print('OWNER_R4_INVARIANTS PASS')
+          PY
+      - name: Commit tested runtime only
+        run: |
+          git config user.name 'Pablicus release'
+          git config user.email 'pablicus-release@users.noreply.github.com'
+          git add vision-talk/pablicus/avatar-rings.css vision-talk/pablicus/avatar-stories.js vision-talk/pablicus/glass-ui.js vision-talk/pablicus/sw.js
+          git commit -m 'feat(pablicus): owner R4 story placement avatar nav and call controls [skip ci]'
+          git push origin HEAD:release/pablicus-owner-r4-20260917
