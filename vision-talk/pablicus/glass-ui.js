@@ -45,6 +45,8 @@
 (function bootAvatarStories(scope){
  'use strict';
  if(scope.PablicusAvatarStoriesUI)return;
+ /* Load the ring layer independently so this release does not depend on rewriting index.html. */
+ if(!document.querySelector('link[data-pablicus-avatar-rings]')){const link=document.createElement('link');link.rel='stylesheet';link.href='avatar-rings.css';link.dataset.pablicusAvatarRings='1';document.head.append(link);}
  const controller=scope.PablicusController,services=controller?.getServices?.(),client=services?.client;
  if(!controller||!client){setTimeout(()=>bootAvatarStories(scope),50);return;}
  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -52,6 +54,7 @@
  const icon=name=>scope.PablicusMessageMenu?.icon?.(name)||scope.PablicusIcons?.icon?.(name)||document.createTextNode('+');
  const current=()=>controller.state();
  function same(a,b=current()){return a.sessionUserId===b.sessionUserId&&a.sessionGeneration===b.sessionGeneration&&a.conversationId===b.conversationId;}
+ /* Until a real story record exists, the ring stays white. Never infer a story from a normal post. */
  function ring(node,state='none'){node.classList.add('pablicusStoryAvatar');node.dataset.pablicusStoryRing=state==='unread'?'unread':'read';}
  async function signed(path,person,snapshot){
   if(!path)return'';if(/^https:\/\//i.test(path))return path;
@@ -78,12 +81,14 @@
  }
  function storyUnavailable(){
   const d=document.getElementById('productDialog'),title=document.getElementById('dialogTitle'),body=document.getElementById('dialogContent');
-  if(d&&title&&body){title.textContent='Сторис';body.replaceChildren();const p=document.createElement('p');p.textContent='Кнопка публикации сторис подготовлена. Серверный формат сторис и срок показа ещё не подключены, поэтому Pablicus не будет выдавать обычную публикацию за сторис.';body.append(p);if(!d.open)d.showModal();}
+  if(d&&title&&body){title.textContent='Сторис';body.replaceChildren();const p=document.createElement('p');p.textContent='Интерфейс сторис готов. Серверный формат сторис и срок показа ещё не подключены, поэтому обычная публикация не будет выдаваться за сторис.';body.append(p);if(!d.open)d.showModal();}
  }
  function makeStoryButton(id,cls){const b=document.createElement('button');b.id=id;b.type='button';b.className=cls;b.setAttribute('aria-label','Опубликовать сторис');b.title='Опубликовать сторис';b.append(icon('plus'));b.addEventListener('click',storyUnavailable);return b;}
  function ensureStoryButtons(){
-  const toolbar=document.querySelector('#composeBox.r2Composer .r2Toolbar');if(toolbar&&!document.getElementById('storyChatAction')){const b=makeStoryButton('storyChatAction','storyAction storyChatAction');const attach=toolbar.querySelector('#attach,.r2Attach');attach?.after(b);}
+  const state=current(),toolbar=document.querySelector('#composeBox.r2Composer .r2Toolbar');
+  if(toolbar&&!document.getElementById('storyChatAction')){const b=makeStoryButton('storyChatAction','storyAction storyChatAction');const attach=toolbar.querySelector('#attach,.r2Attach');attach?.after(b);}
   const nav=document.getElementById('mainNav');if(nav&&!document.getElementById('storyHomeAction')){const b=makeStoryButton('storyHomeAction','storyAction storyHomeAction');const label=document.createElement('span');label.className='storyNavLabel';label.textContent='Сторис';b.append(label);nav.querySelector('[data-page="chats"]')?.after(b);}
+  const homeStory=document.getElementById('storyHomeAction');if(homeStory)homeStory.hidden=!(state.screen==='home'&&state.section==='chats');
  }
  function decoratePersonal(){document.querySelectorAll('.youAvatarButton .youAvatar,.profileAvatar').forEach(n=>ring(n,'none'));}
  function normalizePencil(){const b=document.getElementById('newChat');if(b){b.classList.add('standardComposeAction');if(!b.querySelector('svg'))b.replaceChildren(icon('compose'));}}
