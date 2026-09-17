@@ -41,6 +41,7 @@ jobs:
           for engine in chromium webkit; do
             python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --baseline .p01r2-baseline/vision-talk/pablicus --engine "$engine" || failed=1
             python tools/pablicus-p01r2/shell.py --root vision-talk/pablicus --engine "$engine" || failed=1
+            python tools/pablicus-p01r2/extended.py --root vision-talk/pablicus --engine "$engine" || failed=1
           done
           exit "$failed"
       - name: Save reproducible evidence
