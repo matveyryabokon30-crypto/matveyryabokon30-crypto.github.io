@@ -23,6 +23,7 @@ jobs:
       - name: Assemble and verify syntax
         run: |
           python tests/shared-stories/assemble.py
+          python tests/shared-stories/refine.py
           for f in tests/shared-stories/candidate/*.js; do node --check "$f"; done
           python -c "from PIL import Image,ImageDraw; im=Image.new('RGB',(450,800),'#12354d'); d=ImageDraw.Draw(im); d.ellipse((60,200,390,530),fill='#48acc9'); im.save('tests/shared-stories/fixture.png')"
           ffmpeg -v error -f lavfi -i color=c=0x285870:s=240x426:r=15 -t 12 -c:v libx264 -pix_fmt yuv420p -movflags +faststart -an tests/shared-stories/fixture.mp4
