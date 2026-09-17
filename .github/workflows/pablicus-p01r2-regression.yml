@@ -1,0 +1,72 @@
+name: Pablicus P01-R2 media regression
+on:
+  push:
+    branches: [fix/pablicus-media-p01r2-20260917]
+    paths: ['tools/pablicus-p01r2/**', '.github/workflows/pablicus-p01r2-regression.yml']
+permissions:
+  contents: write
+concurrency:
+  group: pablicus-p01r2-regression
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build only the scoped candidate
+        run: |
+          set -euo pipefail
+          mkdir -p .p01r2-baseline
+          git archive 3c1623992cfe7df3efa59ba15955f29eb4b336e5 vision-talk/pablicus | tar -x -C .p01r2-baseline
+          cp -a .p01r2-baseline/vision-talk/pablicus/. vision-talk/pablicus/
+          cp tools/pablicus-p01r2/media-cache.js tools/pablicus-p01r2/auto-update.js vision-talk/pablicus/
+          python tools/pablicus-p01r2/patch.py vision-talk/pablicus
+          for f in vision-talk/pablicus/*.js; do node --check "$f"; done
+          git diff --stat
+      - name: Install test browsers
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Real browser network and storage regression
+        shell: bash
+        run: |
+          set +e
+          python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --baseline .p01r2-baseline/vision-talk/pablicus --engine chromium
+          chrome=$?
+          python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --baseline .p01r2-baseline/vision-talk/pablicus --engine webkit
+          webkit=$?
+          test "$chrome" = 0 && test "$webkit" = 0
+      - name: Save reproducible evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p01r2-evidence
+          path: |
+            results/
+            vision-talk/pablicus/release-p01r2.json
+          retention-days: 14
+      - name: Save tested runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: p01r2-tested-runtime
+          path: vision-talk/pablicus/
+          retention-days: 14
+      - name: Record tested candidate on feature branch only
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = fix/pablicus-media-p01r2-20260917
+          git config user.name 'Pablicus verification'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          mkdir -p docs/pablicus/p01r2
+          cp results/*.json docs/pablicus/p01r2/
+          git add vision-talk/pablicus docs/pablicus/p01r2
+          if ! git diff --cached --quiet; then
+            git commit -m 'fix(pablicus): verified P01-R2 image pipeline candidate'
+            git push origin HEAD:refs/heads/fix/pablicus-media-p01r2-20260917
+          fi
