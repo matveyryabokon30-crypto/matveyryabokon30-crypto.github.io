@@ -16,7 +16,7 @@
  function btn(label,run,name='close'){const b=el('button','storyButton');b.type='button';b.setAttribute('aria-label',label);b.title=label;b.append(name==='story-add'?storyIcon():icon(name));b.addEventListener('click',run);return b;}
  function notify(text){services()?.notify?.(text);}
  function activeStories(id){return (feeds.get(id)||[]).filter(s=>Date.parse(s.expires_at)>storyNow());}
- function ring(n,id){if(!UUID.test(id||''))return;n.dataset.storyOwner=id;owners.add(id);n.dataset.pablicusStoryRing=activeStories(id).length?'active':'none';}
+ function ring(n,id){if(!UUID.test(id||''))return;if(n.dataset.storyOwner!==id)n.dataset.storyOwner=id;owners.add(id);const value=activeStories(id).length?'active':'none';if(n.dataset.pablicusStoryRing!==value)n.dataset.pablicusStoryRing=value;}
  function refreshRings(){document.querySelectorAll('[data-story-owner]').forEach(n=>{const v=activeStories(n.dataset.storyOwner).length?'active':'none';if(n.dataset.pablicusStoryRing!==v)n.dataset.pablicusStoryRing=v;});}
  async function feed(force=false){
   if(stopped||document.hidden||!state().sessionUserId||!owners.size)return;
@@ -173,5 +173,5 @@
  document.addEventListener('visibilitychange',()=>{if(!document.hidden){schedule();void feed(true);}},{signal:life.signal});
  global.addEventListener('online',()=>{cards.clear();schedule();void feed(true);},{signal:life.signal});
  timer=setInterval(()=>{if(!document.hidden){refreshRings();void feed();}},30000);
- global.PablicusAvatarStoriesUI=Object.freeze({refresh:schedule,compose,view,refreshStories:()=>feed(true),destroy(){stopped=true;life.abort();unsubscribe();observer.disconnect();clearInterval(timer);clearTimeout(feedTimer);cancelAnimationFrame(frame);closeModal(true);cards.clear();signed.clear();feeds.clear();}});schedule();
+ global.PablicusAvatarStoriesUI=Object.freeze({getActiveStories:id=>activeStories(id).slice(),refresh:schedule,compose,view,refreshStories:()=>feed(true),destroy(){stopped=true;life.abort();unsubscribe();observer.disconnect();clearInterval(timer);clearTimeout(feedTimer);cancelAnimationFrame(frame);closeModal(true);cards.clear();signed.clear();feeds.clear();}});schedule();
 })(window);
