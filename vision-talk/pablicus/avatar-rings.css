@@ -1,28 +1,80 @@
-/* Avatar rings + story entry points. Instagram-inspired hierarchy with Pablicus colors. */
-:root{--story-ring-idle:#fff;--story-ring-gap:#fff;--story-ring-active:var(--ocean-sky,#3BA7F2)}
-.pablicusStoryAvatar{position:relative!important;border-radius:50%!important;box-sizing:border-box!important;background-clip:padding-box!important;box-shadow:0 0 0 2px var(--story-ring-gap),0 0 0 4px var(--story-ring-idle)!important;overflow:hidden!important}
-.pablicusStoryAvatar[data-pablicus-story-ring="unread"]{box-shadow:0 0 0 2px var(--story-ring-gap),0 0 0 4px var(--story-ring-active)!important}
-.pablicusStoryAvatar>img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
-/* Conversation avatar: same 56px face as chat rows, above page haze and separate from the action rail. */
-:root body #app>.chatAvatarDock{position:absolute;top:calc(var(--safe-area-top) + 10px);right:max(14px,var(--safe-area-right));z-index:90;width:56px;height:56px;pointer-events:none;background:transparent!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-:root body #app>.chatAvatarDock>#chatTitle{pointer-events:auto!important;display:grid!important;place-items:center!important;width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important;padding:0!important;margin:0!important;border:0!important;border-radius:50%!important;background:var(--soft)!important;color:var(--text)!important;font-size:18px!important;line-height:1!important;overflow:hidden!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-:root body #app>.chatAvatarDock>#chatTitle::before,:root body #app>.chatAvatarDock>#chatTitle::after{content:none!important}
-:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock{max-height:min(var(--glass-rail-room,408px),calc(100dvh - var(--safe-area-top) - 88px - var(--chat-bottom-inset,70px)))!important}
-/* Chat-list ring uses the existing 56px avatar without changing row geometry. */
-#screenContent .contactAvatarTrigger{overflow:visible!important;border-radius:50%!important}
-#screenContent .contactAvatarTrigger .avatar{margin:0!important}
-/* Personal page uses the same two-ring language at its native larger avatar size. */
-.youAvatarButton .youAvatar.pablicusStoryAvatar,.profileAvatar.pablicusStoryAvatar{box-shadow:0 0 0 3px var(--story-ring-gap),0 0 0 6px var(--story-ring-idle)!important}
-.youAvatarButton .youAvatar.pablicusStoryAvatar[data-pablicus-story-ring="unread"],.profileAvatar.pablicusStoryAvatar[data-pablicus-story-ring="unread"]{box-shadow:0 0 0 3px var(--story-ring-gap),0 0 0 6px var(--story-ring-active)!important}
-/* Story creation in the conversation horizontal composer toolbar. */
-#storyChatAction{display:grid!important;place-items:center!important;width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;padding:9px!important;border:0!important;border-radius:50%!important;background:transparent!important;color:var(--text)!important}
-#storyChatAction svg{width:22px!important;height:22px!important}
-/* Story creation appears in the root horizontal navigation only while Chats is active. */
-#home #mainNav:has(#storyHomeAction:not([hidden])){grid-template-columns:repeat(6,minmax(0,1fr))!important}
-#home #mainNav>#storyHomeAction{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;height:52px!important;min-height:52px!important;padding:4px 0!important;gap:3px!important;border:0!important;border-radius:26px!important;background:transparent!important;color:var(--text)!important;font-size:11px!important;line-height:14px!important}
-#home #mainNav>#storyHomeAction[hidden]{display:none!important}
-#home #mainNav>#storyHomeAction svg{width:22px!important;height:22px!important;min-width:22px!important}
-#home #mainNav>#storyHomeAction .storyNavLabel{height:14px!important;line-height:14px!important}
-/* Compose pencil follows the global 44/22 control standard. */
-:root body #home>.cleanHomeActions>#newChat.standardComposeAction{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;max-height:44px!important;padding:11px!important;border-radius:50%!important}
-:root body #home>.cleanHomeActions>#newChat.standardComposeAction svg{width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important}
+/* One avatar-ring language. Color denotes a currently available story, not a demo. */
+:root{--story-ring-idle:#fff;--story-ring-gap:#fff;--story-ring-active:var(--ob-story-ring,linear-gradient(135deg,#3BA7F2,#7FE7D6))}
+:root body .pablicusStoryAvatar{
+ position:relative!important;box-sizing:border-box!important;border:2px solid transparent!important;padding:3px!important;border-radius:50%!important;
+ background:linear-gradient(#fff,#fff) padding-box,linear-gradient(#fff,#fff) border-box!important;
+ box-shadow:0 0 0 1px rgb(20 30 40 / .08)!important;overflow:hidden!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+:root body .pablicusStoryAvatar[data-pablicus-story-ring=active]{background:linear-gradient(#fff,#fff) padding-box,var(--story-ring-active) border-box!important}
+:root body .pablicusStoryAvatar>img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
+:root body #app>.chatAvatarDock{position:absolute;top:max(96px,calc(var(--safe-area-top,env(safe-area-inset-top,0px)) + 28px));right:max(12px,env(safe-area-inset-right,0px));width:var(--pab-chat-avatar,56px);height:var(--pab-chat-avatar,56px);z-index:70;pointer-events:none;background:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root body #app>.chatAvatarDock>#conversationAvatar#conversationAvatar#conversationAvatar{
+ pointer-events:auto!important;display:grid!important;place-items:center!important;box-sizing:border-box!important;
+ width:var(--pab-chat-avatar,56px)!important;height:var(--pab-chat-avatar,56px)!important;min-width:var(--pab-chat-avatar,56px)!important;min-height:var(--pab-chat-avatar,56px)!important;max-width:none!important;max-height:none!important;
+ padding:3px!important;margin:0!important;border:2px solid transparent!important;border-radius:50%!important;line-height:1!important;font-size:18px!important;color:var(--text)!important;
+ background:linear-gradient(#fff,#fff) padding-box,linear-gradient(#fff,#fff) border-box!important;overflow:hidden!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+:root body #app>.chatAvatarDock>#conversationAvatar#conversationAvatar#conversationAvatar[data-pablicus-story-ring=active]{background:linear-gradient(#fff,#fff) padding-box,var(--story-ring-active) border-box!important}
+:root body #app>.chatAvatarDock>#conversationAvatar#conversationAvatar#conversationAvatar::before,:root body #app>.chatAvatarDock>#conversationAvatar#conversationAvatar#conversationAvatar::after{content:none!important}
+:root body #app.composer-fullscreen>.chatAvatarDock{display:none!important}
+:root #screenContent .contactAvatarTrigger{padding:0!important;border:0!important;overflow:visible!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;box-shadow:none!important}
+:root #screenContent .contactAvatarTrigger .avatar{margin:0!important;flex:none}
+/* Profile photo geometry and album gestures remain owned by the existing motion engine. */
+:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile::before,
+:root body .youAvatarButton.pablicusStoryProfile:not(.contactPhotoButton)::before{content:'';position:absolute;inset:0;border:5px solid #fff;border-radius:50%;box-sizing:border-box;z-index:4;pointer-events:none}
+:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile::after,
+:root body .youAvatarButton.pablicusStoryProfile:not(.contactPhotoButton)::after{content:'';position:absolute;inset:0;border:2px solid #fff;border-radius:50%;box-sizing:border-box;z-index:5;pointer-events:none}
+:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile[data-pablicus-story-ring=active]::after{border-color:var(--ocean-sky,#3BA7F2)}
+/* A separate horizontal action row does not steal text space from the narrow input. */
+:root body #app>.storyChatActions{position:absolute;left:8.333333%;right:8.333333%;bottom:calc(var(--chat-bottom-inset,70px) + 8px);display:flex;flex-direction:row;align-items:center;gap:8px;pointer-events:none;z-index:30;background:none}
+:root body #app.composer-fullscreen>.storyChatActions,:root body #app.canvas-active>.storyChatActions{display:none!important}
+:root body #app>.storyChatActions>#storyChatAction,
+:root body #home>.cleanHomeActions>#newChat#newChat.standardComposeAction{
+ position:relative!important;display:grid!important;place-items:center!important;box-sizing:border-box!important;
+ flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;max-height:44px!important;
+ padding:0!important;margin:0!important;border:1px solid var(--ui-glass-line)!important;border-radius:50%!important;pointer-events:auto;
+ background:color-mix(in srgb,var(--surface) 20%,transparent)!important;box-shadow:inset 0 1px 0 #ffffffa6,0 2px 7px #0002!important;
+ backdrop-filter:blur(8px) saturate(1.35)!important;-webkit-backdrop-filter:blur(8px) saturate(1.35)!important;
+}
+:root body #home>.cleanHomeActions>#newChat#newChat.standardComposeAction::before,:root body #home>.cleanHomeActions>#newChat#newChat.standardComposeAction::after,:root body #storyChatAction::before,:root body #storyChatAction::after{content:none!important}
+:root body #home>.cleanHomeActions>#newChat#newChat.standardComposeAction svg,:root body #storyChatAction svg{width:22px!important;height:22px!important;min-width:22px!important;display:block!important;margin:0!important;color:var(--text)!important}
+:root body #home #mainNav:has(#storyHomeAction:not([hidden])){grid-template-columns:repeat(6,minmax(0,1fr))!important}
+:root body #home #mainNav>#storyHomeAction[hidden],:root body #storyChatAction[hidden]{display:none!important}
+:root body #home #mainNav>#storyHomeAction svg{width:22px!important;height:22px!important;min-width:22px!important;display:block!important;color:var(--text)!important}
+:root body #home #mainNav>#storyHomeAction .storyNavLabel{font-size:11px!important;height:14px!important;line-height:14px!important}
+/* Story composer and viewer are modal: explicit Publish only, never an automatic upload. */
+.pablicusStoryDialog{box-sizing:border-box;width:min(480px,calc(100% - 24px));max-width:calc(100% - 24px);max-height:calc(var(--viewport-height,100dvh) - 24px);margin:auto;padding:16px;border:1px solid var(--line);border-radius:24px;background:var(--surface);color:var(--text);overflow-y:auto;overscroll-behavior:contain;z-index:12000}
+.pablicusStoryDialog::backdrop{background:rgb(0 0 0 / .3)}
+.pablicusStoryDialog .storyHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 12px;border:0;background:none}
+.storyHead h2{font-size:18px;font-weight:500;margin:0;line-height:1.3}
+:root body .pablicusStoryDialog .storyButton{display:grid;place-items:center;box-sizing:border-box;width:44px;min-width:44px;min-height:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--ui-glass-fill)}
+:root body .pablicusStoryDialog .storyButton svg{display:block;width:22px!important;height:22px!important;min-width:22px!important}
+.storyForm{display:flex;flex-direction:column;gap:12px}.storyForm textarea{box-sizing:border-box;width:100%;min-height:88px;border-radius:16px;padding:12px;font:inherit;font-size:17px;resize:vertical;caret-color:var(--r2-accent)}
+.storyForm input[type=file]{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:8px;white-space:normal}
+.storyAudience,.storyStatus{font-size:13px;line-height:1.45;color:var(--muted);margin:4px 0;overflow-wrap:anywhere}
+:root body .storyPublish{min-height:44px;border-radius:22px;background:var(--ocean-sky);color:#171717;border:0;padding:10px 18px;font:inherit}
+.storyPublish:disabled{opacity:.55}.storyMine,.storyDelete{font:inherit;min-height:44px;border-radius:22px}
+.storyPreview:empty{display:none}.storyPreview img,.storyPreview video{display:block;max-width:100%;max-height:240px;margin:auto;border-radius:16px;object-fit:contain}
+.storyViewerStage{min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.storyViewerStage img,.storyViewerStage video{display:block;width:100%;max-height:60dvh;object-fit:contain;border-radius:14px}.storyText{font-size:19px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;align-self:stretch;margin:12px 0}
+.storyViewerActions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:16px}.storyNext svg{transform:rotate(-90deg)}
+@media(prefers-reduced-transparency:reduce){:root body #storyChatAction{background:var(--surface)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+
+/* Owner R2: explicit ring geometry independent from all older glass shadows. */
+:root body #screenContent .contactAvatarTrigger .avatar.pablicusStoryAvatar,
+:root body #app>.chatAvatarDock>#conversationAvatar#conversationAvatar#conversationAvatar{
+ border-width:3px!important;padding:3px!important;box-shadow:0 0 0 1px rgb(20 30 40 / .18),0 2px 5px rgb(0 0 0 / .05)!important;
+}
+:root body #screenContent .contactAvatarTrigger .avatar.pablicusStoryAvatar{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(#fff,#fff) border-box!important}
+:root body #screenContent .contactAvatarTrigger .avatar.pablicusStoryAvatar[data-pablicus-story-ring=active]{background:linear-gradient(#fff,#fff) padding-box,var(--story-ring-active) border-box!important}
+:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile::before{border-width:6px!important}
+:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile::after{
+ border:0!important;padding:3px;background:#fff;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+}
+:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile[data-pablicus-story-ring=active]::after{background:var(--story-ring-active)}
+:root body .storyChooseMedia{display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;border-radius:18px;background:var(--ui-glass-fill);font:inherit}
+:root body .storyChooseMedia>svg{width:22px!important;height:22px!important;min-width:22px!important}
+:root body .storyChooseMedia:disabled{opacity:.55}
+:root body #storyOwnView{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px auto 0;min-height:44px;padding:0 16px;border:1px solid var(--ui-glass-line);border-radius:22px;background:var(--ui-glass-fill);font:inherit}
+:root body #storyOwnView>svg{width:22px!important;height:22px!important;min-width:22px!important}
+.pablicusStoryDialog .storyPublish{font-weight:500}
