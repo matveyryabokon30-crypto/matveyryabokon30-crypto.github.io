@@ -1,0 +1,22 @@
+name: Pablicus Platform R1 smoke
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Pages
+        run: sleep 35
+      - name: Verify public assets
+        run: |
+          set -euo pipefail
+          base='https://matveyryabokon30-crypto.github.io/vision-talk/pablicus'
+          for f in auto-update.js share-invite.js contacts-web.js contacts-web.css calls-webrtc.js sw.js manifest.webmanifest; do
+            code=$(curl -L -sS -o /tmp/body -w '%{http_code}' "$base/$f?sha=${GITHUB_SHA}")
+            test "$code" = 200
+            test -s /tmp/body
+          done
+          curl -L -fsS "$base/sw.js?sha=${GITHUB_SHA}" | grep -q 'pablicus-shell-platform-r1-20260917-final3'
+          curl -L -fsS "$base/manifest.webmanifest?sha=${GITHUB_SHA}" | grep -q 'share_target'
