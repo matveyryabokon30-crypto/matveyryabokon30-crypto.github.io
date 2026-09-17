@@ -1,0 +1,28 @@
+name: Pablicus published release verification
+on:
+  push:
+    branches: [repair/shared-stories-20260917-final]
+    paths: ['verification/pablicus-live-release.py', '.github/workflows/pablicus-live-release-check.yml']
+permissions:
+  contents: read
+jobs:
+  live-check:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install browser
+        run: |
+          python -m pip install playwright==1.57.0 > /tmp/packages.log 2>&1 || { cat /tmp/packages.log; exit 1; }
+          python -m playwright install --with-deps chromium > /tmp/browser.log 2>&1 || { tail -100 /tmp/browser.log; exit 1; }
+      - name: Verify public deployment without a user account
+        run: python verification/pablicus-live-release.py
+      - name: Publication evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pablicus-live-publication-evidence
+          path: live-evidence/
+          retention-days: 3
