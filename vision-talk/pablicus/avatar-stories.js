@@ -138,7 +138,7 @@
    m.busy=true;publish.disabled=pick.disabled=mine.disabled=choose.disabled=true;text.readOnly=true;status.textContent=file&&!uploaded?'Загружаем медиа…':'Публикуем…';
    try{
     if(file&&!uploaded){const path=m.snapshot.sessionUserId+'/'+id+'.'+mimeExt[file.type],r=await client.storage.from('pablicus-story-media').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'0'});if(!valid(m))return;
-     if(r.error&&String(r.error.statusCode)!=='409')throw r.error;uploaded={path,type:file.type.startsWith('video/')?'video':'image'};
+     if(r.error&&String(r.error.statusCode)!=='409')throw r.error;if(file.type.startsWith('image/'))await global.PablicusMediaCache.prepare('pablicus-story-media',path);if(!valid(m))return;uploaded={path,type:file.type.startsWith('video/')?'video':'image'};
     }
     if(!valid(m))return;frozen=frozen||{p_id:id,p_expected_owner:m.snapshot.sessionUserId,p_body:body,p_media:uploaded};
     const r=await client.rpc('pablicus_publish_story',frozen);if(!valid(m))return;if(r.error)throw r.error;

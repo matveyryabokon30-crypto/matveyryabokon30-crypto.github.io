@@ -8,19 +8,19 @@
  const MAX_DISK=128*1024*1024,MAX_MEMORY=48*1024*1024,MAX_FILE=50*1024*1024,MAX_ENTRIES=96;
  const memo=new Map(),signs=new Map(),pending=new Map(),controllers=new Set();
  let owner=null,generation=0,subscribed=false,dbPromise=null,diskWrites=Promise.resolve(),active=0,queue=[],used=0;
- const stats={imageDownloads:0,downloadBytes:0,memoryHits:0,diskHits:0,signRequests:0,coalesced:0,errors:0,peakDownloads:0,evictions:0,diskWrites:0,diskErrors:0,lastDiskError:null};
+ const stats={imageDownloads:0,downloadBytes:0,memoryHits:0,diskHits:0,signRequests:0,coalesced:0,errors:0,peakDownloads:0,evictions:0,diskWrites:0,diskErrors:0,lastDiskError:null,serverPreviews:0,sourceBytesAvoided:0,parallelDiskReads:0,previewFallbacks:0};
  const aborted=()=>new DOMException('Media scope changed','AbortError');
  function diskError(e){stats.diskErrors++;stats.lastDiskError=e?.name||'StorageError';}
  function session(){
   const c=g.PablicusController,s=c?.state?.();
   if(!subscribed&&c?.subscribe){subscribed=true;c.subscribe(next=>{if(next.sessionUserId!==owner)changeOwner(next.sessionUserId||null);});}
   if((s?.sessionUserId||null)!==owner)changeOwner(s?.sessionUserId||null);
-  if(!owner)throw aborted();return{id:owner,generation,client:c.getServices().client};
+  if(!owner)throw aborted();return{id:owner,generation,sessionGeneration:s.sessionGeneration,client:c.getServices().client};
  }
  function valid(s){return s.id===owner&&s.generation===generation&&g.PablicusController?.state().sessionUserId===s.id;}
  function assert(s){if(!valid(s))throw aborted();}
  function changeOwner(id){
-  if(owner===id)return;const previous=owner;owner=id;generation++;
+  if(owner===id)return;const previous=owner;owner=id;generation++;g.PablicusPreviewClient?.clear();
   for(const c of controllers)c.abort();controllers.clear();for(const job of queue)job.reject(aborted());queue=[];
   for(const e of memo.values())URL.revokeObjectURL(e.url);memo.clear();signs.clear();pending.clear();used=0;
   if(previous)diskWrites=diskWrites.catch(()=>{}).then(()=>purge(previous)).catch(diskError);
@@ -44,7 +44,7 @@
    const t=db.transaction(['images','metadata'],'readonly'),r=t.objectStore('images').get(key),m=t.objectStore('metadata').get(key);let v=null,meta=null;
    r.onsuccess=()=>v=r.result;m.onsuccess=()=>meta=m.result;
    t.oncomplete=()=>{if(!valid(s)||!meta||meta.owner!==s.id||meta.until<=Date.now()||!v?.data||!String(v.type).startsWith('image/')){resolve(null);return;}
-    try{const blob=new Blob([v.data],{type:v.type});resolve(blob.size===meta.size?{blob}:null);}catch(e){diskError(e);resolve(null);}};
+    try{const blob=new Blob([v.data],{type:v.type});resolve(blob.size===meta.size?{blob,sourceVersion:meta.sourceVersion||null}:null);}catch(e){diskError(e);resolve(null);}};
    t.onerror=t.onabort=()=>{diskError(t.error);resolve(null);};
   }catch(e){diskError(e);resolve(null);}});
  }
@@ -61,14 +61,14 @@
    t.oncomplete=()=>resolve();t.onerror=t.onabort=()=>{diskError(t.error);resolve();};
   }catch(e){diskError(e);resolve();}});
  }
- function write(key,blob,s,bucket,expiry){
+ function write(key,blob,s,bucket,expiry,sourceVersion=null){
   diskWrites=diskWrites.catch(()=>{}).then(async()=>{
    if(!valid(s))return;const db=await openDB();if(!db||!valid(s))return;
    // ArrayBuffer works independently of WebKit's temporary Blob backing files.
    const data=await blob.arrayBuffer();if(!valid(s))return;
    const until=Math.min(Date.now()+24*3600000,expiry||Infinity);
    const saved=await new Promise(resolve=>{try{const t=db.transaction(['images','metadata'],'readwrite');
-    t.objectStore('images').put({key,data,type:blob.type});t.objectStore('metadata').put({key,owner:s.id,bucket,size:data.byteLength,touched:Date.now(),until});
+    t.objectStore('images').put({key,data,type:blob.type});t.objectStore('metadata').put({key,owner:s.id,bucket,size:data.byteLength,touched:Date.now(),until,sourceVersion});
     t.oncomplete=()=>{stats.diskWrites++;resolve(true);};t.onerror=t.onabort=()=>{diskError(t.error);resolve(false);};
    }catch(e){diskError(e);resolve(false);}});
    if(saved&&valid(s))await prune(db);
@@ -88,7 +88,7 @@
   signs.set(key,{until,promise});if(signs.size>256)signs.delete(signs.keys().next().value);promise.catch(()=>{if(signs.get(key)?.promise===promise)signs.delete(key);});return promise;
  }
  function schedule(s,fn,priority=0){return new Promise((resolve,reject)=>{queue.push({s,fn,resolve,reject,priority});queue.sort((a,b)=>a.priority-b.priority);drain();});}
- function drain(){while(active<3&&queue.length){const job=queue.shift();if(!valid(job.s)){job.reject(aborted());continue;}active++;stats.peakDownloads=Math.max(stats.peakDownloads,active);Promise.resolve().then(job.fn).then(job.resolve,job.reject).finally(()=>{active--;drain();});}}
+ function drain(){while(queue.length&&(active<3||(active<4&&queue[0].priority<0))){const job=queue.shift();if(!valid(job.s)){job.reject(aborted());continue;}active++;stats.peakDownloads=Math.max(stats.peakDownloads,active);Promise.resolve().then(job.fn).then(job.resolve,job.reject).finally(()=>{active--;drain();});}}
  async function download(url,s){
   assert(s);const controller=new AbortController();controllers.add(controller);const timer=setTimeout(()=>controller.abort(),25000);
   try{stats.imageDownloads++;const r=await fetch(url,{signal:controller.signal,credentials:'omit',cache:'default'});assert(s);
@@ -106,23 +106,41 @@
    const small=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.84));canvas.width=canvas.height=1;assert(s);return small&&small.size<blob.size?small:blob;
   }catch(e){assert(s);return blob;}finally{bitmap?.close();if(url)URL.revokeObjectURL(url);}
  }
+ async function imageLease(s,bucket,path,width,ttl,priority){
+  if(width&&g.PablicusPreviewClient){try{return await g.PablicusPreviewClient.lease(s,bucket,path,width,ttl,priority);}catch(e){assert(s);if(e.denied)throw e;stats.previewFallbacks++;}}
+  return sign(s,bucket,path,ttl);
+ }
  function resolve(bucket,path,options={}){
   const s=session();check(bucket,path);const type=options.type||(/\.(?:jpe?g|png|webp|gif|heic|avif)(?:$|\?)/i.test(path)?'image':'other');
   const ttl=Math.min(300,Math.max(30,options.ttl||300)),expiry=Number(options.expiresAt)||Infinity;if(expiry<=Date.now())return Promise.reject(Error('Media expired'));
   if(type!=='image')return sign(s,bucket,path,ttl).then(v=>{assert(s);return v.url;});
-  const width=options.width===0?0:(options.width||1280),variant=width?'image:'+width:'original',key=k(s,bucket,path,variant),cached=hit(key);
+  const width=options.width===0?0:(options.width||1280),variant=width?'image:'+width:'original',key=k(s,bucket,path,variant),cached=hit(key),priority=options.priority||0;
   if(cached){cached.until=Math.min(cached.until,expiry);stats.memoryHits++;return Promise.resolve(cached.url);}
   if(pending.has(key)){stats.coalesced++;return pending.get(key);}
   const job=(async()=>{
-   try{const lease=await sign(s,bucket,path,ttl);assert(s);const until=Math.min(lease.until,expiry),mem=memo.get(key);if(mem){mem.until=until;stats.memoryHits++;return mem.url;}
-    const saved=await read(key,s);if(saved){stats.diskHits++;return remember(key,saved.blob,until,s);}
+   try{
+    // Disk I/O and authorization overlap, but bytes are not exposed before authorization.
+    stats.parallelDiskReads++;const diskRead=read(key,s);diskRead.catch(()=>{});
+    let lease=await imageLease(s,bucket,path,width,ttl,priority);assert(s);
+    const until=Math.min(lease.until,expiry),mem=memo.get(key);if(mem){mem.until=until;stats.memoryHits++;return mem.url;}
+    const saved=await diskRead;assert(s);
+    if(saved&&(!saved.sourceVersion||!lease.sourceVersion||saved.sourceVersion===lease.sourceVersion)){stats.diskHits++;return remember(key,saved.blob,until,s);}
+    if(width&&lease.canPrepare){try{lease=await g.PablicusPreviewClient.build(s,bucket,path,width,priority);assert(s);}catch(e){assert(s);stats.previewFallbacks++;}}
+    if(width&&lease.kind==='preview'){
+     const blob=await schedule(s,async()=>{assert(s);const fresh=lease.until>Date.now()?lease:await imageLease(s,bucket,path,width,ttl,priority);return download(fresh.url,s);},priority);
+     assert(s);stats.serverPreviews++;stats.sourceBytesAvoided+=Math.max(0,(lease.sourceBytes||blob.size)-blob.size);
+     void write(key,blob,s,bucket,expiry,lease.sourceVersion);return remember(key,blob,Math.min(lease.until,expiry),s);
+    }
     const originalKey=k(s,bucket,path,'original'),baseKey=k(s,bucket,path,'bytes');let base=pending.get(baseKey);
-    if(!base){base=(async()=>{const disk=width?await read(originalKey,s):null;if(disk){stats.diskHits++;return disk.blob;}return schedule(s,async()=>{const fresh=lease.until>Date.now()?lease:await sign(s,bucket,path,ttl);const b=await download(fresh.url,s);void write(originalKey,b,s,bucket,expiry);return b;},options.priority||0);})();pending.set(baseKey,base);base.finally(()=>{if(pending.get(baseKey)===base)pending.delete(baseKey);}).catch(()=>{});}else stats.coalesced++;
-    const original=await base;assert(s);const blob=width?await preview(original,width,s):original;assert(s);if(width)void write(key,blob,s,bucket,expiry);return remember(key,blob,until,s);
+    if(!base){base=(async()=>{const disk=width?await read(originalKey,s):null;if(disk&&(!disk.sourceVersion||!lease.sourceVersion||disk.sourceVersion===lease.sourceVersion)){stats.diskHits++;return disk.blob;}
+     return schedule(s,async()=>{const fresh=lease.until>Date.now()?lease:await sign(s,bucket,path,ttl);const b=await download(fresh.url,s);void write(originalKey,b,s,bucket,expiry,lease.sourceVersion);return b;},priority);})();pending.set(baseKey,base);base.finally(()=>{if(pending.get(baseKey)===base)pending.delete(baseKey);}).catch(()=>{});}else stats.coalesced++;
+    const original=await base;assert(s);const blob=width?await preview(original,width,s):original;assert(s);if(width)void write(key,blob,s,bucket,expiry,lease.sourceVersion);return remember(key,blob,Math.min(lease.until,expiry),s);
    }catch(e){stats.errors++;const entry=memo.get(key);if(entry){used-=entry.bytes;URL.revokeObjectURL(entry.url);memo.delete(key);}throw e;}
   })();pending.set(key,job);job.finally(()=>{if(pending.get(key)===job)pending.delete(key);}).catch(()=>{});return job;
  }
+ async function prepare(bucket,path){try{const s=session();check(bucket,path);if(g.PablicusPreviewClient)await g.PablicusPreviewClient.build(s,bucket,path,960,2);}catch{/* Never fail an upload because optional preparation failed. */}}
+
  function peek(bucket,path,options={}){try{const s=session(),width=options.width===0?0:(options.width||1280),e=hit(k(s,bucket,path,width?'image:'+width:'original'));return e?e.url:null;}catch{return null;}}
  function invalidate(bucket,path){const s=session();for(const[key,e]of memo){const[id,b,p]=JSON.parse(key);if(id===s.id&&b===bucket&&p===path){used-=e.bytes;URL.revokeObjectURL(e.url);memo.delete(key);}}for(const key of signs.keys()){const[id,b,p]=JSON.parse(key);if(id===s.id&&b===bucket&&p===path)signs.delete(key);}}
- g.PablicusMediaCache=Object.freeze({resolve,peek,invalidate,stats:()=>({...stats,activeDownloads:active,queuedDownloads:queue.length,memoryEntries:memo.size,memoryBytes:used}),settled:()=>diskWrites,clear(){changeOwner(null);}});
+ g.PablicusMediaCache=Object.freeze({resolve,prepare,peek,invalidate,stats:()=>({...stats,activeDownloads:active,queuedDownloads:queue.length,memoryEntries:memo.size,memoryBytes:used}),settled:()=>diskWrites,clear(){changeOwner(null);}});
 })(window);

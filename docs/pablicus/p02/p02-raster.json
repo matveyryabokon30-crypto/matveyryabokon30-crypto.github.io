@@ -1,0 +1,27 @@
+{
+  "sourceBytes": 13243250,
+  "derivatives": [
+    {
+      "size": 1600,
+      "width": 1600,
+      "height": 1440,
+      "bytes": 1417846
+    },
+    {
+      "size": 960,
+      "width": 960,
+      "height": 864,
+      "bytes": 384732
+    },
+    {
+      "size": 192,
+      "width": 192,
+      "height": 173,
+      "bytes": 2872
+    }
+  ],
+  "elapsedMs": 1723,
+  "testEnvironment": "Deno on CI runner, not hosted Edge CPU measurement",
+  "sourceUnmodified": true,
+  "invalidInputRejected": true
+}

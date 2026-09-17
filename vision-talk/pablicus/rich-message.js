@@ -195,7 +195,8 @@
       try {
         if (typeof options.resolveUrl !== 'function') throw new Error('Media resolver is unavailable');
         const warm = options.peekUrl?.(item.block.path || item.block.assetId || item.block.id, item.block);
-        const resolved = warm || await options.resolveUrl(item.block.path || item.block.assetId || item.block.id, item.block);
+        const box=item.button.getBoundingClientRect();
+        const resolved = warm || await options.resolveUrl(item.block.path || item.block.assetId || item.block.id, item.block,{priority:box.bottom>0&&box.top<innerHeight?0:2});
         if (disposed || !isLiveRow()) return;
         const url = safeResolvedUrl(resolved);
         if (!url) throw new Error('Invalid media URL');

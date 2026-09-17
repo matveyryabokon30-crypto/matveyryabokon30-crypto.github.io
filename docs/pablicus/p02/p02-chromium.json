@@ -1,0 +1,176 @@
+{
+  "engine": "chromium",
+  "passed": 15,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "eight first-screen images use one authorization batch",
+      "pass": true,
+      "details": {
+        "batches": 1,
+        "items": 8
+      }
+    },
+    {
+      "name": "cold screen downloads only server previews, not originals",
+      "pass": true,
+      "details": {
+        "imageDownloads": 8,
+        "downloadBytes": 3077856,
+        "memoryHits": 0,
+        "diskHits": 0,
+        "signRequests": 0,
+        "coalesced": 0,
+        "errors": 0,
+        "peakDownloads": 3,
+        "evictions": 0,
+        "diskWrites": 8,
+        "diskErrors": 0,
+        "lastDiskError": null,
+        "serverPreviews": 8,
+        "sourceBytesAvoided": 102868144,
+        "parallelDiskReads": 8,
+        "previewFallbacks": 0,
+        "activeDownloads": 0,
+        "queuedDownloads": 0,
+        "memoryEntries": 8,
+        "memoryBytes": 3077856
+      }
+    },
+    {
+      "name": "cold image bytes are materially smaller",
+      "pass": true,
+      "details": {
+        "originalBytes": 105946000,
+        "receivedBytes": 3077856
+      }
+    },
+    {
+      "name": "repeat scroll uses no new network transfer",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "warm document start reads disk without image downloads",
+      "pass": true,
+      "details": {
+        "imageDownloads": 0,
+        "downloadBytes": 0,
+        "memoryHits": 0,
+        "diskHits": 8,
+        "signRequests": 0,
+        "coalesced": 0,
+        "errors": 0,
+        "peakDownloads": 0,
+        "evictions": 0,
+        "diskWrites": 0,
+        "diskErrors": 0,
+        "lastDiskError": null,
+        "serverPreviews": 0,
+        "sourceBytesAvoided": 0,
+        "parallelDiskReads": 8,
+        "previewFallbacks": 0,
+        "activeDownloads": 0,
+        "queuedDownloads": 0,
+        "memoryEntries": 8,
+        "memoryBytes": 3077856
+      }
+    },
+    {
+      "name": "warm start still authorizes, once per batch",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "new story is prepared on server before phone transfer",
+      "pass": true,
+      "details": {
+        "width": 1600,
+        "stats": {
+          "imageDownloads": 1,
+          "downloadBytes": 1417846,
+          "memoryHits": 0,
+          "diskHits": 8,
+          "signRequests": 0,
+          "coalesced": 0,
+          "errors": 0,
+          "peakDownloads": 1,
+          "evictions": 0,
+          "diskWrites": 1,
+          "diskErrors": 0,
+          "lastDiskError": null,
+          "serverPreviews": 1,
+          "sourceBytesAvoided": 11825404,
+          "parallelDiskReads": 9,
+          "previewFallbacks": 0,
+          "activeDownloads": 0,
+          "queuedDownloads": 0,
+          "memoryEntries": 9,
+          "memoryBytes": 4495702
+        }
+      }
+    },
+    {
+      "name": "original is not fetched while preparing a new preview",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "revoked permission does not expose persisted image",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "background transfer fixture occupies three slots",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "foreground story bypasses blocked background transfers",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "total image work has a bounded urgent reserve",
+      "pass": true,
+      "details": {
+        "imageDownloads": 5,
+        "downloadBytes": 42565442,
+        "memoryHits": 0,
+        "diskHits": 8,
+        "signRequests": 3,
+        "coalesced": 0,
+        "errors": 1,
+        "peakDownloads": 4,
+        "evictions": 0,
+        "diskWrites": 4,
+        "diskErrors": 0,
+        "lastDiskError": null,
+        "serverPreviews": 2,
+        "sourceBytesAvoided": 23650808,
+        "parallelDiskReads": 14,
+        "previewFallbacks": 0,
+        "activeDownloads": 0,
+        "queuedDownloads": 0,
+        "memoryEntries": 12,
+        "memoryBytes": 45258566
+      }
+    },
+    {
+      "name": "optimization outage falls back to authorized original",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "switching account clears private memory cache",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no uncaught browser errors",
+      "pass": true,
+      "details": []
+    }
+  ],
+  "fixture": "Actual P02 client modules, synthetic ACL responses, real WASM-produced preview files; not owner iPhone"
+}

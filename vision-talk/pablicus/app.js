@@ -2,7 +2,7 @@
    Ordered multimodal messages keep a single server sequence. Shared plans and
    tasks are conversation-scoped. Feed/AI and video transcoding remain separate. */
 (() => {'use strict';
- const URL='https://ctcoqgsztdtsazdiwcmd.supabase.co',KEY='sb_publishable_kMGqZAM2vadfXbBr8r5uzw_l9EiBtIw',BUCKET='message-media',VERSION='P01-R2';
+ const URL='https://ctcoqgsztdtsazdiwcmd.supabase.co',KEY='sb_publishable_kMGqZAM2vadfXbBr8r5uzw_l9EiBtIw',BUCKET='message-media',VERSION='P02';
  const $=x=>document.getElementById(x),el=(tag,cls,text)=>{const n=document.createElement(tag); window.PablicusUI?.prepareControl?.(n);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n};
  const safeGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}},safeSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
  const timeoutFetch=async(u,opts={},ms=25000)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);const abort=()=>c.abort();opts.signal?.addEventListener('abort',abort,{once:true});try{return await fetch(u,{...opts,signal:c.signal})}finally{clearTimeout(t);opts.signal?.removeEventListener('abort',abort)}};
@@ -544,7 +544,7 @@
  }
 
  function renderRichContent(content,local=false,source=null){return PablicusRichMessage.render(content,{inlineVideo:true,
-  resolveUrl:(path,block)=>local?PablicusChat.localAssetUrl(block.assetId):signedUrl(path,{type:block.type,width:960}),
+  resolveUrl:(path,block,hint={})=>local?PablicusChat.localAssetUrl(block.assetId):signedUrl(path,{type:block.type,width:960,priority:hint.priority||0}),
   peekUrl:(path,block)=>local?null:PablicusMediaCache.peek(BUCKET,path,{width:960}),
   openMedia:(block,gallery)=>['image','video'].includes(block.type)?mediaViewer.open((gallery?.items||[block]).map(b=>mediaItem(b,local)),gallery?.index||0):viewAttachment({type:block.type,localAssetId:local?block.assetId:null,attachment_path:block.path,attachment_metadata:{name:block.name,mime_type:block.mime,size_bytes:block.size}}),
   onReply:source?block=>chooseReply(source,source.type==='rich'?block.id:null):undefined,
@@ -621,12 +621,13 @@
   const check=()=>{if(controls?.signal?.aborted||(controls?.isCurrent&&!controls.isCurrent()))throw new DOMException('Разговор изменился','AbortError');};
   check();const id=await pablicusClientId(item.id,m.id),path=cid+'/'+uid+'/'+(richMessageId?richMessageId+'/'+m.id:id)+'/'+attachmentName(f);
   if(await objectExists(path)){check();return{path,id};}check();if(user?.id!==uid)throw Error('Аккаунт изменился');
-  if(f.size<=6*1024*1024){const bytes=await f.file.arrayBuffer();check();if(bytes.byteLength!==f.size)throw Error('Не удалось прочитать полный файл');const r=await sb.storage.from(BUCKET).upload(path,bytes,{contentType:f.type||'application/octet-stream',upsert:false});check();if(r.error&&!await objectExists(path))throw r.error;return{path,id}}
+  if(f.size<=6*1024*1024){const bytes=await f.file.arrayBuffer();check();if(bytes.byteLength!==f.size)throw Error('Не удалось прочитать полный файл');const r=await sb.storage.from(BUCKET).upload(path,bytes,{contentType:f.type||'application/octet-stream',upsert:false});check();if(r.error&&!await objectExists(path))throw r.error;if(f.type?.startsWith('image/')){await PablicusMediaCache.prepare(BUCKET,path);check();}return{path,id}}
   const endpoint=URL.replace('.supabase.co','.storage.supabase.co')+'/storage/v1/upload/resumable';let location=item.parts?.[m.id]?.upload_url;
   const auth=async()=>{check();if(user?.id!==uid)throw Error('Аккаунт изменился');const s=await sb.auth.getSession();check();if(!s.data.session)throw Error('Войдите для продолжения отправки');if(s.data.session.user.id!==uid)throw Error('Аккаунт изменился');return{Authorization:'Bearer '+s.data.session.access_token,apikey:KEY,'Tus-Resumable':'1.0.0'}};
   let offset=0;if(location){const lu=new window.URL(location),eu=new window.URL(endpoint);if(lu.origin!==eu.origin||!lu.pathname.startsWith('/storage/v1/upload/resumable/'))throw Error('Некорректный адрес загрузки');const h=await timeoutFetch(location,{method:'HEAD',headers:await auth(),signal:controls?.signal});if(h.ok)offset=+(h.headers.get('Upload-Offset')||0);else if([404,410].includes(h.status))location=null;else throw Error('Не удалось продолжить загрузку: '+h.status)}
   if(!location){const r=await timeoutFetch(endpoint,{method:'POST',signal:controls?.signal,headers:{...await auth(),'Upload-Length':String(f.size),'Upload-Metadata':[['bucketName',BUCKET],['objectName',path],['contentType',f.type||'application/octet-stream'],['cacheControl','3600']].map(([k,v])=>k+' '+b64(v)).join(',')}});if(!r.ok)throw Error('Ошибка начала загрузки: '+r.status);if(!r.headers.get('Location'))throw Error('Сервер не вернул адрес загрузки');location=new window.URL(r.headers.get('Location'),endpoint).href;if(new window.URL(location).origin!==new window.URL(endpoint).origin)throw Error('Некорректный адрес загрузки');await store.progress(item.id,owner,m.id,{upload_url:location})}
   while(offset<f.size){check();const end=Math.min(offset+6*1024*1024,f.size),r=await timeoutFetch(location,{method:'PATCH',signal:controls?.signal,headers:{...await auth(),'Upload-Offset':String(offset),'Content-Type':'application/offset+octet-stream'},body:await f.file.slice(offset,end).arrayBuffer()},60000);if(!r.ok)throw Error('Загрузка прервана: '+r.status);offset=+(r.headers.get('Upload-Offset')||end);await store.progress(item.id,owner,m.id,{upload_url:location,uploaded:offset})}
+  if(f.type?.startsWith('image/')){await PablicusMediaCache.prepare(BUCKET,path);check();}
   return{path,id};
  }
  async function pump(){if(worker){pumpPending=true;return}if(!user||!navigator.onLine||document.hidden)return;worker=true;const uid=user.id,owner=DraftVault.uid();try{

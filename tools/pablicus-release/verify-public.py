@@ -35,10 +35,10 @@ try:
    browser=getattr(p,engine).launch(headless=True);ctx=browser.new_context();page=ctx.new_page();errors=[]
    page.on('pageerror',lambda e:errors.append(str(e)));page.add_init_script('window.initialNativeFetch=window.fetch;')
    page.goto(BASE,wait_until='domcontentloaded',timeout=45000)
-   page.wait_for_function("window.PablicusDebug?.version==='P01-R2'",timeout=45000)
+   page.wait_for_function("window.PablicusDebug?.version==='P02'",timeout=45000)
    page.wait_for_function('navigator.serviceWorker.controller',timeout=90000);page.wait_for_timeout(6500)
    status=page.evaluate("""async()=>{const worker=navigator.serviceWorker.controller;const result=await new Promise(resolve=>{const ch=new MessageChannel();ch.port1.onmessage=e=>resolve(e.data);worker.postMessage({type:'PABLICUS_RELEASE'},[ch.port2]);setTimeout(()=>resolve(null),3000);});return {worker:result,version:PablicusDebug.version,nativeFetch:fetch===initialNativeFetch,cache:!!window.PablicusMediaCache,manualNotice:!document.getElementById('updateNotice').hidden};}""")
-   record(engine+' cold boot installs and controls with P01-R2',status['worker'] and status['worker']['version']=='pablicus-shell-p01r2-20260917',status)
+   record(engine+' cold boot installs and controls with P02',status['worker'] and status['worker']['version']=='pablicus-shell-p02-20260918',status)
    record(engine+' has explicit cache and no manual prompt',status['nativeFetch'] and status['cache'] and not status['manualNotice'])
    record(engine+' actual public app has no JavaScript exceptions',not errors,errors)
    page.screenshot(path=str(OUT/(engine+'-public-boot.png')));browser.close()
@@ -47,5 +47,5 @@ except Exception as e:
  if not any(not c['pass'] for c in checks):checks.append({'name':'Public verification completed','pass':False,'details':fatal})
  raise
 finally:
- result={'commit':SHA,'release':'P01-R2','passed':sum(x['pass'] for x in checks),'failed':sum(not x['pass'] for x in checks),'checks':checks,'boundary':'Public unauthenticated app boot and byte integrity; owner iPhone is not tested here.','error':fatal}
+ result={'commit':SHA,'release':'P02','passed':sum(x['pass'] for x in checks),'failed':sum(not x['pass'] for x in checks),'checks':checks,'boundary':'Public unauthenticated app boot and byte integrity; owner iPhone is not tested here.','error':fatal}
  (OUT/'public-verification.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))

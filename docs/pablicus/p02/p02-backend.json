@@ -1,0 +1,127 @@
+{
+  "passed": 12,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "endpoint rejects missing user token",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "service credential is not accepted as user identity",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "missing derivative returns authorized original lease",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "real handler builds three private image sizes",
+      "pass": true,
+      "details": {
+        "status": 200,
+        "body": {
+          "bucket": "message-media",
+          "path": "source.jpg",
+          "width": 960,
+          "url": "http://127.0.0.1:38995/storage/v1/object/sign/pablicus-media-previews/cccccccc-cccc-4ccc-8ccc-cccccccccccc/775b6d46a662b6821ab75130845fa093edd80b5326b02cb101b672fed762d10c/960.webp?token=fixture",
+          "kind": "preview",
+          "sourceVersion": "v1",
+          "sourceBytes": 13243250,
+          "expiresIn": 105
+        },
+        "stored": 3
+      }
+    },
+    {
+      "name": "original is fetched once using user authorization",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "subsequent client receives a small derivative",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "repeat preparation reuses derivatives",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "revoked source permission cannot issue preview capability",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "revoked source cannot trigger build",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "originals and source policy were not mutated",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "invalid bucket is rejected",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "batch size is limited",
+      "pass": true,
+      "details": null
+    }
+  ],
+  "fixture": "actual Edge handler + SDK + WASM, isolated local Auth/Storage; no production identity",
+  "downloads": 1,
+  "rpc": 8,
+  "requests": [
+    "GET /auth/v1/user",
+    "GET /auth/v1/user",
+    "POST /rest/v1/rpc/pablicus_media_describe",
+    "POST /storage/v1/object/sign/pablicus-media-previews",
+    "POST /storage/v1/object/sign/message-media/source.jpg",
+    "GET /auth/v1/user",
+    "POST /rest/v1/rpc/pablicus_media_describe",
+    "GET /storage/v1/bucket/pablicus-media-previews",
+    "POST /storage/v1/object/sign/pablicus-media-previews",
+    "GET /storage/v1/object/message-media/source.jpg",
+    "POST /storage/v1/object/pablicus-media-previews/cccccccc-cccc-4ccc-8ccc-cccccccccccc/775b6d46a662b6821ab75130845fa093edd80b5326b02cb101b672fed762d10c/1600.webp",
+    "POST /storage/v1/object/pablicus-media-previews/cccccccc-cccc-4ccc-8ccc-cccccccccccc/775b6d46a662b6821ab75130845fa093edd80b5326b02cb101b672fed762d10c/960.webp",
+    "POST /storage/v1/object/pablicus-media-previews/cccccccc-cccc-4ccc-8ccc-cccccccccccc/775b6d46a662b6821ab75130845fa093edd80b5326b02cb101b672fed762d10c/192.webp",
+    "POST /rest/v1/rpc/pablicus_media_describe",
+    "POST /storage/v1/object/sign/pablicus-media-previews/cccccccc-cccc-4ccc-8ccc-cccccccccccc/775b6d46a662b6821ab75130845fa093edd80b5326b02cb101b672fed762d10c/960.webp",
+    "GET /auth/v1/user",
+    "POST /rest/v1/rpc/pablicus_media_describe",
+    "POST /storage/v1/object/sign/pablicus-media-previews",
+    "GET /auth/v1/user",
+    "POST /rest/v1/rpc/pablicus_media_describe",
+    "POST /storage/v1/object/sign/pablicus-media-previews",
+    "POST /rest/v1/rpc/pablicus_media_describe",
+    "POST /storage/v1/object/sign/pablicus-media-previews/cccccccc-cccc-4ccc-8ccc-cccccccccccc/775b6d46a662b6821ab75130845fa093edd80b5326b02cb101b672fed762d10c/960.webp",
+    "GET /auth/v1/user",
+    "POST /rest/v1/rpc/pablicus_media_describe",
+    "GET /auth/v1/user",
+    "POST /rest/v1/rpc/pablicus_media_describe",
+    "GET /auth/v1/user",
+    "GET /auth/v1/user"
+  ],
+  "storedSizes": [
+    {
+      "size": 1600,
+      "bytes": 1417846
+    },
+    {
+      "size": 960,
+      "bytes": 384732
+    },
+    {
+      "size": 192,
+      "bytes": 2872
+    }
+  ]
+}
