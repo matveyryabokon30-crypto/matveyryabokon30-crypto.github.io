@@ -1,0 +1,33 @@
+name: Pablicus media frame preview
+on:
+  push:
+    branches: [build/pablicus-single-nodes-20260917]
+    paths: ['.github/workflows/pablicus-media-frame-preview.yml']
+permissions:
+  contents: write
+jobs:
+  preview:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 2eac6030d20fcf56ded2d84532b5eada4edb978a
+      - name: Apply byte-verified media-layer correction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('vision-talk/pablicus/stories-v2.css')
+          digest=lambda b:hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          assert digest(p.read_bytes())=='715c48a98b3c5a528134cefd18f06ffcd24b34a0'
+          extra='\n/* Media and caption are independent layers, not implicit grid rows. */\n:root body .storyViewerV3 .storyV3Stage{display:block!important}\n:root body .storyViewerV3 .storyV3Media{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important}\n:root body .storyViewerV3 .storyV3Text{position:absolute!important;z-index:2!important;left:16px!important;right:16px!important;bottom:88px!important;margin:0!important;padding:10px 14px!important;max-height:30%!important;overflow:auto!important;color:#fff!important;background:#12171cb3!important;border-radius:16px!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;font-size:16px!important;line-height:1.4!important}\n'
+          p.write_text(p.read_text()+extra)
+          assert digest(p.read_bytes())=='739d0123288617e3a75d5c8156af2aa2054b30f9'
+          PY
+          git config user.name 'Pablicus preview builder'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vision-talk/pablicus/stories-v2.css
+          git commit -m 'fix(pablicus): keep story media and caption on independent layers'
+          git push origin HEAD:refs/heads/preview/pablicus-single-nodes-20260917-r2
+          git rev-parse HEAD
