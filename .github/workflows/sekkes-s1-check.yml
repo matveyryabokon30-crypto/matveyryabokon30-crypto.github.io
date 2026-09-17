@@ -1,0 +1,128 @@
+name: SEKKES S1 live read-only verification
+on:
+  push:
+    branches: [verify/sekkes-s1-20260918]
+    paths: [.github/workflows/sekkes-s1-check.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 48254f491f6375c4bfc8a964e62f480e53ec7c46
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare verification tools
+        run: |
+          python -m pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium webkit
+          node --check sekkes-v2/assets/ui-s1-1.js
+          node --check sekkes-v2/sw.js
+      - name: Verify the deployed site without user accounts or AI calls
+        run: |
+          mkdir -p sekkes-qa
+          python - <<'PY'
+          import hashlib, json, time, urllib.request
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          base='https://matveyryabokon30-crypto.github.io/sekkes-v2/'
+          build='2026.09.18-s1.1'
+          out=Path('sekkes-qa')
+          report={'build':build,'deployment_commit':'48254f491f6375c4bfc8a964e62f480e53ec7c46','scope':'Live public HTTP and clean-profile desktop Chromium/WebKit mobile emulation, including real service-worker network/offline behavior. No physical iPhone test. No user accounts or AI calls.','checks':[]}
+          def check(name, value, detail=None):
+              report['checks'].append({'name':name,'pass':bool(value),'detail':detail})
+              print(('PASS ' if value else 'FAIL ')+name,flush=True)
+          try:
+              for relative in ['index.html','assets/ui-s1-1.css','assets/ui-s1-1.js','manifest.webmanifest','sw.js','version.json']:
+                  expected=Path('sekkes-v2',relative).read_bytes()
+                  data=b''
+                  last_error=None
+                  for attempt in range(8):
+                      try:
+                          request=urllib.request.Request(base+relative+'?verify='+str(time.time_ns()),headers={'Cache-Control':'no-cache','User-Agent':'SEKKES-read-only-release-check'})
+                          with urllib.request.urlopen(request,timeout=20) as response:
+                              data=response.read()
+                          if data==expected: break
+                      except Exception as exc:
+                          last_error=str(exc)
+                      time.sleep(5)
+                  check('HTTP exact bytes '+relative,data==expected,{'expected_sha256':hashlib.sha256(expected).hexdigest(),'actual_sha256':hashlib.sha256(data).hexdigest(),'last_error':last_error})
+              with sync_playwright() as p:
+                  for engine in ['chromium','webkit']:
+                      errors=[]
+                      browser=getattr(p,engine).launch(headless=True)
+                      context=browser.new_context(viewport={'width':390,'height':844},device_scale_factor=1,is_mobile=True,has_touch=True)
+                      context.add_init_script('''
+                      if (!sessionStorage.getItem('sekkes-qa-seeded')) {
+                        sessionStorage.setItem('sekkes-qa-seeded','1');
+                        window.__seedPromise=Promise.all([
+                          caches.open('pablicus-qa-preserve').then(c=>c.put('/qa-synthetic-only',new Response('synthetic unrelated app cache'))),
+                          caches.open('sekkes-v2-qa-old')
+                        ]);
+                      }
+                      ''')
+                      page=context.new_page()
+                      page.on('pageerror',lambda e: errors.append(str(e)))
+                      page.goto(base+'?verify='+build,wait_until='networkidle',timeout=60000)
+                      page.wait_for_function('navigator.serviceWorker.controller !== null',timeout=30000)
+                      check(engine+': exact build',page.locator('html').get_attribute('data-build')==build)
+                      box=page.locator('#hero').bounding_box()
+                      check(engine+': full bleed',box['x']==0 and box['y']==0 and box['width']==390,box)
+                      cache_names=page.evaluate('caches.keys()')
+                      check(engine+': unrelated cache survives','pablicus-qa-preserve' in cache_names,cache_names)
+                      check(engine+': old own cache removed','sekkes-v2-qa-old' not in cache_names,cache_names)
+                      page.screenshot(path=str(out/(engine+'-home.png')))
+                      page.mouse.move(210,170)
+                      page.mouse.down()
+                      page.mouse.move(210,320,steps=12)
+                      h=page.locator('#hero').bounding_box()['height']
+                      check(engine+': continuous drag before release',510<h<844,h)
+                      page.mouse.move(210,490,steps=12)
+                      page.mouse.up()
+                      page.wait_for_timeout(450)
+                      box=page.locator('#hero').bounding_box()
+                      check(engine+': fullscreen expanded',box['height']==844 and box['width']==390,box)
+                      check(engine+': AI state is honest',page.locator('#aiStateLabel').inner_text()=='AI пока не подключён')
+                      page.screenshot(path=str(out/(engine+'-expanded.png')))
+                      page.get_by_role('button',name='Перейти к текстовому режиму').click()
+                      page.locator('#draft').fill('Synthetic release check')
+                      page.get_by_role('button',name='Отправить сообщение',exact=True).click()
+                      check(engine+': no simulated AI send','никуда не отправлен' in page.locator('#toast').inner_text())
+                      page.get_by_role('button',name='Перейти к голосовому режиму').click()
+                      check(engine+': draft retained',page.locator('#draft').input_value()=='Synthetic release check')
+                      page.locator('#draft').evaluate('(e)=>{e.value=""}')
+                      page.get_by_role('button',name='Свернуть AI',exact=True).click()
+                      page.wait_for_timeout(450)
+                      page.get_by_role('button',name='Открыть Игры',exact=True).click()
+                      check(engine+': games route',page.locator('#games').is_visible())
+                      page.get_by_role('button',name='На главную',exact=True).click()
+                      page.get_by_role('button',name='Открыть Живой мир',exact=True).click()
+                      check(engine+': world route',page.locator('#world').is_visible())
+                      page.get_by_role('button',name='На главную',exact=True).click()
+                      context.set_offline(True)
+                      page.goto(base+'?offline-smoke=1',wait_until='load',timeout=30000)
+                      page.wait_for_function('document.querySelector("#app").dataset.route === "home"',timeout=15000)
+                      check(engine+': own cached shell offline',page.locator('html').get_attribute('data-build')==build and page.locator('#hero').bounding_box()['width']==390)
+                      check(engine+': no JavaScript errors',not errors,errors)
+                      context.close()
+                      browser.close()
+          except Exception as exc:
+              check('verification completed without exception',False,str(exc))
+          finally:
+              report['passed']=sum(x['pass'] for x in report['checks'])
+              report['failed']=sum(not x['pass'] for x in report['checks'])
+              out.joinpath('LIVE_CHECK_RESULTS.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          raise SystemExit(1 if report['failed'] else 0)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sekkes-s1-live-verification
+          path: sekkes-qa/
+          if-no-files-found: error
+          retention-days: 7
