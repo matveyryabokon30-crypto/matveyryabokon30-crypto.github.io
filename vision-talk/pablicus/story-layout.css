@@ -1,0 +1,169 @@
+/* Story layout R8. A fixed app frame, one list scroller, one continuous header.
+   Circle geometry: 3% outer ring + 2% white gap per side, 90% photo diameter. */
+:root {
+ --avatar-ring-active:var(--ob-story-ring,linear-gradient(135deg,#3BA7F2,#7FE7D6));
+ --story-expanded-diameter:72px;
+ --story-compact-diameter:38px;
+}
+/* IDs deliberately scope this bridge above the legacy glass component rules. */
+:root body :is(#home #screenContent .pbAvatarUniform,
+ #home #mainNav .pbAvatarUniform,
+ #app #conversationAvatar#conversationAvatar#conversationAvatar.pbAvatarUniform,
+ #home #storyShelfV3 .pbAvatarUniform,
+ .contactPage .pbAvatarUniform,
+ .storyViewerV3 .pbAvatarUniform)[data-avatar-shape="circle"] {
+ box-sizing:border-box!important; border:0!important; padding:0!important;
+ border-radius:50%!important; background:#fff!important;
+ box-shadow:0 0 0 .5px rgb(30 52 66 / .12)!important;
+ overflow:hidden!important; isolation:isolate;
+ backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+:root body :is(#home #screenContent .pbAvatarUniform,
+ #home #mainNav .pbAvatarUniform,
+ #app #conversationAvatar#conversationAvatar#conversationAvatar.pbAvatarUniform,
+ #home #storyShelfV3 .pbAvatarUniform,
+ .contactPage .pbAvatarUniform,
+ .storyViewerV3 .pbAvatarUniform)[data-avatar-shape="circle"][data-pablicus-story-ring="active"] {
+ /* 94% radius leaves an outer band of 3% of the full diameter. */
+ background:radial-gradient(circle closest-side,#fff 0 94%,transparent 94.5%),var(--avatar-ring-active)!important;
+}
+:root body :is(#home #screenContent .pbAvatarUniform,
+ #home #mainNav .pbAvatarUniform,
+ #app #conversationAvatar#conversationAvatar#conversationAvatar.pbAvatarUniform,
+ #home #storyShelfV3 .pbAvatarUniform,
+ .contactPage .pbAvatarUniform,
+ .storyViewerV3 .pbAvatarUniform)[data-avatar-shape="circle"]::before,
+:root body :is(#home #screenContent .pbAvatarUniform,
+ #home #mainNav .pbAvatarUniform,
+ #app #conversationAvatar#conversationAvatar#conversationAvatar.pbAvatarUniform,
+ #home #storyShelfV3 .pbAvatarUniform,
+ .contactPage .pbAvatarUniform,
+ .storyViewerV3 .pbAvatarUniform)[data-avatar-shape="circle"]::after {content:none!important;}
+:root body :is(#home #screenContent .pbAvatarUniform,
+ #home #mainNav .pbAvatarUniform,
+ #app #conversationAvatar#conversationAvatar#conversationAvatar.pbAvatarUniform,
+ #home #storyShelfV3 .pbAvatarUniform,
+ .contactPage .pbAvatarUniform,
+ .storyViewerV3 .pbAvatarUniform)[data-avatar-shape="circle"]>img,
+:root body .contactPage .pbAvatarUniform[data-avatar-shape="circle"]>.profilePhotoPlane,
+:root body .contactPage .pbAvatarUniform[data-avatar-shape="circle"]>.contactFace {
+ position:absolute!important;inset:5%!important;box-sizing:border-box!important;
+ width:90%!important;height:90%!important;min-width:0!important;min-height:0!important;
+ max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;
+ border:0!important;border-radius:50%!important;object-fit:cover!important;
+ overflow:hidden!important;
+}
+/* Album rectangles are NOT avatars. Let the existing photo engine own them. */
+:root body .contactPage .pbAvatarUniform[data-avatar-shape="album"] {border:0!important;padding:0!important;box-shadow:none!important;}
+:root body .contactPage .pbAvatarUniform[data-avatar-shape="album"]::before,
+:root body .contactPage .pbAvatarUniform[data-avatar-shape="album"]::after {content:none!important;}
+:root body #home #mainNav .profileNavAvatar {position:relative!important;flex:0 0 38px!important;width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;max-width:38px!important;max-height:38px!important;}
+:root body #home #mainNav .profileNavLabel {display:none!important;}
+:root body #home #screenContent .contactAvatarTrigger {overflow:visible!important;}
+:root body #home #screenContent .avatar.pbAvatarUniform {position:relative!important;}
+
+/* Do not move #home, the bottom dock or the viewport in response to a gesture. */
+:root body #home.storiesV3Chats {
+ box-sizing:border-box!important;overflow:clip!important;
+ padding-bottom:0!important;
+}
+:root body #home.storiesV3Chats #workspace {
+ position:relative!important;display:flex;flex-direction:column;
+ flex:1 1 0!important;min-height:0!important;height:auto!important;max-height:100%!important;
+ width:100%!important;box-sizing:border-box!important;
+ overflow:clip!important;padding:0!important;overscroll-behavior:none!important;
+ scroll-behavior:auto!important;
+}
+:root body #home.storiesV3Chats #workspace[hidden] {display:none!important;}
+:root body #home.storiesV3Chats #screenContent {
+ position:relative!important;flex:1 1 0!important;min-height:0!important;height:auto!important;
+ width:100%!important;box-sizing:border-box!important;
+ overflow-x:hidden!important;overflow-y:auto!important;
+ -webkit-overflow-scrolling:touch;overscroll-behavior:contain!important;
+ overflow-anchor:none!important;touch-action:pan-y pinch-zoom;
+ padding:8px 0 calc(var(--ui-dock-height,64px) + max(8px,var(--safe-area-bottom)) + 24px)!important;
+ scroll-padding-bottom:100px;scroll-behavior:auto!important;
+}
+:root body #home.storiesV3Chats .workspaceTop,
+:root body #home.storiesV3Chats :is(#searchChats,#chatUpperToggle,#chatUpperPanel,#chatFilters),
+#storyOwnView {display:none!important;}
+
+/* Expanded/compact views share this always-visible host, never the hidden homeHeader. */
+:root body #home #workspace #storyShelfV3 {
+ --shelf-height:266px;--shelf-open:1;--shelf-fold:0;
+ --shelf-shift:0px;--shelf-scale:1;
+ position:relative!important;top:auto!important;flex:0 0 var(--shelf-height)!important;
+ box-sizing:border-box!important;width:100%!important;height:var(--shelf-height)!important;
+ min-height:0!important;padding:0!important;margin:0!important;z-index:25!important;
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+ overflow:clip!important;transition:none!important;touch-action:pan-x pinch-zoom;
+}
+:root body #home #storyShelfV3 .storyShelfRailV3 {
+ position:absolute!important;left:0;right:0;top:0;
+ box-sizing:border-box!important;display:flex!important;align-items:flex-start!important;
+ justify-content:flex-start!important;width:100%!important;height:124px!important;
+ padding:18px 16px 10px!important;gap:12px!important;
+ overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;
+ opacity:var(--shelf-open)!important;
+ transform:translateY(var(--shelf-shift)) scale(var(--shelf-scale))!important;
+ transform-origin:50% 0;transition:none!important;touch-action:pan-x pinch-zoom;
+}
+:root body #home #storyShelfV3 .storyShelfRailV3::-webkit-scrollbar{display:none;}
+:root body #home #storyShelfV3 .storyShelfItem {
+ box-sizing:border-box!important;flex:0 0 var(--story-expanded-diameter)!important;
+ width:var(--story-expanded-diameter)!important;min-width:var(--story-expanded-diameter)!important;
+ max-width:var(--story-expanded-diameter)!important;height:96px!important;min-height:0!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;
+ padding:0!important;margin:0!important;gap:6px!important;
+ color:var(--text)!important;background:none!important;border:0!important;
+ border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important;
+}
+:root body #home #storyShelfV3 .storyShelfAvatar {
+ position:relative!important;display:block!important;flex:none!important;
+ width:var(--story-expanded-diameter)!important;height:var(--story-expanded-diameter)!important;
+ min-width:var(--story-expanded-diameter)!important;min-height:var(--story-expanded-diameter)!important;
+}
+:root body #home #storyShelfV3 .storyShelfLabel {
+ box-sizing:border-box!important;display:block!important;flex:none!important;
+ width:var(--story-expanded-diameter)!important;max-width:var(--story-expanded-diameter)!important;
+ font-size:12px!important;line-height:16px!important;text-align:center!important;
+ overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;
+}
+:root body #home #storyShelfV3 .storyPetCard {
+ position:absolute!important;top:128px!important;left:14px!important;right:14px!important;
+ width:auto!important;height:128px!important;margin:0!important;
+ opacity:var(--shelf-open)!important;transform:translateY(var(--shelf-shift));
+ pointer-events:none;
+}
+:root body #home #storyShelfV3 #storyShelfCompact {
+ position:absolute!important;left:0!important;right:0!important;top:6px!important;
+ height:46px!important;width:100%!important;display:flex!important;
+ align-items:center!important;justify-content:center!important;gap:0!important;
+ opacity:var(--shelf-fold)!important;transform:none!important;
+ padding:0!important;background:none!important;box-shadow:none!important;
+ z-index:2!important;transition:none!important;
+}
+:root body #home #storyShelfV3 .storyCompactItem {
+ display:grid!important;place-items:center!important;box-sizing:border-box!important;
+ flex:0 0 38px!important;width:38px!important;height:44px!important;
+ min-width:38px!important;min-height:44px!important;
+ padding:0!important;margin:0 0 0 -10px!important;overflow:visible!important;
+ background:none!important;box-shadow:none!important;border:0!important;position:relative;
+}
+:root body #home #storyShelfV3 .storyCompactItem:first-child {margin-left:0!important;}
+:root body #home #storyShelfV3 .storyCompactAvatar {
+ display:block!important;position:relative!important;flex:none!important;
+ width:var(--story-compact-diameter)!important;height:var(--story-compact-diameter)!important;
+ min-width:var(--story-compact-diameter)!important;min-height:var(--story-compact-diameter)!important;
+}
+:root body #home #storyShelfV3 [inert] {pointer-events:none!important;}
+:root body #home #storyShelfV3 :is(.storyCompactItem,.storyShelfItem):focus-visible {outline:2px solid var(--ocean-sky,#3BA7F2)!important;outline-offset:3px;}
+@media (max-height:600px){
+ :root body #home #storyShelfV3 .storyPetCard {height:78px!important;}
+ :root body #home #storyShelfV3 .storyPetAnimal {height:58px;width:58px;font-size:38px;flex:none;}
+}
+@media (max-width:390px){:root body #home #storyShelfV3 .storyShelfRailV3{gap:10px!important;}}
+@media (max-height:600px){
+ :root body #home.storiesV3Chats #screenContent {padding-top:4px!important;padding-bottom:calc(var(--ui-dock-height,64px) + max(8px,var(--safe-area-bottom)) + 2px)!important;}
+}
