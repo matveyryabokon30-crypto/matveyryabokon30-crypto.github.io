@@ -53,6 +53,8 @@ jobs:
           im.save('results/fixtures/original.jpg',quality=99,subsampling=0)
           PY
           deno run --allow-read --allow-write --allow-env --allow-net tools/pablicus-p02/raster-test.ts
+      - name: Actual backend authorization and derivative integration on isolated fixtures
+        run: deno run --allow-read --allow-write --allow-env --allow-net tools/pablicus-p02/backend-test.ts
       - name: Media and complete application regression
         shell: bash
         run: |
