@@ -48,3 +48,8 @@
 :root body .storyViewerV3 [hidden]{display:none!important}
 
 :root body .storyViewerV3 svg{stroke-linecap:round!important;stroke-linejoin:round!important}
+
+/* Media and caption are independent layers, not implicit grid rows. */
+:root body .storyViewerV3 .storyV3Stage{display:block!important}
+:root body .storyViewerV3 .storyV3Media{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important}
+:root body .storyViewerV3 .storyV3Text{position:absolute!important;z-index:2!important;left:16px!important;right:16px!important;bottom:88px!important;margin:0!important;padding:10px 14px!important;max-height:30%!important;overflow:auto!important;color:#fff!important;background:#12171cb3!important;border-radius:16px!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;font-size:16px!important;line-height:1.4!important}
