@@ -102,3 +102,58 @@
 :root #home.youMotionActive .youContent{padding-bottom:calc(var(--ui-dock-height) + max(8px,var(--safe-area-bottom)) + 20px)}
 /* Respect the system transparency preference; no full-screen haze returns. */
 @media(prefers-reduced-transparency:reduce){:root{--ui-glass-fill:var(--surface);--ui-glass-input:var(--surface)}}
+
+/* Clean top 2.0. No full-width header surfaces. Local glass only. */
+:root { --clean-composer-width:83.333333%; --clean-composer-max:640px; }
+:root body #app>header,:root body #home>.homeHeader{
+ display:none!important;height:0!important;min-height:0!important;max-height:0!important;
+ padding:0!important;margin:0!important;border:0!important;background:none!important;
+ box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+:root body #app,:root body #app.typing{--head:0px!important}
+:root body #app.canvas-active{grid-template-rows:0 0 0 minmax(0,1fr) auto!important}
+:root body :is(.chatEdgeFade,.contactEdgeFade){display:none!important;visibility:hidden!important;background:none!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;mask:none!important;-webkit-mask:none!important}
+:root body :is(.contactTop,.youMotionTop,.pcfTop,.profilePhotosManagerBar,.peopleHeader,.botsHeader,.dialogHead,.pclHeader,.r2PanelHead){background:transparent!important;background-image:none!important;border-bottom-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root body :is(#home,#app,.homeHeader,.contactTop,.youMotionTop,.pcfTop,.profilePhotosManagerBar,.peopleHeader,.botsHeader)::before,
+:root body :is(#home,#app,.homeHeader,.contactTop,.youMotionTop,.pcfTop,.profilePhotosManagerBar,.peopleHeader,.botsHeader)::after{content:none!important}
+/* Restrict the input itself, not the full-width footer that anchors its rail. */
+:root body #app #composer{background:none!important;background-image:none!important;box-shadow:none!important;border:0!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root body #app #composer #composeBox.r2Composer:not(.r2Fullscreen){width:var(--clean-composer-width)!important;max-width:var(--clean-composer-max)!important;min-width:0!important;margin-inline:auto!important}
+:root body #app #composer{padding-inline:0!important}
+:root body #app #composer #replyDraft{width:var(--clean-composer-width);max-width:var(--clean-composer-max);margin-inline:auto}
+:root body #app.composer-fullscreen #composer #composeBox.r2Composer{width:100%!important;max-width:none!important;margin:0!important}
+/* Center the jump control relative to the chat viewport, not the side dock. */
+:root body #app:not(.canvas-active) #new{left:50%!important;right:auto!important;transform:translateX(-50%)!important;bottom:calc(var(--chat-bottom-inset,70px) + 8px)!important}
+/* Seven navigation/actions plus the retained contact-card shortcut. */
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock{isolation:auto!important;gap:8px!important;max-height:var(--glass-rail-room,408px)!important}
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock>button,
+:root body #home>.cleanHomeActions>button{
+ position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;
+ box-sizing:border-box!important;flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;min-height:44px!important;max-height:44px!important;
+ padding:0!important;margin:0!important;border:1px solid color-mix(in srgb,var(--text) 16%,transparent)!important;border-radius:50%!important;
+ color:var(--text)!important;background:color-mix(in srgb,var(--surface) 20%,transparent)!important;
+ box-shadow:inset 0 1px 0 rgb(255 255 255 / .65),inset 0 -1px 0 rgb(0 0 0 / .06),0 2px 7px rgb(0 0 0 / .09)!important;
+ backdrop-filter:blur(8px) saturate(1.35)!important;-webkit-backdrop-filter:blur(8px) saturate(1.35)!important;
+ font-size:0!important;line-height:0!important;overflow:hidden!important;
+}
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock>button::before,
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock>button::after,
+:root body #home>.cleanHomeActions>button::before,:root body #home>.cleanHomeActions>button::after{content:none!important}
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock>button svg,
+:root body #home>.cleanHomeActions>button svg{width:22px!important;height:22px!important;min-width:22px!important;display:block!important;margin:0!important;color:var(--text)!important;flex:none!important}
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock>button[hidden],:root body #home>.cleanHomeActions>button[hidden]{display:none!important}
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock>button[aria-expanded=true]{border-color:var(--ob-link)!important}
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock .r2PillFrame{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+/* Root-page actions stay usable without restoring a top bar or title capsule. */
+:root body #home>.cleanHomeActions{position:absolute;right:max(12px,var(--safe-area-right));bottom:calc(var(--ui-dock-height) + max(8px,var(--safe-area-bottom)) + 12px);display:flex;flex-direction:column;gap:8px;z-index:51;pointer-events:none;background:none}
+:root body #home>.cleanHomeActions>button{pointer-events:auto}
+/* Canvas still needs its navigation; the composer adapter itself is not editable here. */
+:root body #app.canvas-active #composer #composeBox>.r2SideDock{display:flex!important;pointer-events:auto}
+:root body #app.canvas-active #composer #composeBox>.r2SideDock>.r2FunctionPill,
+:root body #app.canvas-active #composer #composeBox>.r2SideDock>.r2AI{display:none!important}
+@media(prefers-reduced-transparency:reduce){
+ :root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock>button,:root body #home>.cleanHomeActions>button{background:var(--surface)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
+
+/* A backdrop on the editor would isolate the outside rail from chat pixels. */
+:root body #app #composer #composeBox#composeBox.r2Composer{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
