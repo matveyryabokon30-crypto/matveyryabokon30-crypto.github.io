@@ -31,17 +31,18 @@ jobs:
           git diff --stat
       - name: Install test browsers
         run: |
-          python -m pip install playwright==1.57.0
+          python -m pip install playwright==1.57.0 pillow
           python -m playwright install --with-deps chromium webkit
       - name: Real browser network and storage regression
         shell: bash
         run: |
           set +e
-          python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --baseline .p01r2-baseline/vision-talk/pablicus --engine chromium
-          chrome=$?
-          python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --baseline .p01r2-baseline/vision-talk/pablicus --engine webkit
-          webkit=$?
-          test "$chrome" = 0 && test "$webkit" = 0
+          failed=0
+          for engine in chromium webkit; do
+            python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --baseline .p01r2-baseline/vision-talk/pablicus --engine "$engine" || failed=1
+            python tools/pablicus-p01r2/shell.py --root vision-talk/pablicus --engine "$engine" || failed=1
+          done
+          exit "$failed"
       - name: Save reproducible evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -50,11 +51,13 @@ jobs:
           path: |
             results/
             vision-talk/pablicus/release-p01r2.json
+            tools/pablicus-p01r2/
           retention-days: 14
-      - name: Save tested runtime
+      - name: Save candidate runtime for inspection
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: p01r2-tested-runtime
+          name: p01r2-candidate-runtime
           path: vision-talk/pablicus/
           retention-days: 14
       - name: Record tested candidate on feature branch only
