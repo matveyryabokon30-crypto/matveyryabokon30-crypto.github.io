@@ -1,0 +1,60 @@
+name: Assemble Pablicus single-node preview
+on:
+  push:
+    branches: [build/pablicus-single-nodes-20260917]
+    paths: ['.github/pablicus-single-nodes.json', '.github/workflows/pablicus-single-nodes-preview.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Materialize exact reviewed browser files into isolated preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,subprocess,hashlib,base64,urllib.request,os,re
+          from pathlib import Path
+          spec=json.loads(Path('.github/pablicus-single-nodes.json').read_text())
+          assert spec['baseline']=='92a0b55acb37334aa71c8699d13d09b8ce7e897c'
+          assert spec['candidate_branch']=='preview/pablicus-single-nodes-20260917'
+          expected={'stories-v3-core.js','stories-v2.css','chat.js','chat-list-view.js','avatar-stories.js','index.html','profile-appearance.js','sw.js'}
+          assert {x['path'] for x in spec['changes']}==expected
+          digest=lambda b:hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          subprocess.run(['git','checkout','--detach',spec['baseline']],check=True)
+          root=Path('vision-talk/pablicus');original_sw=(root/'sw.js').read_text()
+          for change in spec['changes']:
+              path=root/change['path'];old=path.read_bytes();assert digest(old)==change['old'],change['path']
+              if 'blob' in change:
+                  u='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/git/blobs/'+change['blob']
+                  req=urllib.request.Request(u,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+                  with urllib.request.urlopen(req,timeout=30) as response: data=json.load(response)
+                  new=base64.b64decode(data['content'])
+              else:
+                  text=old.decode()
+                  for before,after in change['replace']:
+                      assert text.count(before)==1,(change['path'],'ambiguous patch')
+                      text=text.replace(before,after,1)
+                  new=text.encode()
+              assert digest(new)==change['new'],(change['path'],'new hash')
+              path.write_bytes(new)
+          clean=lambda text:re.sub(r"const VERSION='[^']+';",'',text)
+          assert clean(original_sw)==clean((root/'sw.js').read_text()),'Worker handlers changed'
+          changed=set(subprocess.check_output(['git','diff','--name-only']).decode().splitlines())
+          assert changed=={'vision-talk/pablicus/'+n for n in expected},changed
+          for name in expected:
+              if name.endswith('.js'):subprocess.run(['node','--check',str(root/name)],check=True)
+          subprocess.run(['git','config','user.name','Pablicus preview builder'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','--',*sorted(changed)],check=True)
+          subprocess.run(['git','commit','-m','fix(pablicus): preserve story nodes during continuous header morph'],check=True)
+          subprocess.run(['git','push','origin','HEAD:refs/heads/'+spec['candidate_branch']],check=True)
+          print('PREVIEW_COMMIT='+subprocess.check_output(['git','rev-parse','HEAD']).decode().strip())
+          print('MAIN_NOT_CHANGED; WORKER_HANDLERS_UNCHANGED; RUNTIME_FILES=8')
+          PY
