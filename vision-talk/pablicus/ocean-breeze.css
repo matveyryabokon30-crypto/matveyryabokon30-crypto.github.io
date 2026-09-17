@@ -1,0 +1,189 @@
+/* Ocean Breeze v1.2. Scope: messages/voice, story rings, icon controls and text actions.
+   Page backgrounds, cards, headings, form content and informational text stay achromatic.
+   No layout, type sizing, gesture, media filter, opacity or animation changes. */
+html,body,#home,#app,.stage{background-color:var(--bg);color:var(--text)}
+/* Do not color a whole settings/search/list row because it reuses a message variable. */
+#workspace #searchChats,.chatUpperToggle,#home .setting{background:var(--soft);color:var(--text)}
+:root :is(.avatar,.botAvatar,.pcfAvatar,.youAvatar,.contactFace){background:var(--soft);color:var(--muted)}
+:root :is(.youInfo,.contactInfo,.contactPost,.botCard,.botRecord,.scenarioCard,.factoryProjectCard){background-color:var(--surface);color:var(--text);border-color:var(--line)}
+:root :is(.scenarioStart,.scenarioNotice,.scenarioOption,.factoryStatus,.factoryStatus.ready,.factoryReady,.factoryModuleState,.factoryPlanModule.available .factoryModuleState,.factoryPlanModule.integration_required .factoryModuleState,.factoryPlanModule.unregistered .factoryModuleState,.factoryPlanStatus,.factoryPlanStatus.ready,.factoryPlanStatus.failed){background:var(--soft);color:var(--text)}
+:root :is(.youInfoLabel,.contactLabel,.contactHint,.contactField,.youMuted,.previewText,.factoryStatus small,header small){color:var(--muted)}
+:root :is(.youInfoValue,.contactValue,.contactField input,.contactField textarea,.youField input,.youField textarea,.chatText strong){color:var(--text)}
+:root :is(.youError,.profilePhotoError,#loginError,.workspaceEditorNotice,.richMissing p,.richRecordingTime,#saveState,.pass,.fail,#fatal){color:var(--text)}
+:root :is(.richMissing){border-color:var(--line)!important}
+:root :is(#queueError,.factoryNotice){background:var(--soft);color:var(--text)}
+/* The text-entry canvas is neutral; only its action controls carry color. */
+:root :is(#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer){--r2-composer-base:var(--r2-shell);--r2-composer-base-top:var(--surface);--r2-toolbar-ink:var(--text)}
+:root :is(.r2Composer .r2PillFrame){background:var(--surface);color:var(--text);border-color:var(--line)}
+:root :is(.r2Composer)::before{background:var(--surface)!important}
+:root :is(.r2Composer .r2FunctionPill){color:var(--text)}
+:root :is(input,textarea,select){caret-color:var(--text)}
+/* Only actual text actions get blue type, never names or normal body copy. */
+:root :is(a[href],.textBtn,.pcfAction,.pcfQr,.contactTextButton,.youPage .youTextAction,.contactTop .contactEdit,.contactTop .contactSave,.contactTop .contactCancel){color:var(--ob-link)}
+:root :is(.youButton,.contactButton,.publicTopIcon,.publicSearchBack,.r2IconButton,.r2LabelButton,.pccButton,.pthButton,.pcfAction,.pmmAction,.chatActionButtons button,.setting) > svg,
+:root :is(#home #newChat,#profileSettings,#profileBack,#chatBack,#chatLibraryOpen,#reportBtn,#new,.youMotionSettings,.richAudioReply){color:var(--ob-link)!important}
+:root :is(.youPage .contactActions>.youButton,.contactPage .contactActions>.contactButton){background:var(--surface);color:var(--text);border-color:var(--line)}
+:root :is(#home #mainNav .selected){color:var(--ob-link);background:transparent}
+:root :is(#chatFilters .selected,#chatViewTabs [aria-selected=true],.youTabs [aria-selected=true],.contactTabs .contactButton[aria-selected=true],.pclTab[aria-selected=true]){color:var(--ob-link)}
+:root :is(.solid,.primary,#send,.pcfPrimary,.youPage .youPrimary,.youQrCard .youPrimary,.contactPage .contactSave){background:var(--ocean-sky)!important;color:var(--ob-on-sky)!important;border-color:var(--ocean-sky)!important}
+:root :is(.unread,.r2PillCount,.r2Action[data-primary=true]){background:var(--ocean-sky);color:var(--ob-on-sky)}
+:root :is(.pcfToggle input:checked+i,.pcfPickPerson.selected .pcfCheck){background:var(--ocean-sky);border-color:var(--ocean-sky)}
+:root :is(button:focus-visible,a[href]:focus-visible){outline-color:var(--ob-link)}
+/* A story ring can use this token only when a real story state is provided upstream.
+   This stylesheet does not invent stories or color ordinary avatar placeholders. */
+[data-pablicus-story-ring="unread"]{border-color:var(--ocean-sky);background-image:var(--ob-story-ring)}
+[data-pablicus-story-ring="read"]{border-color:var(--line);background-image:none}
+/* Text and voice bubbles: blue/ice fills with BLACK body text (never blue type). */
+#app .row .bubble{--text:var(--ob-message-ink);--muted:var(--ob-message-muted);--accent:var(--ocean-primary);--incoming:var(--ob-message-in);--outgoing:var(--ob-message-out);color:var(--ob-message-ink)!important}
+:root #app .row:not(.mine) .bubble:not(:has(.richMessageHasMedia,.mediaOpen)),
+:root #app .row:not(.mine) .bubble .richMessage>.richText,
+:root #app .row:not(.mine) .bubble .richMessage>.richMedia-audio{background:var(--ob-message-in)!important;color:var(--ob-message-ink)!important}
+:root #app .mine .bubble:not(:has(.richMessageHasMedia,.mediaOpen)),
+:root #app .mine .bubble .richMessage>.richText,
+:root #app .mine .bubble .richMessage>.richMedia-audio,
+:root #app .mine .bubble:has(.mediaOpen)>.text:not(:empty){background:var(--ob-message-out)!important;color:var(--ob-message-ink)!important}
+:root #app .row .bubble>.meta{color:var(--ob-message-muted)!important}
+:root #app .row .bubble .replyQuote strong{color:var(--ob-message-ink)}
+:root #app .row .bubble a[href]{color:var(--ocean-primary)}
+:root #app .richAudioPlay{background:#FFFFFF;color:var(--ob-message-ink)}
+:root #app .messageReceipt[data-message-status=read]{color:var(--ocean-primary)}
+:root :is(.botBubble.me){background:var(--ob-message-out);color:var(--ob-message-ink)}
+:root :is(.botBubble.bot){background:var(--ob-message-in);color:var(--ob-message-ink)}
+/* Auxiliary palette is restricted to actionable destructive/record controls. */
+:root :is(button.danger,.pmmDanger,#app #pop .destructive,.chatActionDanger,[data-chat-action=delete],.selectionAction[data-selection-action=delete]){color:var(--ob-danger)}
+:root :is(.chatActionButtons .chatActionDanger){background:var(--ob-danger-fill)}
+:root :is(#composer #richVoice.is-recording,.workspaceEditor .workspaceEditorVoice.is-recording){background:var(--ob-danger-fill);color:var(--ob-danger)}
+
+/* Auxiliary accents are ACTIVE, but only on real buttons/pictograms. */
+:root{--aux-purple:#7C3AED;--aux-cyan:#22D3EE;--aux-plum:#4D3A4D;--aux-rose:#BE5CA9;--aux-pink:#D59CC5;--aux-apple-blue:#007AFF}
+/* Noninteractive blocks and placeholder artwork stay grayscale. */
+:root :is(.youPage .youTile,.youEmpty,.contactPost,.profileCard,.pcfPhoneMock,.pcfPhoneMock>div,.pcfChannelGraphic>i,.pcfChannelGraphic>b){background:var(--surface);color:var(--text);border-color:var(--line)}
+:root :is(.youEmpty>svg,.youMediaError,.profileAvatar){color:var(--muted);background-color:var(--soft)}
+:root :is(.youQr>path,.contactQr>svg>path){fill:#171717}
+:root :is(#taskBar){background:var(--soft);color:var(--text)}
+:root :is(.queueItem strong,header small,#app #saveState,#composer #saveState,#app .richRecordingTime,#composer .richRecordingTime){color:var(--muted)!important}
+:root :is(#app .richMissing,.workspaceEditor .richMissing){border-color:var(--line)!important}
+:root :is(#app .richMissing p,.workspaceEditor .richMissing p){color:var(--muted)!important}
+:root :is(.youQrCard,.youEmpty,.contactInfo,.youInfo){border-color:var(--line)}
+/* Mixed auxiliary control colors do not spread via --text/--bg/--surface. */
+:root :is(.contactActions>button:nth-child(2),.youHeroActions>button:nth-child(2))>svg{color:var(--aux-apple-blue)!important}
+:root :is(.contactActions>button:nth-child(3))>svg{color:var(--aux-purple)!important}
+:root :is(.contactActions>button:nth-child(4),.youHeroActions>button:nth-child(3))>svg{color:var(--aux-rose)!important}
+:root :is(.chatSwipeAction[data-chat-action=read]){background:var(--ocean-sky);color:#171717}
+:root :is(.chatSwipeAction[data-chat-action=pin]){background:var(--ocean-mint);color:#171717}
+:root :is(.chatSwipeAction[data-chat-action=mute]){background:#A78BFA;color:#171717}
+:root :is(.chatSwipeAction[data-chat-action=delete]){background:var(--aux-pink);color:#171717}
+:root :is(.chatSwipeAction[data-chat-action=archive]){background:#EDE9FE;color:#171717}
+/* The send button is a blue control, not a blue composer canvas. */
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) :is(#send,.r2Send):not(:disabled)::before{background:var(--ocean-sky)!important;border-color:var(--ocean-sky)!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) :is(#send,.r2Send):not(:disabled){color:#171717!important}
+/* Composer R2 has its own dark media rule; keep its canvas neutral in both modes. */
+html[data-theme=dark] .r2Composer .r2PillFrame{background:var(--surface);color:var(--text);border-color:var(--line)}
+@media(prefers-color-scheme:dark){html:not([data-theme=light]) .r2Composer .r2PillFrame{background:var(--surface);color:var(--text);border-color:var(--line)}}
+[data-profile-palette="ocean_breeze"]{--profile-ink:#0B3D91;--profile-secondary-ink:#0B3D91;--profile-fill:#3BA7F2;--profile-soft-fill:#7FE7D6;--profile-hint:#E8F6FF;}
+[data-profile-palette="midnight_neon"]{--profile-ink:#7C3AED;--profile-secondary-ink:#0F172A;--profile-fill:#A78BFA;--profile-soft-fill:#22D3EE;--profile-hint:#EDE9FE;}
+[data-profile-palette="apple_modern"]{--profile-ink:#0063CC;--profile-secondary-ink:#1D1D1F;--profile-fill:#007AFF;--profile-soft-fill:#F5F5F7;--profile-hint:#F5F5F7;}
+[data-profile-palette="vibrant_sunset"]{--profile-ink:#79406E;--profile-secondary-ink:#4D3A4D;--profile-fill:#D59CC5;--profile-soft-fill:#EADADA;--profile-hint:#EADADA;}
+
+/* Personal-page modes affect only controls. Ordinary names/notes/labels stay black/gray. */
+:root .youPage[data-profile-palette] :is(.youButton,.contactButton)>svg{color:var(--profile-ink)!important}
+:root .youPage[data-profile-palette] :is(.youButton,.contactButton):nth-child(2)>svg{color:var(--profile-secondary-ink)!important}
+:root .youPage[data-profile-palette] :is(.youTextAction,.youTabs [aria-selected=true],a[href]){color:var(--profile-ink)}
+:root .youPage[data-profile-palette] .youPrimary{background:var(--profile-fill)!important;border-color:var(--profile-fill)!important;color:#171717!important}
+:root .youPage[data-profile-palette="apple_modern"] .youPrimary{color:#FFFFFF!important}
+:root .youPage[data-profile-palette] .youTabs [aria-selected=true]{background:var(--soft)}
+:root .youPage[data-profile-palette] .youAlbumFilters [aria-pressed=true]{border-color:var(--profile-ink);background:var(--surface)}
+:root .youPage[data-profile-palette] .contactActions>button{background:var(--surface);color:var(--text);border-color:var(--line)}
+:root .youPage[data-profile-palette] :is(button,a[href]):focus-visible{outline-color:var(--profile-ink)}
+/* These new controls do not change any existing profile/card geometry. */
+.profileAccentPicker{border:0;padding:14px 0;margin:12px 0;min-width:0;color:var(--text);font:inherit;background:transparent}
+.profileAccentPicker legend{color:var(--text);font:inherit;padding:0}
+.profileAccentChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+:root .youPage .profileAccentChoice{display:flex;gap:8px;justify-content:flex-start;min-width:0;max-width:100%;padding:10px;font:inherit;font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.profileAccentSwatch{display:inline-flex;gap:3px;flex-shrink:0;pointer-events:none}
+.profileAccentSwatch i{display:block;width:10px;height:10px;border-radius:50%}
+:root .youPage .profileAccentChoice[aria-pressed=true]{border-color:var(--profile-ink);box-shadow:inset 0 0 0 1px var(--profile-ink)}
+.profileAccentError{font:inherit;font-size:13px;color:var(--muted);margin:8px 0}
+
+:root #app .row .bubble .richAudioTime{color:var(--ob-message-muted)!important}
+
+/* UI SCALE 1.0 — Telegram-scale chat rows and one shared control/icon rhythm.
+   Geometry only: no data, gesture, motion or color semantics are changed. */
+:root{
+  --pab-ui-control:48px;
+  --pab-ui-icon:24px;
+  --pab-ui-pill:48px;
+  --pab-chat-avatar:56px;
+  --pab-chat-row:78px;
+}
+/* Chats: denser than a card, but visually the same scale as Telegram iOS. */
+#workspace #searchChats{min-height:52px;padding:13px 16px;border-radius:18px;font-size:17px}
+#workspace #chatFilters{gap:8px;margin:14px 0 10px}
+#workspace #chatFilters button{min-width:82px;min-height:48px;padding:10px 18px;border-radius:24px;font-size:15px}
+#screenContent .chatMain{min-height:var(--pab-chat-row);gap:14px;padding:11px 0}
+#screenContent .avatar{width:var(--pab-chat-avatar);height:var(--pab-chat-avatar);min-width:var(--pab-chat-avatar);font-size:19px}
+#screenContent .chatText{gap:4px}
+#screenContent .chatText strong{font-size:17px;line-height:1.25}
+#screenContent .previewText{font-size:15px;line-height:1.35}
+#screenContent .focusBtn{width:var(--pab-ui-control);min-width:var(--pab-ui-control);height:var(--pab-ui-control);min-height:var(--pab-ui-control);padding:10px;font-size:24px}
+#screenContent .chatSwipeActions button{min-width:72px;font-size:13px}
+#screenContent .chatSwipeActions button svg{width:var(--pab-ui-icon);height:var(--pab-ui-icon)}
+/* Shared icon controls: one 48px hit target and one 24px pictogram master. */
+:root [data-ui-control="icon"],
+:root :is(.youButton,.contactButton,.publicTopIcon,.publicSearchBack,.pccButton,.pthButton,.pcfAction,.pmmAction,.youMotionSettings,.richAudioReply){min-width:var(--pab-ui-control);min-height:var(--pab-ui-control)}
+:root :is([data-ui-control="icon"],.youButton,.contactButton,.publicTopIcon,.publicSearchBack,.pccButton,.pthButton,.pcfAction,.pmmAction,.chatActionButtons button,.youMotionSettings,.richAudioReply) > svg{width:var(--pab-ui-icon)!important;height:var(--pab-ui-icon)!important;min-width:var(--pab-ui-icon)!important}
+:root svg[data-pablicus-icon]{width:var(--pab-ui-icon)!important;height:var(--pab-ui-icon)!important;min-width:var(--pab-ui-icon)!important}
+/* Composer: larger buttons and icons while retaining the existing interaction model. */
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon]))){width:var(--pab-ui-control)!important;height:var(--pab-ui-control)!important;min-width:var(--pab-ui-control)!important;min-height:var(--pab-ui-control)!important;padding:12px!important;line-height:24px}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) :is(.r2IconButton,.r2LabelButton,:where(button[data-ui-control="icon"]:has(>svg[data-pablicus-icon])))::before{inset:5px!important}
+#composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer{min-height:72px;border-radius:22px!important}
+.r2Toolbar{height:70px;min-height:70px;padding:0 6px}
+.r2Composer.r2Open .r2Toolbar{height:64px;min-height:64px;padding-bottom:10px}
+:is(#composer,.workspaceEditor,.botComposer) .r2Toolbar .r2AI{width:var(--pab-ui-control)!important}
+#composer #composeBox.r2Composer:not(.r2Open) #editor,.r2Composer:not(.r2Open) .r2ComposerBody{top:23px;left:62px;right:112px}
+/* Text-bearing pills/actions share the same minimum height; widths remain content-driven. */
+:root :is(.r2LabelButton,.r2Action,.pushButton,.profileAccentChoice,.chatQuickAction,.setting,button[data-ui-control="button"]){min-height:var(--pab-ui-pill)}
+@media(max-width:360px){
+  :root{--pab-chat-avatar:54px;--pab-chat-row:76px;--pab-ui-control:46px;--pab-ui-icon:23px;--pab-ui-pill:46px}
+  #workspace #chatFilters button{min-width:76px}
+}
+
+
+/* UI SCALE 1.1: resolve legacy specificity and measured-control dependencies. */
+:root{--control-size:var(--pab-ui-control);--icon-size:var(--pab-ui-icon)}
+#screenContent .contactAvatarTrigger{width:var(--pab-chat-avatar);height:var(--pab-chat-avatar);min-width:var(--pab-chat-avatar);min-height:var(--pab-chat-avatar);flex:0 0 var(--pab-chat-avatar);margin-right:14px}
+#workspace .chatUpperToggle{min-height:52px;padding:13px 16px;border-radius:18px;font-size:17px}
+#home .homeHeader{min-height:calc(var(--pab-ui-control) + 14px)}
+#home .homeHeader .homeTitle{min-height:var(--pab-ui-pill)}
+#home .homeHeader :is(#newChat,#profileBack,#profileSettings){width:var(--pab-ui-control);height:var(--pab-ui-control);min-width:var(--pab-ui-control);min-height:var(--pab-ui-control)}
+#home #mainNav button svg,#home .homeHeader button>svg{width:var(--pab-ui-icon)!important;height:var(--pab-ui-icon)!important}
+#app,#app.typing{--head:calc(var(--pab-ui-control) + 14px)!important}
+#app>header{height:var(--head)!important;min-height:var(--head)!important;grid-template-columns:var(--pab-ui-control) minmax(0,1fr) var(--pab-ui-control) var(--pab-ui-control)!important}
+#app>header :is(#chatBack,#chatLibraryOpen,#reportBtn){width:var(--pab-ui-control)!important;height:var(--pab-ui-control)!important;min-width:var(--pab-ui-control)!important;min-height:var(--pab-ui-control)!important}
+#app>header :is(#chatBack,#chatLibraryOpen,#reportBtn)>svg{width:var(--pab-ui-icon)!important;height:var(--pab-ui-icon)!important;min-width:var(--pab-ui-icon)!important}
+#app>header .chatHeading{height:var(--pab-ui-control)!important;min-height:var(--pab-ui-control)!important;grid-template-rows:calc(var(--pab-ui-control) - 2px)!important;max-width:min(56%,calc(100% - 4 * var(--pab-ui-control) - 32px))!important}
+#app>header #chatTitle{height:calc(var(--pab-ui-control) - 2px)!important;min-height:calc(var(--pab-ui-control) - 2px)!important;line-height:calc(var(--pab-ui-control) - 2px)!important}
+/* Label controls remain content-sized; metadata and media playback glyphs are not enlarged blindly. */
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .r2LabelButton{width:auto!important;padding-inline:16px!important}
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer,.r2Panel,body) .r2Toolbar .r2AI{width:var(--pab-ui-control)!important;padding-inline:12px!important}
+.r2Composer .r2ActionGroup{height:var(--pab-ui-control)}
+.r2Composer .r2ActionAccent{left:0;top:5px;width:calc(var(--pab-ui-control) - 10px);height:calc(var(--pab-ui-control) - 10px)}
+#app #composer #composeBox.r2Composer .r2Toolbar .r2GroupedAction::before{background:transparent!important;border:0!important}
+#app #composer #composeBox.r2Composer:not(.r2Open){min-height:72px}
+#app #composer #composeBox.r2Composer:not(.r2Open) .r2Toolbar{height:70px;min-height:70px}
+#app #composer #composeBox.r2Composer:not(.r2Open) #editor{top:13px;left:calc(var(--pab-ui-control) + 14px);right:calc(3 * var(--pab-ui-control) + 14px)}
+.r2Composer[data-r2-action-count='3']:not(.r2Open) .r2ComposerBody{right:calc(3 * var(--pab-ui-control) + 14px)}
+#app #composer #composeBox.r2Composer.r2Fullscreen,.workspaceEditor.r2Composer.is-expanded,.botComposer.r2Composer.r2Fullscreen{min-height:0;border-radius:0!important}
+/* The action rail can scroll inside itself on small/large-text layouts, never widen the page. */
+#app #composer{padding-top:calc(var(--pab-ui-pill) + 4px)!important}
+#app.composer-fullscreen #composer{padding-top:calc(var(--pab-ui-pill) + 4px + var(--safe-area-top))!important}
+#app #composer #composeBox.r2Composer>.r2FunctionRail{top:calc(-1 * (var(--pab-ui-pill) + 4px));height:var(--pab-ui-pill);padding-inline:4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain}
+#app #composer #composeBox.r2Composer .r2FunctionPill{height:var(--pab-ui-pill);min-height:var(--pab-ui-pill);flex-shrink:0}
+.r2Composer .r2FunctionRail svg[data-pablicus-icon]{display:block;width:var(--pab-ui-icon)!important;height:var(--pab-ui-icon)!important;min-width:var(--pab-ui-icon)!important}
+.r2Composer .r2PillFrame{min-height:32px}
+.r2Panel .r2MenuRow,.r2Panel .r2Action{min-height:var(--pab-ui-pill)}
+:root .youPage .profileAccentChoice span:last-child{min-width:0;overflow-wrap:anywhere}
+.contactPage .contactTop{height:calc(64px + env(safe-area-inset-top,0px));min-height:calc(64px + env(safe-area-inset-top,0px))}
+.contactPage .contactTop .contactBackIcon{width:var(--pab-ui-control);height:var(--pab-ui-control);min-width:var(--pab-ui-control);min-height:var(--pab-ui-control)}
+
+:is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ActionGroup :is(#send,.r2Send).r2GroupedAction::before{background:transparent!important;border:0!important}
