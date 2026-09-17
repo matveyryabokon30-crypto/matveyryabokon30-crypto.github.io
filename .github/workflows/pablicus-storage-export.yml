@@ -1,0 +1,113 @@
+name: Assemble Pablicus storage repair
+on:
+  push:
+    branches: [release/pablicus-storage-export-20260917]
+    paths: ['.github/workflows/pablicus-storage-export.yml']
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+      - name: Assemble reviewed browser patch with fixed byte hashes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re,shutil,json,hashlib,subprocess,os
+          PIN='b27540ddc6a83a20734e87fda17abac6979eba56'
+          BASE=Path('vision-talk/pablicus');OUT=Path('candidate-runtime')
+          shutil.copytree(BASE,OUT,dirs_exist_ok=True)
+          def replace(s,a,b):
+           assert s.count(a)==1,('expected one patch anchor',a[:100],s.count(a))
+           return s.replace(a,b)
+          v=(BASE/'vault.js').read_text()
+          v=replace(v,"this.bootId=uid();}","this.bootId=uid();this.initializing=null;this.recoverySignature=this.captureSignature();}")
+          v=replace(v," async init(){\n  this.a.lock(true);",''' captureSignature(){try{return signature(this.a.capture())}catch{return null}}
+           canRecover(){const current=this.captureSignature();return !this.pending&&!this.flight&&!this.pump&&current!==null&&current===this.recoverySignature}
+           canReloadSafely(){const current=this.captureSignature();return !this.initializing&&!this.pending&&!this.flight&&!this.pump&&current!==null&&current===(this.ready?this.lastSignature:this.recoverySignature)}
+           async ensureReady(){
+            if(this.initializing)await this.initializing;
+            if(this.ready)return;
+            // Read recovery must never replace edits made after a failed load.
+            if(!this.canRecover())throw err('ConflictError','Есть несохранённые изменения. Сначала сохраните или скопируйте их; повторное чтение не будет затирать текст.');
+            await this.init();
+            if(!this.ready)throw err(this.error?.name||'NotAllowedError',this.error?.message||'Не удалось подключить локальное хранилище. Повторите подключение.');
+           }
+           async init(){
+            if(this.initializing)return this.initializing;
+            const work=this.restoreFromStore();this.initializing=work;
+            try{return await work}finally{if(this.initializing===work)this.initializing=null}
+           }
+           async restoreFromStore(){
+            this.restoring=true;this.a.lock(true);''')
+          v=replace(v,"  }catch(e){this.restoring=false;this.ready=false;this.set('load-error',e)}finally{this.a.lock(false)}",'''  }catch(e){
+             this.restoring=false;
+             if(!this.ready){this.recoverySignature=this.captureSignature();this.set('load-error',e)}
+             else this.set(this.state==='conflict'?'conflict':'error',e);
+            }finally{this.a.lock(false)}''')
+          v=replace(v,"  if(!this.ready)throw err('NotAllowedError','Сначала восстановите доступ к хранилищу');","  if(!this.ready)await this.ensureReady();")
+          v=replace(v," async retry(){if(!this.ready){return this.init()}"," async retry(){if(!this.ready){return this.ensureReady()}")
+          (OUT/'vault.js').write_text(v)
+          c=(BASE/'chat.js').read_text()
+          c=replace(c,"let vault=null,storeTests=null,storeTesting=false;", "let vault=null,storeTests=null,storeTesting=false,storageRecoveryFlight=null;")
+          c=replace(c,"function draftChanged(){vault?.changed()}",'''function draftChanged(){vault?.changed()}
+          async function recoverStorage(){
+           const target=vault;if(!target)return;
+           if(storageRecoveryFlight)return storageRecoveryFlight;
+           if(!target.ready&&!target.canRecover())return target.ensureReady();
+           const work=(async()=>{
+            if(!target.ready){
+             // Reopen the same account/conversation database. Never delete it or change its version.
+             target.store.close();
+             try{
+              const restoredQueue=await target.store.readQueue();
+              if(vault!==target)throw Error('Разговор изменился во время восстановления');
+              await target.ensureReady();
+              if(vault!==target)throw Error('Разговор изменился во время восстановления');
+              queueRows=restoredQueue;queueLoaded=true;queueError=null;ingestQueue(restoredQueue);paintQueue();
+             }catch(e){if(vault===target){queueError=e;paintQueue();if(!target.ready)target.set('load-error',e)}throw e}
+            }
+            if(vault===target){draftChanged();await target.flush();}
+           })();
+           storageRecoveryFlight=work;
+           try{return await work}finally{if(storageRecoveryFlight===work)storageRecoveryFlight=null}
+          }
+          async function flushCurrentVault(){if(!vault)return;if(!vault.ready)return recoverStorage();draftChanged();await vault.flush()}
+          ''')
+          c=replace(c,"  if(vault){draftChanged();await vault.flush();vault.restoring=true;vault.ready=false;clearTimeout(vault.timer);vault.store.close();}","  if(vault){await flushCurrentVault();vault.restoring=true;vault.ready=false;clearTimeout(vault.timer);vault.store.close();vault=null;window.vault=null;}")
+          c=replace(c," async flush(){await richComposer?.stopRecording();if(vault){draftChanged();await vault.flush()}},"," async flush(){await richComposer?.stopRecording();await flushCurrentVault()},")
+          c=replace(c," async persistDraft(){if(vault){draftChanged();await vault.flush()}},",''' async persistDraft(){await flushCurrentVault()},
+           async retryStorage(){await richComposer?.stopRecording();return recoverStorage()},
+           async prepareUpdate(){
+            await richComposer?.stopRecording();
+            // A failed read does not make already-persisted records unsafe to keep across a reload.
+            // Only skip a write when there are provably no unsaved in-memory changes.
+            if(vault&&!vault.canReloadSafely())await flushCurrentVault();
+           },''')
+          c=replace(c,"  if(!vaultBound){vaultBound=true;await initializeVault()}","  try{if(!vaultBound){vaultBound=true;await initializeVault()}")
+          c=replace(c,"  if(!list)await openChat();if(!vault.ready)throw Error('Локальное хранилище недоступно: черновик не будет потерян молча');", "  }catch(e){if(!vault||vault.ready||!vault.canRecover())throw e;await recoverStorage()}\n  if(!vault.ready)await recoverStorage();\n  if(!list)await openChat();if(!vault.ready)throw Error('Локальное хранилище недоступно: черновик не будет потерян молча');")
+          (OUT/'chat.js').write_text(c)
+          a=(BASE/'app.js').read_text()
+          a=replace(a,"$('applyUpdate').onclick=async()=>{try{await PablicusChat.flush();", "$('applyUpdate').onclick=async()=>{try{await PablicusChat.prepareUpdate();")
+          a=replace(a,"if(approveUpdate){await PablicusChat.flush();location.reload()}","if(approveUpdate){await PablicusChat.prepareUpdate();location.reload()}")
+          (OUT/'app.js').write_text(a)
+          s=(BASE/'sw.js').read_text();s=re.sub(r"const VERSION='[^']+';","const VERSION='pablicus-shell-storage-recovery-20260917-r1';",s,count=1);(OUT/'sw.js').write_text(s)
+          expected={'vault.js':'34865b12df62dc7faa3ff9b3f53afc5cb226cfd6d105dcb2edfdf423e85d26d9','chat.js':'813bb28459cf8057a67028e843709e2427e98a933c49b3c561a50449441be7d0','app.js':'967264410b444fc83c616f9880ef7086ec2c6f2d8895c00f0a22aad5631d303a','sw.js':'f75d590000036b604892561389e98fd896a57f31bf3f6466edd26c059e39a760'}
+          for n,h in expected.items():
+           assert hashlib.sha256((OUT/n).read_bytes()).hexdigest()==h,n
+           subprocess.run(['node','--check',str(OUT/n)],check=True)
+          env=dict(os.environ,GIT_INDEX_FILE=str(Path('runtime-export.index').resolve()),GIT_AUTHOR_NAME='Pablicus release',GIT_AUTHOR_EMAIL='pablicus-release@users.noreply.github.com',GIT_COMMITTER_NAME='Pablicus release',GIT_COMMITTER_EMAIL='pablicus-release@users.noreply.github.com')
+          def git(*args):return subprocess.check_output(['git',*args],env=env,text=True).strip()
+          git('read-tree',PIN)
+          for n in expected:
+           blob=git('hash-object','-w',str(OUT/n));git('update-index','--add','--cacheinfo','100644,'+blob+',vision-talk/pablicus/'+n)
+          tree=git('write-tree');commit=git('commit-tree',tree,'-p',PIN,'-m','fix(pablicus): reconnect draft storage safely without deleting user data')
+          assert set(git('diff','--name-only',PIN,commit).splitlines())=={'vision-talk/pablicus/'+n for n in expected}
+          git('push','origin',commit+':refs/heads/release/pablicus-storage-candidate-20260917')
+          print('RUNTIME_CANDIDATE',commit,'PARENT',PIN,'TREE',tree)
+          print(json.dumps(expected,sort_keys=True))
+          PY
