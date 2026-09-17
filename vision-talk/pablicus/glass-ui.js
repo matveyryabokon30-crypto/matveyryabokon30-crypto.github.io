@@ -42,3 +42,18 @@
  global.PablicusGlassUI=Object.freeze({refresh:schedule,destroy(){stopped=true;cancelAnimationFrame(frame);mutation.disconnect();mode.disconnect();pages.disconnect();resize?.disconnect();life.abort();for(const [node,at]of origins)if(at.parent?.isConnected)at.parent.insertBefore(node,at.next?.parentNode===at.parent?at.next:null);homeDock.remove();chatAvatarDock.remove();}});
  schedule();
 })(window);
+
+/* The real story module needs the authenticated app services created by app.js.
+   Load it after the page has finished executing all parser scripts. */
+(function(global){
+ 'use strict';
+ function boot(){
+  if(global.PablicusAvatarStoriesUI||document.querySelector('script[data-pablicus-real-stories]'))return;
+  const controller=global.PablicusController,services=controller?.getServices?.();
+  if(!controller||!services?.client){setTimeout(boot,100);return;}
+  if(typeof services.getProfile!=='function')services.getProfile=()=>{try{const id=controller.state().sessionUserId;if(!id)return null;return JSON.parse(localStorage.getItem('pablicus:'+id+':profile')||'null');}catch{return null;}};
+  if(typeof services.notify!=='function')services.notify=text=>{const toast=document.getElementById('toast');if(!toast)return;toast.textContent=String(text||'');toast.hidden=false;clearTimeout(boot.toastTimer);boot.toastTimer=setTimeout(()=>{toast.hidden=true;},5000);};
+  const script=document.createElement('script');script.src='avatar-stories.js';script.async=false;script.dataset.pablicusRealStories='1';script.onerror=()=>services.notify('Не удалось загрузить сторис. Обновите Pablicus.');document.body.append(script);
+ }
+ if(document.readyState==='complete')boot();else global.addEventListener('load',boot,{once:true});
+})(window);
