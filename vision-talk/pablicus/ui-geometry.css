@@ -1,0 +1,70 @@
+/* Geometry 2.0 — owner's ChatGPT screenshot reference, 2026-09-17.
+   One VISIBLE 44px top-control frame (not a 44px target around a smaller frame).
+   Compact composer: 56px capsule, 40px action targets, 22px glyphs.
+   Palette, chat-row/avatar sizes, content and interaction engines are retained. */
+:root{
+ --ui-control-s:36px;--ui-control-m:44px;--ui-control-l:56px;
+ --ui-icon-s:18px;--ui-icon-m:22px;--ui-icon-l:24px;
+ --ui-radius-s:18px;--ui-radius-m:22px;--ui-radius-l:28px;
+ --ui-composer-action:40px;--ui-edge:12px;--ui-top-gap:12px;
+ --pab-ui-control:var(--ui-control-m);--pab-ui-icon:var(--ui-icon-m);
+ --pab-ui-pill:var(--ui-control-m);--control-size:var(--ui-control-m);--icon-size:var(--ui-icon-m);
+}
+/* Home, search and filters: identical capsule height and end curves. */
+:root #home .homeHeader{min-height:60px;padding:8px var(--ui-edge)!important}
+:root #home .homeHeader .homeTitle{box-sizing:border-box;height:var(--ui-control-m);min-height:var(--ui-control-m);max-height:var(--ui-control-m);border-radius:var(--ui-radius-m)!important;padding:0 18px!important;font-size:17px!important;line-height:22px!important}
+:root #home .homeHeader :is(#newChat,#profileBack,#profileSettings){top:8px;box-sizing:border-box;width:var(--ui-control-m)!important;height:var(--ui-control-m)!important;min-width:var(--ui-control-m)!important;min-height:var(--ui-control-m)!important;padding:10px!important;border:1px solid var(--line)!important;border-radius:var(--ui-radius-m)!important;background:var(--surface)!important}
+:root #home .homeHeader :is(#newChat,#profileBack,#profileSettings)::before,:root #home .homeHeader :is(#newChat,#profileBack,#profileSettings)::after{content:none!important}
+:root #home .homeHeader button>svg{width:var(--ui-icon-m)!important;height:var(--ui-icon-m)!important;min-width:var(--ui-icon-m)!important;margin:0!important}
+:root #workspace :is(#searchChats,.chatUpperToggle){box-sizing:border-box;height:var(--ui-control-m);min-height:var(--ui-control-m);padding:0 16px;border-radius:var(--ui-radius-m);font-size:17px;line-height:22px}
+:root #workspace #chatFilters button{box-sizing:border-box;height:var(--ui-control-m);min-height:var(--ui-control-m);padding:0 18px;border-radius:var(--ui-radius-m)}
+/* Three measured columns keep long titles clear of both action groups. */
+:root #app,:root #app.typing{--head:60px!important}
+:root #app>header{height:var(--head)!important;min-height:var(--head)!important;padding:8px var(--ui-edge)!important;grid-template-columns:var(--ui-control-m) minmax(0,1fr) calc(2 * var(--ui-control-m) + var(--ui-top-gap))!important;gap:var(--ui-top-gap)!important}
+:root #app>header .chatHeading{position:relative!important;left:auto!important;top:auto!important;right:auto!important;transform:none!important;grid-column:2!important;grid-row:1!important;justify-self:center!important;width:max-content!important;max-width:100%!important;min-width:0!important;height:var(--ui-control-m)!important;min-height:var(--ui-control-m)!important;grid-template-rows:minmax(0,1fr)!important;padding:0 18px!important;border:1px solid var(--line)!important;border-radius:var(--ui-radius-m)!important}
+:root #app>header #chatTitle{height:42px!important;min-height:0!important;line-height:42px!important;font-size:17px!important;font-weight:600!important;border-radius:0!important}
+:root #app>header :is(#chatBack,#chatLibraryOpen,#reportBtn){box-sizing:border-box;width:var(--ui-control-m)!important;height:var(--ui-control-m)!important;min-width:var(--ui-control-m)!important;min-height:var(--ui-control-m)!important;padding:10px!important;border-radius:var(--ui-radius-m)!important}
+:root #app>header :is(#chatBack,#chatLibraryOpen,#reportBtn)>svg{width:var(--ui-icon-m)!important;height:var(--ui-icon-m)!important;min-width:var(--ui-icon-m)!important}
+:root #app>header #chatBack::before{inset:0!important;border:1px solid var(--line)!important;border-radius:var(--ui-radius-m)!important}
+:root #app>header .chatHeaderActions{grid-column:3!important;grid-row:1!important;box-sizing:border-box;width:calc(2 * var(--ui-control-m) + var(--ui-top-gap));height:var(--ui-control-m);min-height:var(--ui-control-m);grid-template-columns:repeat(2,var(--ui-control-m));gap:var(--ui-top-gap);border-radius:var(--ui-radius-m)}
+:root #app>header .chatHeaderActions::before{inset:0;border:1px solid var(--line);border-radius:var(--ui-radius-m)}
+:root #app>header .chatHeaderActions :is(#chatLibraryOpen,#reportBtn)::before{inset:0!important;border:0!important;background:transparent!important}
+/* Profile and modal top bars use the same frame; moving action tiles are untouched. */
+:root .contactPage .contactTop{height:calc(60px + env(safe-area-inset-top,0px));min-height:calc(60px + env(safe-area-inset-top,0px));padding:calc(8px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px))}
+:root :is(.contactTop>.contactButton,.youPage.youMotionPage .youMotionTop>.youMotionSettings,.pcfTop>.pcfRound,.pcfTop>.pcfNext,.profilePhotosManagerBar>button,.peopleHeader>.peopleClose,.botsHeader>.botsBack,.dialogHead>button,.pclHeader>.pclIcon,.r2PanelHead>button){box-sizing:border-box;height:var(--ui-control-m)!important;min-height:var(--ui-control-m)!important;min-width:var(--ui-control-m)!important;padding:0 16px!important;border:1px solid var(--line)!important;border-radius:var(--ui-radius-m)!important}
+:root :is(.contactTop>.contactBackIcon,.youPage.youMotionPage .youMotionTop>.youMotionSettings,.pcfTop>.pcfRound,.profilePhotosManagerBar>.profilePhotosClose,.peopleHeader>.peopleClose,.botsHeader>.botsBack,.dialogHead>button,.pclHeader>.pclIcon,.r2PanelHead>button){width:var(--ui-control-m)!important;padding:10px!important;font-size:22px}
+:root :is(.contactTop,.youMotionTop,.pcfTop,.profilePhotosManagerBar,.peopleHeader,.botsHeader,.dialogHead,.pclHeader,.r2PanelHead)>button::before{content:none!important}
+:root :is(.contactTop,.youMotionTop,.pcfTop,.profilePhotosManagerBar,.peopleHeader,.botsHeader,.dialogHead,.pclHeader,.r2PanelHead)>button>svg{width:var(--ui-icon-m)!important;height:var(--ui-icon-m)!important;min-width:var(--ui-icon-m)!important}
+/* Same compact composer in conversation, workspace and bot adapters. */
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer){box-sizing:border-box;min-height:var(--ui-control-l);border:1px solid var(--line)!important;border-radius:var(--ui-radius-l)!important;box-shadow:none!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer)::before{content:none!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Open){height:var(--ui-control-l)!important;min-height:var(--ui-control-l)!important;max-height:var(--ui-control-l)!important;padding:0!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2Toolbar{box-sizing:border-box;height:54px!important;min-height:54px!important;padding:0 7px!important;align-items:center;gap:4px;border-radius:var(--ui-radius-l)}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2Toolbar :is(.r2IconButton,.r2LabelButton,button[data-ui-control="icon"]){box-sizing:border-box;width:var(--ui-composer-action)!important;height:var(--ui-composer-action)!important;min-width:var(--ui-composer-action)!important;min-height:var(--ui-composer-action)!important;max-height:var(--ui-composer-action)!important;padding:9px!important;line-height:22px}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2Toolbar button>svg{width:var(--ui-icon-m)!important;height:var(--ui-icon-m)!important;min-width:var(--ui-icon-m)!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2Toolbar button::before{inset:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+:root .r2Composer .r2ActionGroup{height:var(--ui-composer-action);margin-inline-end:0;gap:0;background:transparent}
+:root .r2Composer .r2ActionGroup::before{content:none}
+:root .r2Composer .r2ActionAccent{left:0;top:0;width:var(--ui-composer-action);height:var(--ui-composer-action);border-radius:50%}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Open) .r2ComposerBody{top:16px!important;left:56px!important;right:96px!important;height:22px!important;min-height:22px!important;padding:0!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer)[data-r2-action-count='3']:not(.r2Open) .r2ComposerBody{right:136px!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ComposerBody textarea{font-size:17px!important;line-height:22px!important;min-height:22px!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Open) .r2ComposerBody textarea{height:22px!important;min-height:22px!important;max-height:22px!important;padding:0!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer).r2Open .r2ComposerBody{padding-inline:16px!important}
+/* Function chips remain outside the input capsule, with no extra inner shell. */
+:root #app #composer{padding-top:44px!important;padding-inline:max(12px,var(--safe-area-left)) max(12px,var(--safe-area-right))!important}
+:root :is(.workspaceEditor.r2Composer,.botComposer.r2Composer){margin-top:44px}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer)>.r2FunctionRail{position:absolute;top:-44px!important;left:0;right:0;height:var(--ui-control-s)!important;min-height:var(--ui-control-s)!important;padding:0!important;gap:4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2FunctionPill{height:var(--ui-control-s)!important;min-height:var(--ui-control-s)!important;flex-shrink:0;padding:0!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2PillFrame{box-sizing:border-box;height:var(--ui-control-s);min-height:var(--ui-control-s);padding:0 10px;border-radius:var(--ui-radius-s)}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2FunctionRail svg[data-pablicus-icon]{display:block!important;width:var(--ui-icon-s)!important;height:var(--ui-icon-s)!important;min-width:var(--ui-icon-s)!important}
+/* Fullscreen and accessibility are content-sized, never clipped to compact height. */
+:root #app.composer-fullscreen #composer{padding-top:calc(44px + var(--safe-area-top))!important}
+:root :is(#app #composer #composeBox.r2Composer.r2Fullscreen,.workspaceEditor.r2Composer.is-expanded,.botComposer.r2Composer.r2Fullscreen){height:100%!important;min-height:0!important;max-height:none!important;border-radius:0!important;margin-top:0}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer).r2LargeText.r2Open .r2Toolbar{height:auto!important;min-height:54px!important;flex-wrap:wrap}
+/* R2's body fallback inherits a three-ID selector specificity. Override only
+   actual top-bar controls, rather than enlarging every pseudo-element. */
+:root :is(#app #composer #composeBox.r2Composer,body) :is(.homeHeader>button,#app>header>button,#app>header .chatHeaderActions>button,.r2PanelHead>button){border-radius:var(--ui-radius-m)!important;border:1px solid var(--line)!important}
+:root :is(#app #composer #composeBox.r2Composer,body) :is(.homeHeader>button,#app>header>button,#app>header .chatHeaderActions>button,.r2PanelHead>button)::before{content:none!important}
+:root :is(#app #composer #composeBox.r2Composer,body) #app>header .chatHeaderActions>button{border:0!important}
+:root :is(#app #composer #composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Open) :is(#editor,.r2ComposerBody){height:22px!important;min-height:22px!important;max-height:22px!important}
