@@ -146,15 +146,21 @@
  }
  function buttons(){
   const nav=document.getElementById('mainNav'),app=document.getElementById('app'),authorized=!!state().sessionUserId&&!!services()?.getProfile?.()?.is_approved;
-  if(nav&&!document.getElementById('storyHomeAction')){const b=btn('Опубликовать сторис',compose,'story-add');b.id='storyHomeAction';b.className='storyHomeAction';b.append(el('span','storyNavLabel','Сторис'));nav.querySelector('[data-page="chats"]')?.after(b);}
-  if(app&&!document.getElementById('storyChatAction')){const bar=el('nav','storyChatActions');bar.setAttribute('aria-label','Публикация сторис');const b=btn('Опубликовать сторис',compose,'story-add');b.id='storyChatAction';b.classList.add('storyChatAction');bar.append(b);app.append(bar);}
+  const dock=document.querySelector('#home>.cleanHomeActions');if(dock&&!document.getElementById('storyHomeAction')){const b=btn('Опубликовать сторис',compose,'story-add');b.id='storyHomeAction';b.className='storyHomeAction';dock.append(b);}
+  document.querySelector('.storyChatActions')?.remove();document.getElementById('storyChatAction')?.remove();
   const b=document.getElementById('storyHomeAction');if(b)b.hidden=!authorized||state().section!=='chats'||state().screen!=='home';
-  const c=document.getElementById('storyChatAction');if(c)c.hidden=!authorized||state().screen!=='conversation'||document.getElementById('app')?.classList.contains('composer-fullscreen');
   const pencil=document.getElementById('newChat');if(pencil)pencil.classList.add('standardComposeAction');
+ }
+ async function hydrateOwnNav(){
+  const own=services()?.getProfile?.(),nav=document.querySelector('#mainNav>[data-page="profile"]');if(!own||!nav||!UUID.test(own.id||''))return;
+  owners.add(own.id);nav.classList.add('profileAvatarNav');let a=nav.querySelector('.profileNavAvatar');if(!a){a=el('span','profileNavAvatar');nav.replaceChildren(a,el('span','profileNavLabel','Вы'));}
+  ring(a,own.id);const snapshot=state(),url=await avatarUrl(own,snapshot);if(!live(snapshot)||!a.isConnected)return;
+  const stamp=own.id+'|'+(url||'');if(a.dataset.avatarStamp===stamp)return;a.dataset.avatarStamp=stamp;a.replaceChildren();
+  if(url){const img=el('img');img.alt='Ваш профиль';img.src=url;img.onload=()=>{if(a.isConnected&&a.dataset.avatarStamp===stamp)a.replaceChildren(img);};}else a.textContent=Array.from(own.display_name||own.username||'Я')[0]?.toUpperCase()||'Я';ring(a,own.id);
  }
  function layout(){
   frame=0;if(stopped)return;buttons();if(!state().sessionUserId)return;
-  const own=services()?.getProfile?.();if(own){owners.add(own.id);if(!document.getElementById('storyOwnView')&&document.querySelector('.youHeroActions')){const v=btn('Мои сторис',()=>void view(own.id),'story-add');v.id='storyOwnView';v.append(el('span','','Мои сторис'));document.querySelector('.youHeroActions').after(v);}document.querySelectorAll('.youMotionPage .contactPhotoButton,.youAvatarButton:not(.contactPhotoButton)').forEach(n=>{n.classList.add('pablicusStoryProfile');ring(n,own.id);});}
+  const own=services()?.getProfile?.();void hydrateOwnNav();if(own){owners.add(own.id);if(!document.getElementById('storyOwnView')&&document.querySelector('.youHeroActions')){const v=btn('Мои сторис',()=>void view(own.id),'story-add');v.id='storyOwnView';v.append(el('span','','Мои сторис'));document.querySelector('.youHeroActions').after(v);}document.querySelectorAll('.youMotionPage .contactPhotoButton,.youAvatarButton:not(.contactPhotoButton)').forEach(n=>{n.classList.add('pablicusStoryProfile');ring(n,own.id);});}
   document.querySelectorAll('.chatCard[data-conversation-id]').forEach(row=>void hydrateRow(row));void hydrateTop();refreshRings();
  }
  function schedule(){if(!stopped&&!frame)frame=requestAnimationFrame(layout);}
