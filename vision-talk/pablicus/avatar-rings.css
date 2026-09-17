@@ -91,3 +91,25 @@
 :root body #app>.chatAvatarDock>.conversationCallDock{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto}
 :root body #app>.chatAvatarDock>.conversationCallDock>button{display:grid;place-items:center;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid var(--ui-glass-line);border-radius:50%;background:color-mix(in srgb,var(--surface) 20%,transparent);box-shadow:inset 0 1px 0 #ffffffa6,0 2px 7px #0002;backdrop-filter:blur(8px) saturate(1.35);-webkit-backdrop-filter:blur(8px) saturate(1.35)}
 :root body #app>.chatAvatarDock>.conversationCallDock svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* Owner R5 — circular profile avatar and unclipped story rings. */
+:root body #home #mainNav>[data-page="profile"].profileAvatarNav{gap:0!important;padding:0!important;overflow:visible!important}
+:root body #home #mainNav>[data-page="profile"].profileAvatarNav>.profileNavLabel{display:none!important}
+:root body #home #mainNav>[data-page="profile"].profileAvatarNav>.profileNavAvatar{display:block!important;box-sizing:border-box!important;width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;min-height:38px!important;max-height:38px!important;line-height:38px!important;aspect-ratio:1/1!important;border-radius:50%!important;padding:2px!important;overflow:hidden!important;flex:none!important}
+:root body #home #mainNav>[data-page="profile"].profileAvatarNav>.profileNavAvatar>img{width:100%!important;height:100%!important;aspect-ratio:1/1!important;border-radius:50%!important;object-fit:cover!important}
+:root body #screenContent .chatCard{margin-left:24px!important}
+:root body #screenContent .chatMain{padding-left:2px!important}
+:root body #screenContent .contactAvatarTrigger{overflow:visible!important}
+/* Telegram-like reveal geometry, Pablicus actions and brand palette. */
+:root body #screenContent .chatSwipeActions{inset-block:0!important;gap:0!important;max-width:78%!important;align-items:stretch!important;background:transparent!important}
+:root body #screenContent .chatSwipeActions.before{left:0!important;border-radius:18px 0 0 18px!important}
+:root body #screenContent .chatSwipeActions.after{right:0!important;border-radius:0 18px 18px 0!important}
+:root body #screenContent .chatSwipeActions .chatSwipeAction{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;box-sizing:border-box!important;width:76px!important;min-width:76px!important;height:100%!important;min-height:72px!important;margin:0!important;padding:8px 4px!important;border:0!important;border-radius:0!important;box-shadow:none!important;font-size:11px!important;font-weight:400!important;line-height:1.15!important;text-align:center!important}
+:root body #screenContent .chatSwipeActions .chatSwipeAction svg{width:24px!important;height:24px!important;min-width:24px!important;margin:0!important}
+:root body #screenContent .chatSwipeActions.before .chatSwipeAction:first-child{border-radius:18px 0 0 18px!important}
+:root body #screenContent .chatSwipeActions.after .chatSwipeAction:last-child{border-radius:0 18px 18px 0!important}
+:root body #screenContent .chatSwipeAction[data-chat-action="read"]{background:var(--ocean-sky,#3BA7F2)!important;color:#171717!important}
+:root body #screenContent .chatSwipeAction[data-chat-action="pin"]{background:var(--ocean-mint,#7FE7D6)!important;color:#171717!important}
+:root body #screenContent .chatSwipeAction[data-chat-action="mute"]{background:#F2B35D!important;color:#171717!important}
+:root body #screenContent .chatSwipeAction[data-chat-action="delete"]{background:#F45D5D!important;color:#fff!important}
+:root body #screenContent .chatSwipeAction[data-chat-action="archive"]{background:#AEB2BD!important;color:#fff!important}

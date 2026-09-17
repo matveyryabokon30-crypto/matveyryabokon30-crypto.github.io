@@ -153,7 +153,7 @@
  }
  async function hydrateOwnNav(){
   const own=services()?.getProfile?.(),nav=document.querySelector('#mainNav>[data-page="profile"]');if(!own||!nav||!UUID.test(own.id||''))return;
-  owners.add(own.id);nav.classList.add('profileAvatarNav');let a=nav.querySelector('.profileNavAvatar');if(!a){a=el('span','profileNavAvatar');nav.replaceChildren(a,el('span','profileNavLabel','Вы'));}
+  owners.add(own.id);nav.classList.add('profileAvatarNav');let a=nav.querySelector('.profileNavAvatar');if(!a){a=el('span','profileNavAvatar');nav.replaceChildren(a);}nav.setAttribute('aria-label','Профиль');nav.title='Профиль';nav.querySelectorAll('.profileNavLabel').forEach(n=>n.remove());
   ring(a,own.id);const snapshot=state(),url=await avatarUrl(own,snapshot);if(!live(snapshot)||!a.isConnected)return;
   const stamp=own.id+'|'+(url||'');if(a.dataset.avatarStamp===stamp)return;a.dataset.avatarStamp=stamp;a.replaceChildren();
   if(url){const img=el('img');img.alt='Ваш профиль';img.src=url;img.onload=()=>{if(a.isConnected&&a.dataset.avatarStamp===stamp)a.replaceChildren(img);};}else a.textContent=Array.from(own.display_name||own.username||'Я')[0]?.toUpperCase()||'Я';ring(a,own.id);
