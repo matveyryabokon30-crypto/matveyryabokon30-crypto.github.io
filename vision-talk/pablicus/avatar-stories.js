@@ -11,12 +11,17 @@
  const life=new AbortController(),cards=new Map(),signed=new Map(),rowTickets=new WeakMap(),owners=new Set(),feeds=new Map();
  let account=key(state()),frame=0,timer=0,feedTimer=0,feedFlight=false,feedDirty=false,lastFeed=0,serverOffset=0,modal=null,stopped=false;
  const storyNow=()=>Date.now()+serverOffset;
+ const people=new Map();let emitted=false;
+ function emitStories(){if(emitted||stopped)return;emitted=true;queueMicrotask(()=>{emitted=false;if(!stopped)global.dispatchEvent(new Event('pablicus:stories-changed'));});}
+ function remember(p,url,conversationId=null,name=null){if(!UUID.test(p?.id||''))return;const old=people.get(p.id);const next={id:p.id,name:name||old?.name||p.display_name||p.username||'Собеседник',url:url||old?.url||'',conversationId:conversationId||old?.conversationId||null};if(!old||JSON.stringify(old)!==JSON.stringify(next)){people.set(p.id,next);emitStories();}}
+ function snapshot(){return {userId:state().sessionUserId,now:storyNow(),people:[...people.values()].map(p=>({...p})),stories:[...feeds.values()].flat().filter(s=>Date.parse(s.expires_at)>storyNow()).map(s=>({...s,media:s.media?{...s.media}:null}))};}
+
  function icon(name){return global.PablicusIcons.icon(name);}
  function storyIcon(){const s=icon('add'),ns=s.namespaceURI,c=document.createElementNS(ns,'circle');c.setAttribute('cx','12');c.setAttribute('cy','12');c.setAttribute('r','10');s.prepend(c);s.dataset.pablicusIcon='story-add';return s;}
  function btn(label,run,name='close'){const b=el('button','storyButton');b.type='button';b.setAttribute('aria-label',label);b.title=label;b.append(name==='story-add'?storyIcon():icon(name));b.addEventListener('click',run);return b;}
  function notify(text){services()?.notify?.(text);}
  function activeStories(id){return (feeds.get(id)||[]).filter(s=>Date.parse(s.expires_at)>storyNow());}
- function ring(n,id){if(!UUID.test(id||''))return;n.dataset.storyOwner=id;owners.add(id);n.dataset.pablicusStoryRing=activeStories(id).length?'active':'none';}
+ function ring(n,id){if(!UUID.test(id||''))return;if(n.dataset.storyOwner!==id)n.dataset.storyOwner=id;owners.add(id);const value=activeStories(id).length?'active':'none';if(n.dataset.pablicusStoryRing!==value)n.dataset.pablicusStoryRing=value;}
  function refreshRings(){document.querySelectorAll('[data-story-owner]').forEach(n=>{const v=activeStories(n.dataset.storyOwner).length?'active':'none';if(n.dataset.pablicusStoryRing!==v)n.dataset.pablicusStoryRing=v;});}
  async function feed(force=false){
   if(stopped||document.hidden||!state().sessionUserId||!owners.size)return;
@@ -27,7 +32,7 @@
    const data=r.data;if(!data||!Array.isArray(data.stories)||!Number.isFinite(Date.parse(data.server_now)))throw Error('Invalid story feed');
    serverOffset=Date.parse(data.server_now)-Date.now();for(const id of chunk)feeds.set(id,[]);
    for(const s of data.stories)if(chunk.includes(s.owner_id)&&UUID.test(s.id)&&Date.parse(s.expires_at)>storyNow())feeds.get(s.owner_id).push(s);
-  }refreshRings();
+  }refreshRings();emitStories();
   }catch{if(live(snapshot))refreshRings();}finally{feedFlight=false;if(feedDirty){feedDirty=false;queueFeed();}}
  }
  function queueFeed(){clearTimeout(feedTimer);feedTimer=setTimeout(()=>void feed(true),100);}
@@ -64,7 +69,7 @@
   const k=key(snapshot)+':'+id;if(rowTickets.get(row)===k)return;rowTickets.set(row,k);
   n.classList.add('pablicusStoryAvatar');n.dataset.pablicusStoryRing='none';
   const d=await card(id,snapshot);if(!live(snapshot)||!row.isConnected||!d)return;
-  const url=await avatarUrl(d.profile,snapshot);if(!live(snapshot)||!row.isConnected)return;paint(n,d.profile,url);queueFeed();
+  const url=await avatarUrl(d.profile,snapshot);if(!live(snapshot)||!row.isConnected)return;remember(d.profile,url,id,d.personal?.first_name||row.querySelector('.chatText strong')?.textContent);paint(n,d.profile,url);queueFeed();
  }
  let topTicket=0,topId=null,topData=null,topUrl='',topPending=null;
  async function hydrateTop(){
@@ -75,7 +80,7 @@
   topPending=key(snapshot)+':'+id;const ticket=++topTicket;topId=id;topData=null;topUrl='';n.dataset.avatarStamp='';n.replaceChildren(icon('profile'));n.dataset.pablicusStoryRing='none';delete n.dataset.storyOwner;
   const d=await card(id,snapshot);if(ticket!==topTicket||!live(snapshot)||state().conversationId!==id)return;
   if(!d){topPending=key(snapshot)+':'+id;return;}const url=await avatarUrl(d.profile,snapshot);if(ticket!==topTicket||!live(snapshot)||state().conversationId!==id)return;
-  topPending=null;topData=d;topUrl=url;paint(n,d.profile,url);const name=d.personal?.first_name||d.profile.display_name||d.profile.username;n.setAttribute('aria-label','Профиль и сторис: '+name);n.title='Профиль и сторис: '+name;queueFeed();
+  topPending=null;topData=d;topUrl=url;remember(d.profile,url,id,d.personal?.first_name);paint(n,d.profile,url);const name=d.personal?.first_name||d.profile.display_name||d.profile.username;n.setAttribute('aria-label','Профиль и сторис: '+name);n.title='Профиль и сторис: '+name;queueFeed();
  }
  function closeModal(force=false){
   const m=modal;if(!m)return true;
@@ -91,6 +96,7 @@
  }
  const valid=m=>modal===m&&live(m.snapshot)&&m.dialog.isConnected;
  async function view(owner,conversationId=null){
+  if(global.PablicusStoriesViewer){if(!closeModal())return;return global.PablicusStoriesViewer.open(owner,conversationId,document.activeElement);}
   const m=dialog('Сторис');if(!m)return;
   const status=el('p','storyStatus','Загружаем сторис…'),stage=el('div','storyViewerStage'),actions=el('div','storyViewerActions');m.dialog.append(status,stage,actions);owners.add(owner);
   await feed(true);if(!valid(m))return;let items=activeStories(owner),index=0,serial=0;
@@ -154,24 +160,24 @@
  async function hydrateOwnNav(){
   const own=services()?.getProfile?.(),nav=document.querySelector('#mainNav>[data-page="profile"]');if(!own||!nav||!UUID.test(own.id||''))return;
   owners.add(own.id);nav.classList.add('profileAvatarNav');let a=nav.querySelector('.profileNavAvatar');if(!a){a=el('span','profileNavAvatar');nav.replaceChildren(a,el('span','profileNavLabel','Вы'));}
-  ring(a,own.id);const snapshot=state(),url=await avatarUrl(own,snapshot);if(!live(snapshot)||!a.isConnected)return;
-  const stamp=own.id+'|'+(url||'');if(a.dataset.avatarStamp===stamp)return;a.dataset.avatarStamp=stamp;a.replaceChildren();
+  ring(a,own.id);const snapshot=state(),url=await avatarUrl(own,snapshot);if(!live(snapshot)||!a.isConnected)return;remember(own,url);
+  const stamp=own.id+'|'+(url||'');if(a.dataset.avatarStamp===stamp)return;a.dataset.avatarStamp=stamp;
   if(url){const img=el('img');img.alt='Ваш профиль';img.src=url;img.onload=()=>{if(a.isConnected&&a.dataset.avatarStamp===stamp)a.replaceChildren(img);};}else a.textContent=Array.from(own.display_name||own.username||'Я')[0]?.toUpperCase()||'Я';ring(a,own.id);
  }
  function layout(){
   frame=0;if(stopped)return;buttons();if(!state().sessionUserId)return;
-  const own=services()?.getProfile?.();void hydrateOwnNav();if(own){owners.add(own.id);if(!document.getElementById('storyOwnView')&&document.querySelector('.youHeroActions')){const v=btn('Мои сторис',()=>void view(own.id),'story-add');v.id='storyOwnView';v.append(el('span','','Мои сторис'));document.querySelector('.youHeroActions').after(v);}document.querySelectorAll('.youMotionPage .contactPhotoButton,.youAvatarButton:not(.contactPhotoButton)').forEach(n=>{n.classList.add('pablicusStoryProfile');ring(n,own.id);});}
+  const own=services()?.getProfile?.();void hydrateOwnNav();if(own){owners.add(own.id);document.querySelectorAll('.youMotionPage .contactPhotoButton,.youAvatarButton:not(.contactPhotoButton)').forEach(n=>{n.classList.add('pablicusStoryProfile');ring(n,own.id);});}
   document.querySelectorAll('.chatCard[data-conversation-id]').forEach(row=>void hydrateRow(row));void hydrateTop();refreshRings();
  }
  function schedule(){if(!stopped&&!frame)frame=requestAnimationFrame(layout);}
- const observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true});
+ const observer=new MutationObserver(records=>{if(records.some(r=>!r.target.closest?.('.storyShelfV3,.storyViewerV3')))schedule();});observer.observe(document.body,{childList:true,subtree:true});
  const unsubscribe=ctrl.subscribe(next=>{
-  if(key(next)!==account){const av=document.getElementById('conversationAvatar');if(av){av.replaceChildren();delete av.dataset.avatarPerson;}account=key(next);closeModal(true);cards.clear();signed.clear();owners.clear();feeds.clear();topData=null;topId=null;topPending=null;topTicket++;lastFeed=0;feedDirty=false;document.querySelectorAll('[data-story-owner]').forEach(n=>{delete n.dataset.storyOwner;n.dataset.pablicusStoryRing='none';delete n.dataset.avatarStamp;});}
+  if(key(next)!==account){const av=document.getElementById('conversationAvatar');if(av){av.replaceChildren();delete av.dataset.avatarPerson;}account=key(next);closeModal(true);people.clear();emitStories();cards.clear();signed.clear();owners.clear();feeds.clear();topData=null;topId=null;topPending=null;topTicket++;lastFeed=0;feedDirty=false;document.querySelectorAll('[data-story-owner]').forEach(n=>{delete n.dataset.storyOwner;n.dataset.pablicusStoryRing='none';delete n.dataset.avatarStamp;});}
   if(next.conversationId!==topId){topId=null;topData=null;topPending=null;topTicket++;}schedule();
  });
  document.addEventListener('click',e=>{const trigger=e.target.closest?.('#conversationAvatar,.contactAvatarTrigger');if(!trigger)return;const n=trigger.matches('#conversationAvatar')?trigger:trigger.querySelector('[data-story-owner]'),owner=n?.dataset.storyOwner;if(!owner||!activeStories(owner).length)return;e.preventDefault();e.stopImmediatePropagation();void view(owner,trigger.closest('.chatCard')?.dataset.conversationId||state().conversationId);},{capture:true,signal:life.signal});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden){schedule();void feed(true);}},{signal:life.signal});
  global.addEventListener('online',()=>{cards.clear();schedule();void feed(true);},{signal:life.signal});
  timer=setInterval(()=>{if(!document.hidden){refreshRings();void feed();}},30000);
- global.PablicusAvatarStoriesUI=Object.freeze({refresh:schedule,compose,view,refreshStories:()=>feed(true),destroy(){stopped=true;life.abort();unsubscribe();observer.disconnect();clearInterval(timer);clearTimeout(feedTimer);cancelAnimationFrame(frame);closeModal(true);cards.clear();signed.clear();feeds.clear();}});schedule();
+ global.PablicusAvatarStoriesUI=Object.freeze({snapshot,refresh:schedule,compose,view,refreshStories:()=>feed(true),destroy(){stopped=true;life.abort();unsubscribe();observer.disconnect();clearInterval(timer);clearTimeout(feedTimer);cancelAnimationFrame(frame);closeModal(true);cards.clear();signed.clear();feeds.clear();}});schedule();
 })(window);
