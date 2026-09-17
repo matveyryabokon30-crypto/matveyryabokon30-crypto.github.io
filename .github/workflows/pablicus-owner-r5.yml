@@ -1,0 +1,46 @@
+name: Pablicus owner R5
+on:
+  push:
+    branches: [release/pablicus-owner-r4-20260917]
+    paths: ['.github/workflows/pablicus-owner-r5.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Apply owner R5
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('vision-talk/pablicus')
+          p=root/'avatar-stories.js';s=p.read_text()
+          old="if(!a){a=el('span','profileNavAvatar');nav.replaceChildren(a,el('span','profileNavLabel','Вы'));}"
+          new="if(!a){a=el('span','profileNavAvatar');nav.replaceChildren(a);}nav.setAttribute('aria-label','Профиль');nav.title='Профиль';nav.querySelectorAll('.profileNavLabel').forEach(n=>n.remove());"
+          assert old in s;s=s.replace(old,new,1);p.write_text(s)
+          p=root/'avatar-rings.css';s=p.read_text();s+='''\n/* Owner R5 — circular profile avatar and unclipped story rings. */\n:root body #home #mainNav>[data-page="profile"].profileAvatarNav{gap:0!important;padding:0!important;overflow:visible!important}\n:root body #home #mainNav>[data-page="profile"].profileAvatarNav>.profileNavLabel{display:none!important}\n:root body #home #mainNav>[data-page="profile"].profileAvatarNav>.profileNavAvatar{display:block!important;box-sizing:border-box!important;width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;min-height:38px!important;max-height:38px!important;line-height:38px!important;aspect-ratio:1/1!important;border-radius:50%!important;padding:2px!important;overflow:hidden!important;flex:none!important}\n:root body #home #mainNav>[data-page="profile"].profileAvatarNav>.profileNavAvatar>img{width:100%!important;height:100%!important;aspect-ratio:1/1!important;border-radius:50%!important;object-fit:cover!important}\n:root body #screenContent .chatCard{margin-left:24px!important}\n:root body #screenContent .chatMain{padding-left:2px!important}\n:root body #screenContent .contactAvatarTrigger{overflow:visible!important}\n/* Telegram-like reveal geometry, Pablicus actions and brand palette. */\n:root body #screenContent .chatSwipeActions{inset-block:0!important;gap:0!important;max-width:78%!important;align-items:stretch!important;background:transparent!important}\n:root body #screenContent .chatSwipeActions.before{left:0!important;border-radius:18px 0 0 18px!important}\n:root body #screenContent .chatSwipeActions.after{right:0!important;border-radius:0 18px 18px 0!important}\n:root body #screenContent .chatSwipeActions .chatSwipeAction{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;box-sizing:border-box!important;width:76px!important;min-width:76px!important;height:100%!important;min-height:72px!important;margin:0!important;padding:8px 4px!important;border:0!important;border-radius:0!important;box-shadow:none!important;font-size:11px!important;font-weight:400!important;line-height:1.15!important;text-align:center!important}\n:root body #screenContent .chatSwipeActions .chatSwipeAction svg{width:24px!important;height:24px!important;min-width:24px!important;margin:0!important}\n:root body #screenContent .chatSwipeActions.before .chatSwipeAction:first-child{border-radius:18px 0 0 18px!important}\n:root body #screenContent .chatSwipeActions.after .chatSwipeAction:last-child{border-radius:0 18px 18px 0!important}\n:root body #screenContent .chatSwipeAction[data-chat-action="read"]{background:var(--ocean-sky,#3BA7F2)!important;color:#171717!important}\n:root body #screenContent .chatSwipeAction[data-chat-action="pin"]{background:var(--ocean-mint,#7FE7D6)!important;color:#171717!important}\n:root body #screenContent .chatSwipeAction[data-chat-action="mute"]{background:#F2B35D!important;color:#171717!important}\n:root body #screenContent .chatSwipeAction[data-chat-action="delete"]{background:#F45D5D!important;color:#fff!important}\n:root body #screenContent .chatSwipeAction[data-chat-action="archive"]{background:#AEB2BD!important;color:#fff!important}\n''';p.write_text(s)
+          p=root/'sw.js';s=p.read_text().replace('pablicus-shell-avatar-nav-calls-20260917-r1','pablicus-shell-owner-r5-20260917-r1');p.write_text(s)
+          PY
+          node --check vision-talk/pablicus/avatar-stories.js
+          node --check vision-talk/pablicus/sw.js
+      - name: Verify R5 invariants
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          a=Path('vision-talk/pablicus/avatar-stories.js').read_text();c=Path('vision-talk/pablicus/avatar-rings.css').read_text();sw=Path('vision-talk/pablicus/sw.js').read_text()
+          assert "profileNavLabel','Вы'" not in a
+          assert "nav.setAttribute('aria-label','Профиль')" in a
+          assert 'width:38px!important;height:38px!important' in c
+          assert 'width:76px!important;min-width:76px!important' in c
+          for action in ['read','pin','mute','delete','archive']: assert f'data-chat-action="{action}"' in c
+          assert 'pablicus-shell-owner-r5-20260917-r1' in sw
+          print('OWNER_R5 PASS')
+          PY
+      - name: Commit tested runtime
+        run: |
+          git config user.name 'Pablicus release'
+          git config user.email 'pablicus-release@users.noreply.github.com'
+          git add vision-talk/pablicus/avatar-stories.js vision-talk/pablicus/avatar-rings.css vision-talk/pablicus/sw.js
+          git commit -m 'fix(pablicus): circular profile avatar and branded swipe actions [skip ci]'
+          git push origin HEAD:release/pablicus-owner-r4-20260917
