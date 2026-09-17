@@ -1,5 +1,3 @@
-/* P01 must patch the network hot-path before app.js creates the Supabase clients. */
-if(!window.PablicusPerformanceP01&&document.readyState==='loading')document.write('<script src="performance-p01.js"><\/script>');
 /* Stateless shell projection. Route, identity and lifecycle stay in the controller. */
 (function(root){
  'use strict';

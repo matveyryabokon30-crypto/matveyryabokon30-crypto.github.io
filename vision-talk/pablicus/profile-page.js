@@ -9,7 +9,7 @@
   const viewer=PablicusMediaViewer.create({resolveUrl:item=>resolve(item.path),onError:o.onError});
   const active=t=>root?.isConnected&&uid===o.getUser()?.id&&(t===undefined||t===serial);
   async function result(request){const r=await request;if(r.error)throw r.error;return r.data}
-  async function resolve(path){if(!path)return '';if(/^https:\/\//.test(path))return path;const cached=urls.get(path);if(cached&&cached.until>Date.now())return cached.url;const data=await result(bucket.createSignedUrl(path,300));urls.set(path,{url:data.signedUrl,until:Date.now()+240000});return data.signedUrl}
+  async function resolve(path){if(!path)return '';if(/^https:\/\//.test(path))return path;return scope.PablicusMediaCache.resolve('profile-media',path)}
   function fail(error,target){if(!active())return;if(target){target.textContent=error.code==='23505'?'Это имя пользователя уже занято.':error.message?.includes('BIRTHDAY')?'Проверьте дату рождения.':'Не удалось сохранить. Проверьте соединение и повторите.';target.hidden=false}else o.onError(error)}
   function resetMedia(){observer?.disconnect();observer=null;root?.querySelectorAll('video').forEach(v=>{v.pause();v.removeAttribute('src');v.load()});editorUrls.forEach(URL.revokeObjectURL);editorUrls=[]}
   function releaseMotion(){++motionRender;motion?.destroy();motion=null;motionKey=null;motionHost?.classList.remove('youMotionActive');motionHost=null;}

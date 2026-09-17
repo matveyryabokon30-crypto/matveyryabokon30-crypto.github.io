@@ -26,9 +26,7 @@
    if(typeof path!=='string'||!path)return '';
    if(/^https:\/\//i.test(path)){const u=new URL(path);if(u.username||u.password)throw Error('Invalid avatar');return u.href;}
    if(!UUID.test(person||'')||!path.startsWith(person+'/')||path.includes('..')||!/^[a-z0-9_/-]+\.(jpe?g|png|webp|gif|mp4|mov|webm)$/i.test(path))throw Error('Invalid media');
-   const cached=urlCache.get(path);if(cached?.until>Date.now())return cached.url;
-   const r=await client.storage.from('profile-media').createSignedUrl(path,300);if(!session(s))throw Error('Account changed');if(r.error)throw r.error;
-   const u=new URL(r.data?.signedUrl);if(u.protocol!=='https:'||u.username||u.password)throw Error('Invalid media URL');urlCache.set(path,{url:u.href,until:Date.now()+240000});return u.href;
+   const url=await scope.PablicusMediaCache.resolve('profile-media',path);if(!session(s))throw Error('Account changed');return url;
   }
   function face(p,s,cls='contactFace'){const n=el('div',cls,initial(nameOf(s.data)));if(p.avatar_url)imageUrl(p.avatar_url,p.id,s).then(url=>{if(!live(s)||!n.isConnected)return;const img=el('img');img.alt='Фотография профиля';img.referrerPolicy='no-referrer';img.draggable=false;img.onload=()=>{if(live(s)&&n.isConnected)n.replaceChildren(img)};img.onerror=()=>{};img.src=url;}).catch(()=>{});return n;}
   function row(label,value,action){const n=el('div','contactInfoRow');n.append(el('span','contactLabel',label));n.append(action?btn(value,action,null,'contactTextButton'):el('div','contactValue',value));return n;}

@@ -40,9 +40,7 @@
   const path=p?.avatar_url;if(typeof path!=='string'||!path)return '';
   if(/^https:\/\//i.test(path)){try{const u=new URL(path);return !u.username&&!u.password?u.href:'';}catch{return '';}}
   if(!UUID.test(p.id||'')||!path.startsWith(p.id+'/')||path.includes('..'))return '';
-  const k=key(snapshot)+':'+path,hit=signed.get(k);if(hit&&hit.until>Date.now())return hit.url;
-  const r=await client.storage.from('profile-media').createSignedUrl(path,300);if(!live(snapshot)||r.error)return '';
-  const u=new URL(r.data.signedUrl);if(u.protocol!=='https:'||u.username||u.password)return '';signed.set(k,{url:u.href,until:Date.now()+240000});return u.href;
+  try{const url=await global.PablicusMediaCache.resolve('profile-media',path,{type:'image',width:192});return live(snapshot)?url:'';}catch{return '';}
  }
  async function card(id,snapshot){
   const k=key(snapshot)+':'+id,hit=cards.get(k);if(hit&&hit.until>Date.now())return hit.promise;

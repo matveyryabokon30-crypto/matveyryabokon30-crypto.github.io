@@ -194,7 +194,8 @@
       if (observer) observer.unobserve(item.button);
       try {
         if (typeof options.resolveUrl !== 'function') throw new Error('Media resolver is unavailable');
-        const resolved = await options.resolveUrl(item.block.path || item.block.assetId || item.block.id, item.block);
+        const warm = options.peekUrl?.(item.block.path || item.block.assetId || item.block.id, item.block);
+        const resolved = warm || await options.resolveUrl(item.block.path || item.block.assetId || item.block.id, item.block);
         if (disposed || !isLiveRow()) return;
         const url = safeResolvedUrl(resolved);
         if (!url) throw new Error('Invalid media URL');
@@ -217,7 +218,8 @@
       item.statusNode.textContent = 'Загрузка видео…';
       try {
         if (typeof options.resolveUrl !== 'function') throw new Error('Media resolver is unavailable');
-        const resolved = await options.resolveUrl(item.block.path || item.block.assetId || item.block.id, item.block);
+        const warm = options.peekUrl?.(item.block.path || item.block.assetId || item.block.id, item.block);
+        const resolved = warm || await options.resolveUrl(item.block.path || item.block.assetId || item.block.id, item.block);
         if (disposed || !isLiveRow()) return;
         const url = safeResolvedUrl(resolved);
         if (!url) throw new Error('Invalid media URL');
@@ -586,7 +588,7 @@
       if (block.type === 'image') {
         const image = element('img', 'richImage');
         image.alt = attachmentLabel(block);
-        image.loading = 'lazy';
+        image.loading = 'eager'; // IntersectionObserver owns scheduling; visibility changes on load.
         image.decoding = 'async';
         if (block.width > 0 && block.height > 0) {
           button.style.setProperty('--rich-image-ratio', String(Math.min(2, Math.max(0.65, block.width / block.height))));

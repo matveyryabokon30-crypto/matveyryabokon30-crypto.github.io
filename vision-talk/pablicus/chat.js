@@ -125,13 +125,21 @@ const start=this.at(Math.max(0,y-OVERSCAN)),end=this.at(y+this.height+OVERSCAN);
 const wanted=new Set(),fragment=document.createDocumentFragment();
 for(let i=start;i<=end;i++){
 const m=this.messages[i];wanted.add(m.id);let n=this.nodes.get(m.id);
+if(n){n.hidden=false;this.nodes.delete(m.id);this.nodes.set(m.id,n);}
 if(!n||n.dataset.rev!==String(m.revision)){
 n?.remove();n=nodeFor(m);this.nodes.set(m.id,n);fragment.append(n);
 }
 const transform='translateY('+(this.offsets[i]+this.pad)+'px)';
 if(n.style.transform!==transform)n.style.transform=transform;
 }
-for(const[id,n]of this.nodes)if(!wanted.has(id)){n.remove();this.nodes.delete(id)}
+for(const[id,n]of this.nodes)if(!wanted.has(id)){
+ if(!this.index.has(id)||n.querySelector('video,audio')){n.remove();this.nodes.delete(id);}else n.hidden=true;
+}
+let warmRows=0,warmImages=0;
+for(const[id,n]of [...this.nodes].reverse())if(!wanted.has(id)){
+ warmRows++;warmImages+=n.querySelectorAll('img').length;
+ if(warmRows>12||warmImages>32||this.nodes.size>LIMIT){n.remove();this.nodes.delete(id);}
+}
 canvas.append(fragment);
 counters.max_dom=Math.max(counters.max_dom,this.nodes.size);
 if(this.nodes.size>LIMIT)throw Error('DOM limit exceeded: '+this.nodes.size);
@@ -176,7 +184,7 @@ function topOf(a){const n=list?.nodes.get(a?.id);return n?n.getBoundingClientRec
 function anchorDelta(a){const t=topOf(a);return t===null?Infinity:Math.abs(t-a.offset)}
 const frames=(n=3)=>new Promise(resolve=>{const next=()=>--n<=0?resolve():requestAnimationFrame(next);requestAnimationFrame(next)});
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function audit(){let maxOverlap=0,maxGap=0,maxModel=0,clipped=0,widthErrors=0;const nodes=[...canvas.querySelectorAll('.row')].sort((a,b)=>list.index.get(a.dataset.id)-list.index.get(b.dataset.id));for(let i=0;i<nodes.length;i++){const n=nodes[i],r=n.getBoundingClientRect(),t=n.querySelector('.text,.richMessage'),b=n.querySelector('.bubble'),c=b.getBoundingClientRect(),nr=vp.getBoundingClientRect();maxModel=Math.max(maxModel,Math.abs(r.height-(list.heights.get(n.dataset.id)||0)));if((t&&t.scrollWidth>t.clientWidth+2)||b.scrollWidth>b.clientWidth+2||c.bottom>r.bottom+1||c.top<r.top-1)clipped++;if(r.left<nr.left-1||r.right>nr.right+1||vp.scrollWidth>vp.clientWidth+1)widthErrors++;if(i&&list.index.get(n.dataset.id)===list.index.get(nodes[i-1].dataset.id)+1){const diff=nodes[i-1].getBoundingClientRect().bottom-r.top;maxOverlap=Math.max(maxOverlap,diff);maxGap=Math.max(maxGap,-diff)}}return{rows:nodes.length,max_overlap_px:round(maxOverlap),max_gap_px:round(maxGap),model_error_px:round(maxModel),clipped,width_errors:widthErrors,active:counters.active_lists}}
+function audit(){let maxOverlap=0,maxGap=0,maxModel=0,clipped=0,widthErrors=0;const nodes=[...canvas.querySelectorAll('.row:not([hidden])')].sort((a,b)=>list.index.get(a.dataset.id)-list.index.get(b.dataset.id));for(let i=0;i<nodes.length;i++){const n=nodes[i],r=n.getBoundingClientRect(),t=n.querySelector('.text,.richMessage'),b=n.querySelector('.bubble'),c=b.getBoundingClientRect(),nr=vp.getBoundingClientRect();maxModel=Math.max(maxModel,Math.abs(r.height-(list.heights.get(n.dataset.id)||0)));if((t&&t.scrollWidth>t.clientWidth+2)||b.scrollWidth>b.clientWidth+2||c.bottom>r.bottom+1||c.top<r.top-1)clipped++;if(r.left<nr.left-1||r.right>nr.right+1||vp.scrollWidth>vp.clientWidth+1)widthErrors++;if(i&&list.index.get(n.dataset.id)===list.index.get(nodes[i-1].dataset.id)+1){const diff=nodes[i-1].getBoundingClientRect().bottom-r.top;maxOverlap=Math.max(maxOverlap,diff);maxGap=Math.max(maxGap,-diff)}}return{rows:nodes.length,max_overlap_px:round(maxOverlap),max_gap_px:round(maxGap),model_error_px:round(maxModel),clipped,width_errors:widthErrors,active:counters.active_lists}}
 function okGeometry(g){return g.max_overlap_px<=1.5&&g.max_gap_px<=1.5&&g.model_error_px<=1.5&&!g.clipped&&!g.width_errors}
 const draft={expanded:false,mode:'message',attachments:[],task:null,composing:false};
 let richComposer=null,replyTarget=null;
