@@ -26,7 +26,7 @@
   field.append(legend,choices,error);host.append(field);reflect(read(uid));return field;
  }
  scope.PablicusProfileAppearance=Object.freeze({apply,mountPicker,read,palettes});
-const original=scope.PablicusProfilePage;
+ const original=scope.PablicusProfilePage;
  if(original?.create){
   scope.PablicusProfilePage=Object.freeze({...original,create(o){
    const inner=original.create({...o,mountSettings(host){
@@ -37,3 +37,5 @@ const original=scope.PablicusProfilePage;
   }});
  }
 })(window);
+/* Stories V2 is a presentation layer: it does not change story persistence or access rules. */
+(function(){if(document.querySelector('link[data-stories-v2]'))return;const l=document.createElement('link');l.rel='stylesheet';l.href='stories-v2.css';l.dataset.storiesV2='1';document.head.append(l);const s=document.createElement('script');s.src='stories-v2.js';s.defer=true;s.dataset.storiesV2='1';document.head.append(s);})();
