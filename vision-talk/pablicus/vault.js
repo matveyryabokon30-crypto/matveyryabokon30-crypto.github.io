@@ -83,11 +83,27 @@ async function digest(blob){const bytes=await blob.arrayBuffer();const v=await c
 async function fingerprint(s){return {blocks:s.blocks,reply_to:s.reply_to||null,recording:s.recording,text:await digest(new Blob([s.text])),selection:s.selection,expanded:s.expanded,files:await Promise.all(s.files.map(async f=>({id:f.id,size:f.size,type:f.type,name:f.name,lastModified:f.lastModified,hash:await digest(f.file)})))}}
 const empty=()=>({text:'',selection:{start:0,end:0,direction:'none'},expanded:false,files:[]});
 class Controller {
- constructor(adapter){this.a=adapter;this.store=new DraftStore();this.ready=false;this.restoring=true;this.rev=0;this.pending=null;this.flight=null;this.timer=0;this.firstDirty=0;this.lastSignature='';this.state='loading';this.error=null;this.restored=0;this.reloadCheck=null;this.audit=null;this.info={persistent:null,quota:null,usage:null};this.history=[];this.changeCount=0;this.failures=0;this.bootId=uid();}
+ constructor(adapter){this.a=adapter;this.store=new DraftStore();this.ready=false;this.restoring=true;this.rev=0;this.pending=null;this.flight=null;this.timer=0;this.firstDirty=0;this.lastSignature='';this.state='loading';this.error=null;this.restored=0;this.reloadCheck=null;this.audit=null;this.info={persistent:null,quota:null,usage:null};this.history=[];this.changeCount=0;this.failures=0;this.bootId=uid();this.initializing=null;this.recoverySignature=this.captureSignature();}
  set(state,e=null){this.state=state;this.error=e?{name:e.name,message:e.message}:null;this.history.push({state,error:e?.name||null,at:new Date().toISOString()});this.history=this.history.slice(-20);this.a.paint(this.public())}
  public(){return {state:this.state,error:this.error,revision:this.rev,restored_files:this.restored,changes:this.changeCount,failures:this.failures,pending:!!this.pending,transaction_active:!!this.flight,storage:{...this.info},database_stats:{...this.store.stats},reload_check:this.reloadCheck,audit:this.audit,events:this.history.slice(),scope:'THIS_ORIGIN_THIS_BROWSER_ONLY',background_save_guaranteed:false}}
+ captureSignature(){try{return signature(this.a.capture())}catch{return null}}
+ canRecover(){const current=this.captureSignature();return !this.pending&&!this.flight&&!this.pump&&current!==null&&current===this.recoverySignature}
+ canReloadSafely(){const current=this.captureSignature();return !this.initializing&&!this.pending&&!this.flight&&!this.pump&&current!==null&&current===(this.ready?this.lastSignature:this.recoverySignature)}
+ async ensureReady(){
+  if(this.initializing)await this.initializing;
+  if(this.ready)return;
+  // Read recovery must never replace edits made after a failed load.
+  if(!this.canRecover())throw err('ConflictError','Есть несохранённые изменения. Сначала сохраните или скопируйте их; повторное чтение не будет затирать текст.');
+  await this.init();
+  if(!this.ready)throw err(this.error?.name||'NotAllowedError',this.error?.message||'Не удалось подключить локальное хранилище. Повторите подключение.');
+ }
  async init(){
-  this.a.lock(true);
+  if(this.initializing)return this.initializing;
+  const work=this.restoreFromStore();this.initializing=work;
+  try{return await work}finally{if(this.initializing===work)this.initializing=null}
+ }
+ async restoreFromStore(){
+  this.restoring=true;this.a.lock(true);
   try{
    const record=await this.store.read();this.rev=record?.revision||0;
    if(record){await this.a.restore(record);this.restored=record.files.length}
@@ -99,7 +115,11 @@ class Controller {
    if(record&&(JSON.stringify(record.blocks)!==JSON.stringify(normalized.blocks)||JSON.stringify(record.recording||null)!==JSON.stringify(normalized.recording||null))){this.lastSignature='';this.changed();await this.flush();}
    const proof=await this.store.proof();
    if(proof&&proof.bootId!==this.bootId&&proof.revision===this.rev){const now=await fingerprint(this.a.capture());const match=JSON.stringify(now)===JSON.stringify(proof.value);this.reloadCheck={pass:match,files:now.files.length,revision:this.rev,kind:'ACTUAL_NEW_PAGE_INSTANCE',checkedAt:new Date().toISOString()};this.set(match?'restored':'error',match?null:err('DataError','Проверка восстановленных байтов не пройдена'));}
-  }catch(e){this.restoring=false;this.ready=false;this.set('load-error',e)}finally{this.a.lock(false)}
+  }catch(e){
+   this.restoring=false;
+   if(!this.ready){this.recoverySignature=this.captureSignature();this.set('load-error',e)}
+   else this.set(this.state==='conflict'?'conflict':'error',e);
+  }finally{this.a.lock(false)}
   this.updateInfo();
  }
  async updateInfo(){try{const n=navigator.storage;this.info.persistent=n?.persisted?await n.persisted():null;const est=n?.estimate?await n.estimate():{};this.info.quota=est.quota??null;this.info.usage=est.usage??null;this.a.paint(this.public())}catch{}}
@@ -114,7 +134,7 @@ class Controller {
  }
  async flush(){
   clearTimeout(this.timer);this.firstDirty=0;
-  if(!this.ready)throw err('NotAllowedError','Сначала восстановите доступ к хранилищу');
+  if(!this.ready)await this.ensureReady();
   if(this.state==='conflict')throw err('ConflictError','Сохранение остановлено: другая вкладка');
   if(this.pump){await this.pump;if(this.pending)return this.flush();return}
   if(!this.pending)return;
@@ -143,7 +163,7 @@ class Controller {
   if(this.rev!==revision||this.pending)throw err('DataError','Черновик изменился во время проверки');
   this.audit={pass:JSON.stringify(a)===JSON.stringify(b),files:a.files.length,total_bytes:live.files.reduce((n,f)=>n+f.size,0),text_equal:a.text===b.text,revision,checkedAt:new Date().toISOString()};this.a.paint(this.public());return this.audit;
  }
- async retry(){if(!this.ready){return this.init()}if(this.state==='conflict')return;this.pending=this.pending||{snapshot:this.a.capture()};await this.flush()}
+ async retry(){if(!this.ready){return this.ensureReady()}if(this.state==='conflict')return;this.pending=this.pending||{snapshot:this.a.capture()};await this.flush()}
  async requestPersistent(){try{this.info.persistent=navigator.storage?.persist?await navigator.storage.persist():null;this.a.paint(this.public());return this.info.persistent}catch(e){this.set('error',e)}}
  async checkOtherTab(){if(!this.ready||this.flight||this.restoring)return;try{const r=await this.store.revision();if(r!==this.rev)this.set('conflict',err('ConflictError','Черновик изменён в другой вкладке. Текущий текст не стёрт.'))}catch{}}
  async loadSaved(){if(this.flight)await this.flight;clearTimeout(this.timer);this.pending=null;this.ready=false;return this.init()}

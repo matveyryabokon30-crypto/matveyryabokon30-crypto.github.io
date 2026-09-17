@@ -397,9 +397,32 @@ window.addEventListener('pagehide',e=>{if(!e.persisted)for(const u of [...liveUr
 applyLayout();syncComposer();
 }
 async function fillDraft(value){input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));await frames(3)}
-let vault=null,storeTests=null,storeTesting=false;
+let vault=null,storeTests=null,storeTesting=false,storageRecoveryFlight=null;
 function captureDraft(){if(richComposer)return {...richComposer.capture(),composer:r2Composer?.capture(),reply_to:replyTarget,expanded:draft.expanded};return {text:input.value,expanded:draft.expanded,selection:{start:input.selectionStart,end:input.selectionEnd,direction:input.selectionDirection},files:draft.attachments.map(id=>{const a=assets.get(id);if(!a?.file)throw Error('Missing local file');return{id:a.id,name:a.name,type:a.file.type,size:a.file.size,lastModified:a.file.lastModified,kind:a.kind,file:a.file}})}}
 function draftChanged(){vault?.changed()}
+async function recoverStorage(){
+ const target=vault;if(!target)return;
+ if(storageRecoveryFlight)return storageRecoveryFlight;
+ if(!target.ready&&!target.canRecover())return target.ensureReady();
+ const work=(async()=>{
+  if(!target.ready){
+   // Reopen the same account/conversation database. Never delete it or change its version.
+   target.store.close();
+   try{
+    const restoredQueue=await target.store.readQueue();
+    if(vault!==target)throw Error('Разговор изменился во время восстановления');
+    await target.ensureReady();
+    if(vault!==target)throw Error('Разговор изменился во время восстановления');
+    queueRows=restoredQueue;queueLoaded=true;queueError=null;ingestQueue(restoredQueue);paintQueue();
+   }catch(e){if(vault===target){queueError=e;paintQueue();if(!target.ready)target.set('load-error',e)}throw e}
+  }
+  if(vault===target){draftChanged();await target.flush();}
+ })();
+ storageRecoveryFlight=work;
+ try{return await work}finally{if(storageRecoveryFlight===work)storageRecoveryFlight=null}
+}
+async function flushCurrentVault(){if(!vault)return;if(!vault.ready)return recoverStorage();draftChanged();await vault.flush()}
+
 async function restoreDraft(s){
  if(richComposer){if(!list)await openChat();await richComposer.restore(s);r2Composer?.restore(s.composer);replyTarget=s.reply_to||null;paintReply();draft.expanded=!!s.expanded&&hasComposerContent();syncComposer();return;}
  if(!list)await openChat();
@@ -517,13 +540,15 @@ window.PablicusChat={
  async open(user,chat,messages){
   ensureRichComposer();await richComposer.stopRecording();
   if(submitBusy)throw Error('Дождитесь сохранения отправки');
-  if(vault){draftChanged();await vault.flush();vault.restoring=true;vault.ready=false;clearTimeout(vault.timer);vault.store.close();}
+  if(vault){await flushCurrentVault();vault.restoring=true;vault.ready=false;clearTimeout(vault.timer);vault.store.close();vault=null;window.vault=null;}
   closeMenu(false);input.blur();list?.destroy();list=null;
   for(const u of [...liveUrls])urlRevoke(u);assets.clear();queueRows=[];queueLoaded=false;queueError=null;
   input.value='';draft.attachments=[];draft.expanded=false;draft.mode='message';draft.task=null;$('tray').replaceChildren();renderTask();
   richComposer.clear();r2Composer?.restore(null);replyTarget=null;paintReply();sourceMessages=messages;scopeUser=user;scopeChat=chat;
-  if(!vaultBound){vaultBound=true;await initializeVault()}
+  try{if(!vaultBound){vaultBound=true;await initializeVault()}
   else{vault=new DraftVault.Controller({capture:captureDraft,restore:restoreDraft,paint:paintVault,lock:lockDraft});vault.store=new PablicusRichStore(user,chat);window.vault=vault;queueRows=await vault.store.readQueue();queueLoaded=true;ingestQueue(queueRows);await vault.init();}
+  }catch(e){if(!vault||vault.ready||!vault.canRecover())throw e;await recoverStorage()}
+  if(!vault.ready)await recoverStorage();
   if(!list)await openChat();if(!vault.ready)throw Error('Локальное хранилище недоступно: черновик не будет потерян молча');
   $('reportBtn').onclick=()=>window.PablicusHost.showOutbox();
   syncComposer();return publicSnapshot();
@@ -534,9 +559,16 @@ window.PablicusChat={
   list.messages=sourceMessages.concat(queueMessages());if(!f)list.pendingBelow+=incoming;
   list.sync(a,f,'server-update');
  },
- async flush(){await richComposer?.stopRecording();if(vault){draftChanged();await vault.flush()}},
+ async flush(){await richComposer?.stopRecording();await flushCurrentVault()},
  collapseEditor(){if(r2Composer?.opened){r2Composer.close();return;}if(draft.expanded)toggleExpand();},
- async persistDraft(){if(vault){draftChanged();await vault.flush()}},
+ async persistDraft(){await flushCurrentVault()},
+ async retryStorage(){await richComposer?.stopRecording();return recoverStorage()},
+ async prepareUpdate(){
+  await richComposer?.stopRecording();
+  // A failed read does not make already-persisted records unsafe to keep across a reload.
+  // Only skip a write when there are provably no unsaved in-memory changes.
+  if(vault&&!vault.canReloadSafely())await flushCurrentVault();
+ },
  async refreshQueue(){if(vault)return refreshQueue()},
  get scope(){return{user:scopeUser,chat:scopeChat}},
  get store(){return vault?.store},get snapshot(){return publicSnapshot()},

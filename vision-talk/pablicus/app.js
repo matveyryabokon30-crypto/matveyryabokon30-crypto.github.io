@@ -694,8 +694,8 @@
  setInterval(()=>{if(!document.hidden){if(current)syncMessages();else loadDialogs();pump()}},1300);connection();
  if('serviceWorker'in navigator){let approveUpdate=false;const hadController=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('sw.js',{scope:'./',updateViaCache:'none'}).then(reg=>{const show=()=>{$('updateNotice').hidden=!reg.waiting};reg.addEventListener('updatefound',()=>reg.installing?.addEventListener('statechange',show));show();
-   $('applyUpdate').onclick=async()=>{try{await PablicusChat.flush();if(worker){toast('Сначала дождитесь завершения отправки');return}approveUpdate=true;reg.waiting?.postMessage('ACTIVATE')}catch(e){problem(e)}};
-   navigator.serviceWorker.addEventListener('controllerchange',async()=>{if(!hadController)return;if(approveUpdate){await PablicusChat.flush();location.reload()}else toast('Обновление готово. Сохраните черновик перед перезапуском.')});reg.update();
+   $('applyUpdate').onclick=async()=>{try{await PablicusChat.prepareUpdate();if(worker){toast('Сначала дождитесь завершения отправки');return}approveUpdate=true;reg.waiting?.postMessage('ACTIVATE')}catch(e){problem(e)}};
+   navigator.serviceWorker.addEventListener('controllerchange',async()=>{if(!hadController)return;if(approveUpdate){await PablicusChat.prepareUpdate();location.reload()}else toast('Обновление готово. Сохраните черновик перед перезапуском.')});reg.update();
   }).catch(()=>toast('Офлайн-режим не установлен. Онлайн-переписка доступна.'));
  }
  window.PablicusDebug={version:VERSION,get user(){return user?.id},get current(){return current?.id},get messageCount(){return rows.length},pump,syncMessages};
