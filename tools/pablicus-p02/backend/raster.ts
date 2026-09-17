@@ -11,11 +11,13 @@ export function derivatives(bytes:Uint8Array,mime:string):Promise<{size:number,b
  const work=serial.catch(()=>{}).then(async()=>{
   if(bytes.length>16*1024*1024||!['image/jpeg','image/png','image/webp'].includes(mime)||animated(bytes,mime))throw Error('unsupported_source');
   await init();const info=MagickImageInfo.create(bytes),pixels=info.width*info.height;
+  const actual=String(info.format).toUpperCase(),expected=mime==='image/jpeg'?'JPEG':mime==='image/png'?'PNG':'WEBP';
+  if(actual!==expected)throw Error('unsupported_source');
   if(!info.width||!info.height||pixels>(mime==='image/jpeg'?50_000_000:10_000_000))throw Error('image_dimensions_limit');
   const settings=new MagickReadSettings();if(mime==='image/jpeg')settings.setDefine(MagickFormat.Jpeg,'size','1600x1600');
   return ImageMagick.read(bytes,settings,image=>{
    image.autoOrient();const result=[];
-   // Preserve ICC metadata: stripping it would change display-P3 colours.
+   // Keep ICC profiles rather than silently changing display-P3 colours.
    for(const size of [1600,960,192]){
     if(Math.max(image.width,image.height)>size){if(image.width>=image.height)image.resize(size,0);else image.resize(0,size);}
     image.quality=size===1600?82:80;image.settings.setDefine(MagickFormat.WebP,'method','1');
