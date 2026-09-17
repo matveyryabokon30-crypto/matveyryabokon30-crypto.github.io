@@ -1,22 +1,30 @@
-name: Pablicus Platform R1 smoke
+name: Pablicus published release verification
 on:
   push:
     branches: [main]
+    paths: ['vision-talk/pablicus/**', 'tools/pablicus-release/**', '.github/workflows/pablicus-platform-r1-smoke.yml']
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
     steps:
-      - name: Wait for Pages
-        run: sleep 35
-      - name: Verify public assets
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install independent browser checks
         run: |
-          set -euo pipefail
-          base='https://matveyryabokon30-crypto.github.io/vision-talk/pablicus'
-          for f in auto-update.js share-invite.js contacts-web.js contacts-web.css calls-webrtc.js sw.js manifest.webmanifest; do
-            code=$(curl -L -sS -o /tmp/body -w '%{http_code}' "$base/$f?sha=${GITHUB_SHA}")
-            test "$code" = 200
-            test -s /tmp/body
-          done
-          curl -L -fsS "$base/sw.js?sha=${GITHUB_SHA}" | grep -q 'pablicus-shell-platform-r1-20260917-final3'
-          curl -L -fsS "$base/manifest.webmanifest?sha=${GITHUB_SHA}" | grep -q 'share_target'
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Verify actual Pages release and both browser engines
+        run: python tools/pablicus-release/verify-public.py
+      - name: Save publication evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pablicus-public-verification
+          path: public-evidence/
+          retention-days: 14
