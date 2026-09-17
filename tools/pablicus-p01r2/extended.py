@@ -28,7 +28,8 @@ with sync_playwright() as p:
   r.fulfill(status=200,body=data,content_type='image/jpeg' if data is LARGE else 'image/png',headers={'Access-Control-Allow-Origin':'*','Cache-Control':'no-store'})
  ctx.route(REMOTE+'/**',route)
  try:
-  page.goto(origin+'/probe');page.evaluate(BOOT);page.add_script_tag(url=origin+'/media-cache.js')
+  page.goto(origin+'/probe');page.add_script_tag(content=BOOT);page.add_script_tag(url=origin+'/media-cache.js')
+  check('fixture identity is intact before test',page.evaluate('()=>PablicusController.state().sessionUserId')=='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
   info=page.evaluate("""async()=>{const u=await PablicusMediaCache.resolve('message-media','large.jpg',{type:'image',width:960});const i=new Image;i.src=u;await i.decode();await PablicusMediaCache.settled();return {width:i.naturalWidth,height:i.naturalHeight,stats:PablicusMediaCache.stats()};}""")
   check('multi-megabyte photo is decoded once into bounded preview',len(LARGE)>3000000 and info['width']==960 and info['stats']['memoryBytes']<len(LARGE)//2,info)
   n=sum(counts.values());info=page.evaluate("""async()=>{const u=await PablicusMediaCache.resolve('message-media','large.jpg',{type:'image',width:0});const i=new Image;i.src=u;await i.decode();return {width:i.naturalWidth,stats:PablicusMediaCache.stats()};}""")
