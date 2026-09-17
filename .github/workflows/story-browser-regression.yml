@@ -1,0 +1,19 @@
+name: Story browser regression
+on:
+  push:
+    branches: [repair/shared-stories-20260917-final]
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify runtime inputs
+        run: |
+          test -f vision-talk/pablicus/index.html
+          node --check vision-talk/pablicus/chat.js
+          echo PUBLIC_RUNTIME_CHECKED
