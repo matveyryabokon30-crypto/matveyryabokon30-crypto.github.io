@@ -2,18 +2,46 @@ name: Story browser regression
 on:
   push:
     branches: [repair/shared-stories-20260917-final]
+    paths: ['tests/shared-stories/**', '.github/workflows/story-browser-regression.yml']
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: shared-story-verification
+  cancel-in-progress: true
 jobs:
   browser:
     runs-on: ubuntu-22.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Verify runtime inputs
+      - name: Install test browsers
         run: |
-          test -f vision-talk/pablicus/index.html
-          node --check vision-talk/pablicus/chat.js
-          echo PUBLIC_RUNTIME_CHECKED
+          python -m pip install playwright==1.57.0 pillow==11.3.0 > /tmp/packages.log 2>&1 || { cat /tmp/packages.log; exit 1; }
+          python -m playwright install --with-deps chromium webkit > /tmp/browsers.log 2>&1 || { tail -150 /tmp/browsers.log; exit 1; }
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg > /tmp/ffmpeg.log 2>&1
+      - name: Assemble and verify syntax
+        run: |
+          python tests/shared-stories/assemble.py
+          for f in tests/shared-stories/candidate/*.js; do node --check "$f"; done
+          python -c "from PIL import Image,ImageDraw; im=Image.new('RGB',(450,800),'#12354d'); d=ImageDraw.Draw(im); d.ellipse((60,200,390,530),fill='#48acc9'); im.save('tests/shared-stories/fixture.png')"
+          ffmpeg -v error -f lavfi -i color=c=0x285870:s=240x426:r=15 -t 12 -c:v libx264 -pix_fmt yuv420p -movflags +faststart -an tests/shared-stories/fixture.mp4
+      - name: Full runtime regression
+        run: python tests/shared-stories/verify.py
+      - name: Record verified runtime on candidate branch only
+        run: |
+          python -c "import json,shutil; from pathlib import Path; r=Path('tests/shared-stories'); [shutil.copy2(r/'candidate'/n,Path('vision-talk/pablicus')/n) for n in json.loads((r/'manifest.json').read_text())]"
+          git config user.name 'Pablicus browser verification'
+          git config user.email 'pablicus-verification@users.noreply.github.com'
+          git add vision-talk/pablicus
+          git diff --cached --quiet || { git commit -m 'fix(pablicus): verified same-avatar story morph, player and stable chat [skip ci]'; git push origin HEAD:repair/shared-stories-20260917-final; }
+          git rev-parse HEAD > tests/shared-stories/results/verified-commit.txt
+      - name: Test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: shared-stories-browser-evidence
+          path: |
+            tests/shared-stories/results/
+            tests/shared-stories/manifest.json
+          retention-days: 3
