@@ -1,5 +1,5 @@
 {
-  "release": "P06",
+  "release": "P06-F01",
   "base": "73464666955ccd285559f88e1b128e8c05c810fc",
   "assets": {
     "auto-update.js": "0526baa0c44e5b051c103de1612ef47d90706c2342787380de3917c6e7609247",
@@ -39,8 +39,8 @@
     "fonts/NotoSans-Regular.ttf": "f5f552c8c5edb61fe6efb824baf4d4de47b1a8689ab4925ff43f7bd6a4ebece5",
     "fonts/NotoSans-Bold.ttf": "3a08a47daa00cade516425c15c57615aef2fd418ec9811a7b9f465088f92cc05",
     "fonts/OFL.txt": "e2e177a32561584d4fc13aaa3cd8e53758a12910f013fe9ca125419111722029",
-    "./": "35947c794d3fb593d414ef201e23bd399f2650aaa4b84814011864c5e10bc6e8",
-    "index.html": "35947c794d3fb593d414ef201e23bd399f2650aaa4b84814011864c5e10bc6e8",
+    "./": "28abd00f9a38df3386973af39a1a81745a6c2894dfa6191803a66838ef8110eb",
+    "index.html": "28abd00f9a38df3386973af39a1a81745a6c2894dfa6191803a66838ef8110eb",
     "component-registry.js": "354a1d53a3930dab9e664e30fce7e18fc79a3a9cecb0bda56611dcc27853bf54",
     "app-shell.js": "82a40533678b1377e486c2bee30afbe053585cd7aa36a71b5d7a943c8627763a",
     "design-tokens.css": "bb0bdb16b5a0b477e7671f00d027a8957ca54cce781c84f3d5f6bd1794fc03e5",
@@ -88,7 +88,7 @@
     "workspace-quick.css": "d5f87d0d6cda3895c0c4f9959b3f88f6b1208921b31dc8f829e53415b630fb29",
     "push-notifications.js": "d02fda496151815cd6c649af585fe07fbacc0f3e98a1ea21f9a94441df99149a",
     "chat.js": "85d811b3fd90bce3b7d12bdc199f3ce3607c208ead34ea3ffeb60733470fad5c",
-    "app.js": "a83bf3188088e29a7d2c49bfb24f7eca09532ef0ed85544755118e3fd556179c",
+    "app.js": "2acd061a203d9a0e8a0a90e424dadf2c82f7afd446917401d9a628a1525c3094",
     "bots.js": "0abf8698cd9ccdcb6d0b245ae2fc6f455094c37249feb63b6ad05d74c1432f7b",
     "bot-chat-r2.js": "262f9ca4b97554d3892735390f82d5309de895600f4e0e91bf08f691afdff2dd",
     "bots.css": "69fb0256b9cdbcbc94d398a23af45d7d7c7151b016c86079cce36b2f87c90de7",
@@ -124,4 +124,3 @@
   },
   "push_sha256": "a5cc2f20984394168f0d8b51a9c5cad43db09ce97baf276efe3e3c6e29064422"
 }
-
