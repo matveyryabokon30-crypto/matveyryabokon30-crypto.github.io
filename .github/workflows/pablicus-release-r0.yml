@@ -35,8 +35,10 @@ jobs:
           for f in vision-talk/pablicus/*.js; do node --check "$f"; done
       - name: Install browser verification
         run: |
-          python -m pip install playwright==1.57.0 pillow
+          python -m pip install playwright==1.63.0 pillow
           python -m playwright install --with-deps chromium webkit
+          python -m pip show playwright > results/toolchain.txt
+          uname -a >> results/toolchain.txt
       - name: Accumulated media and release lifecycle tests
         run: |
           set -euo pipefail
