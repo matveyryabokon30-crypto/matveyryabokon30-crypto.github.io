@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru" data-build="2026.09.18-s2.3">
+<html lang="ru" data-build="2026.09.18-s3.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -11,7 +11,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="assets/ui-s1-1.css">
-<link rel="stylesheet" href="assets/voice-s2-3.css">
+<link rel="stylesheet" href="assets/voice-s3-0.css">
 <title>SEKKES</title>
 </head>
 <body>
@@ -74,13 +74,13 @@
 <div class="quiet-tag"><span></span><span id="aiStateLabel">Войди в SEKKES для разговора</span></div>
 <div class="voice-view" id="voiceView">
 <div class="wave" id="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-<p id="voiceHint">Скажи одну фразу и отправь.<br>Ответ можно слушать или читать.</p>
-<button class="text-link" id="micTestLink">Войти и начать</button>
+<p id="voiceHint">Нажми голос — и просто говори.<br>Я отвечу сам, без дополнительных кнопок.</p>
+<button class="text-link" id="micTestLink">Начать голосовой разговор</button>
 </div>
 <div class="text-view" id="textView" hidden>
 <label for="draft">О чём ты хочешь поговорить?</label>
 <textarea id="draft" rows="4" maxlength="2000" placeholder="Можно начать с одной мысли…"></textarea>
-<p>Текст отправляется после входа и согласия. Долгосрочная память по умолчанию выключена.</p>
+<p>Текстовый режим работает отдельно от голосового разговора.</p>
 </div>
 </section>
 <div class="composer-wrap">
@@ -125,5 +125,5 @@
 </main>
 <noscript><div class="noscript">Для жестов и переходов SEKKES нужен JavaScript.</div></noscript>
 <script src="assets/ui-s2-3.js" defer></script>
-<script type="module" src="assets/voice-s2-3.mjs"></script>
+<script type="module" src="assets/voice-s3-0.mjs"></script>
 </body></html>
