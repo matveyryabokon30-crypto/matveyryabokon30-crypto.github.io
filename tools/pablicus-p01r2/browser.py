@@ -38,6 +38,11 @@ checks=[]
 def check(name,condition,details=None):
  checks.append({'name':name,'pass':bool(condition),'details':details});print(('PASS ' if condition else 'FAIL ')+name,details or '',flush=True)
  if not condition:raise AssertionError(name)
+def repeated_paths(before,after):
+ return {path:{'before':count,'after':after.get(path,0)} for path,count in before.items() if after.get(path,0)>count}
+# Negative/positive metric controls: first-time visible assets are not repeat downloads.
+assert repeated_paths({'viewed':1},{'viewed':1,'newly_visible':1})=={}
+assert repeated_paths({'viewed':1},{'viewed':2})=={'viewed':{'before':1,'after':2}}
 with sync_playwright() as p:
  browser=getattr(p,A.engine).launch(headless=True)
  context=browser.new_context(viewport={'width':390,'height':844},device_scale_factor=2,is_mobile=True,has_touch=True)
@@ -81,8 +86,11 @@ with sync_playwright() as p:
   check('scroll down and back does not redownload viewed images',firstDownloads==secondDownloads and firstDownloads>0,{'cold':firstDownloads,'after_two_returns':secondDownloads})
   data=page.evaluate("""()=>({rows:PablicusChat.list.nodes.size,live:document.querySelectorAll('#canvas .row:not([hidden])').length,ready:[...document.querySelectorAll('#canvas .row:not([hidden]) img')].every(i=>i.complete&&i.naturalWidth>0),audit:gate.audit()})""")
   check('warm rows remain painted and bounded',data['rows']<=120 and data['ready'],data)
+  beforeReopen={k:v for k,v in counts.items() if '/conversation/' in k}
   page.evaluate("""async()=>{await PablicusChat.leave();await PablicusChat.open(testUser,'cccccccc-cccc-4ccc-8ccc-cccccccccccc',messages);}""");page.wait_for_timeout(750)
-  check('reopen conversation reuses loaded media',sum(v for k,v in counts.items() if '/conversation/' in k)==secondDownloads)
+  afterReopen={k:v for k,v in counts.items() if '/conversation/' in k}
+  repeated=repeated_paths(beforeReopen,afterReopen)
+  check('reopen conversation reuses loaded media',bool(beforeReopen) and not repeated,{'repeated':repeated,'first_time_visible':sorted(set(afterReopen)-set(beforeReopen))})
   page.evaluate("()=>PablicusStoriesViewer.open(testUser)")
   page.wait_for_function("document.querySelector('.storyViewerV3')?.querySelector('div')?.shadowRoot?.querySelector('img.media')?.naturalWidth>0",timeout=10000)
   n=sum(v for k,v in counts.items() if k.endswith('/story.png'))

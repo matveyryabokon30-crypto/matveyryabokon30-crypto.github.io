@@ -1,51 +1,94 @@
-"""Verify actual Pages bytes, current SW and public app boot. No user identity."""
-import concurrent.futures,hashlib,json,os,pathlib,time,urllib.request
+"""Verify exact published bytes and cold browser boot; never claim device Push delivery."""
+import concurrent.futures
+import hashlib
+import json
+import os
+import pathlib
+import time
+import urllib.request
 from playwright.sync_api import sync_playwright
-ROOT=pathlib.Path('vision-talk/pablicus');OUT=pathlib.Path('public-evidence');OUT.mkdir(exist_ok=True)
-BASE='https://matveyryabokon30-crypto.github.io/vision-talk/pablicus/'
-SHA=os.environ['GITHUB_SHA'];manifest=json.loads((ROOT/'release-p01r2.json').read_text());checks=[];fatal=None
+from build_release import check
 
-def digest(b):return hashlib.sha256(b).hexdigest()
-def fetch(path,cache_bust=True):
- url=BASE+('' if path=='./' else path)
- if cache_bust:url+='?verify='+SHA
- with urllib.request.urlopen(urllib.request.Request(url,headers={'Cache-Control':'no-cache'}),timeout=25) as r:return r.read()
-def record(name,passed,details=None):
- checks.append({'name':name,'pass':bool(passed),'details':details});print(('PASS ' if passed else 'FAIL ')+name,details or '',flush=True)
- if not passed:raise AssertionError(name)
+ROOT = pathlib.Path('vision-talk/pablicus')
+OUT = pathlib.Path('public-evidence');OUT.mkdir(exist_ok=True)
+BASE = 'https://matveyryabokon30-crypto.github.io/vision-talk/pablicus/'
+SHA = os.environ['GITHUB_SHA']
+manifest = json.loads((ROOT / 'release.json').read_text())
+checks = []
+fatal = None
+
+
+def digest(b):
+    return hashlib.sha256(b).hexdigest()
+
+
+def fetch(path, cache_bust=True):
+    url = BASE + ('' if path == './' else path)
+    if cache_bust:
+        url += ('&' if '?' in url else '?') + 'verify=' + SHA
+    with urllib.request.urlopen(urllib.request.Request(url, headers={'Cache-Control': 'no-cache'}), timeout=25) as r:
+        return r.read()
+
+
+def record(name, passed, details=None):
+    checks.append(dict(name=name, passed=bool(passed), details=details))
+    print(('PASS ' if passed else 'FAIL ') + name, details or '', flush=True)
+    if not passed:
+        raise AssertionError(name)
+
+
 try:
- expected=digest((ROOT/'sw.js').read_bytes());last=None
- for attempt in range(24):
-  try:
-   if digest(fetch('sw.js'))==expected and digest(fetch('index.html'))==manifest['assets']['index.html']:break
-  except Exception as e:last=type(e).__name__
-  time.sleep(10)
- else:raise RuntimeError('Submitted release has not reached Pages: '+str(last))
- record('Pages serves submitted release shell',True,{'commit':SHA})
- def check_asset(item):
-  name,sha=item
-  try:return {'path':name,'pass':digest(fetch(name))==sha}
-  except Exception as e:return {'path':name,'pass':False,'error':type(e).__name__}
- with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:files=list(executor.map(check_asset,manifest['assets'].items()))
- record('All release assets match tested content hashes',all(f['pass'] for f in files),{'verified':len(files),'failed':[f for f in files if not f['pass']]})
- record('Canonical non-versioned URL serves current HTML',digest(fetch('index.html',False))==manifest['assets']['index.html'])
- record('Canonical non-versioned SW serves current release',digest(fetch('sw.js',False))==expected)
- for engine in ['chromium','webkit']:
-  with sync_playwright() as p:
-   browser=getattr(p,engine).launch(headless=True);ctx=browser.new_context();page=ctx.new_page();errors=[]
-   page.on('pageerror',lambda e:errors.append(str(e)));page.add_init_script('window.initialNativeFetch=window.fetch;')
-   page.goto(BASE,wait_until='domcontentloaded',timeout=45000)
-   page.wait_for_function("window.PablicusDebug?.version==='P06'",timeout=45000)
-   page.wait_for_function('navigator.serviceWorker.controller',timeout=90000);page.wait_for_timeout(6500)
-   status=page.evaluate("""async()=>{const worker=navigator.serviceWorker.controller;const result=await new Promise(resolve=>{const ch=new MessageChannel();ch.port1.onmessage=e=>resolve(e.data);worker.postMessage({type:'PABLICUS_RELEASE'},[ch.port2]);setTimeout(()=>resolve(null),3000);});return {worker:result,version:PablicusDebug.version,nativeFetch:fetch===initialNativeFetch,cache:!!window.PablicusMediaCache,manualNotice:!document.getElementById('updateNotice').hidden};}""")
-   record(engine+' cold boot installs and controls with F01',status['worker'] and status['worker']['version']=='pablicus-shell-f01-20260918',status)
-   record(engine+' has explicit cache and no manual prompt',status['nativeFetch'] and status['cache'] and not status['manualNotice'])
-   record(engine+' actual public app has no JavaScript exceptions',not errors,errors)
-   page.screenshot(path=str(OUT/(engine+'-public-boot.png')));browser.close()
-except Exception as e:
- fatal=str(e)
- if not any(not c['pass'] for c in checks):checks.append({'name':'Public verification completed','pass':False,'details':fatal})
- raise
+    check(ROOT)
+    observed = None
+    for attempt in range(24):
+        try:
+            observed = {'sw': digest(fetch('sw.js')), 'index': digest(fetch('index.html')), 'release': digest(fetch('release.json'))}
+            if observed == {'sw': manifest['sw_sha256'], 'index': manifest['assets']['index.html'], 'release': digest((ROOT / 'release.json').read_bytes())}:
+                break
+        except Exception as exc:
+            observed = {'network_error': type(exc).__name__}
+        time.sleep(10)
+    else:
+        raise RuntimeError('Exact candidate not served by Pages: ' + json.dumps(observed))
+    record('Pages serves exact tested build', True, {'deployment_commit': SHA, 'build_id': manifest['build_id']})
+
+    def verify_asset(item):
+        name, expected = item
+        try:
+            actual = digest(fetch(name))
+            return {'path': name, 'pass': actual == expected, 'actual': actual}
+        except Exception as exc:
+            return {'path': name, 'pass': False, 'error': type(exc).__name__}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        assets = list(executor.map(verify_asset, manifest['assets'].items()))
+    record('All published asset bytes match', all(x['pass'] for x in assets), {'verified': len(assets), 'failed': [x for x in assets if not x['pass']]})
+    record('Canonical URL has current HTML', digest(fetch('index.html', False)) == manifest['assets']['index.html'])
+    record('Canonical worker is current', digest(fetch('sw.js', False)) == manifest['sw_sha256'])
+    record('Legacy release manifest agrees', json.loads(fetch('release-p01r2.json')) == manifest)
+    for engine in ['chromium', 'webkit']:
+        with sync_playwright() as pw:
+            browser = getattr(pw, engine).launch(headless=True)
+            ctx = browser.new_context();page = ctx.new_page();errors = []
+            page.on('pageerror', lambda exc: errors.append(str(exc)))
+            page.add_init_script('window.initialNativeFetch=window.fetch;')
+            page.goto(BASE, wait_until='domcontentloaded', timeout=45000)
+            page.wait_for_function('window.PablicusDebug && window.PablicusBuild', timeout=45000)
+            page.wait_for_function('navigator.serviceWorker.controller', timeout=90000)
+            page.wait_for_timeout(6500)
+            status = page.evaluate('PablicusBuild.inspect()')
+            record(engine + ' coherent active build', status['coherent'] and status['buildId'] == status['htmlBuildId'] == status['workerBuildId'] == manifest['build_id'], status)
+            record(engine + ' expected worker version', status['workerVersion'] == manifest['worker_version'])
+            record(engine + ' P06 modules and native fetch intact', page.evaluate("PablicusDebug.version==='P06' && fetch===initialNativeFetch && !!PablicusMediaCache"))
+            record(engine + ' no manual update prompt', page.locator('#updateNotice').is_hidden())
+            record(engine + ' no JavaScript exceptions', not errors, errors)
+            page.screenshot(path=str(OUT / (engine + '-public-boot.png')))
+            browser.close()
+except Exception as exc:
+    fatal = str(exc)
+    if not any(not c['passed'] for c in checks):
+        checks.append(dict(name='verification completed', passed=False, details=fatal))
+    raise
 finally:
- result={'commit':SHA,'release':'P06-F01','passed':sum(x['pass'] for x in checks),'failed':sum(not x['pass'] for x in checks),'checks':checks,'boundary':'Public unauthenticated app boot and byte integrity; owner iPhone is not tested here.','error':fatal}
- (OUT/'public-verification.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+    result = dict(deployment_commit=SHA, build_id=manifest['build_id'], release=manifest['release'], passed=sum(c['passed'] for c in checks), failed=sum(not c['passed'] for c in checks), checks=checks, error=fatal, boundary='Unauthenticated public boot and byte integrity. No physical iPhone, lock-screen or Push delivery acceptance.')
+    (OUT / 'public-verification.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))

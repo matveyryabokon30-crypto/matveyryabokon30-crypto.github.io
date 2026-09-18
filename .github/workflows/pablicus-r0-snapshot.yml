@@ -1,0 +1,39 @@
+name: Pablicus R0 baseline snapshot
+on:
+  push:
+    branches: [fix/pablicus-f02-r0-release-20260919]
+    paths: [.github/workflows/pablicus-r0-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Record exact published-file snapshot
+        run: |
+          mkdir snapshot
+          git rev-parse HEAD > snapshot/INPUT_SHA.txt
+          tar -czf snapshot/public-pablicus-baseline.tar.gz vision-talk/pablicus tools .github/workflows
+          python - <<'PY'
+          import hashlib,json,pathlib,re
+          root=pathlib.Path('vision-talk/pablicus')
+          manifest=json.loads((root/'release-p01r2.json').read_text())
+          mismatches=[]
+          for name,expected in manifest['assets'].items():
+              p=root/('index.html' if name=='./' else name)
+              actual=hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None
+              if actual!=expected:mismatches.append({'asset':name,'expected':expected,'actual':actual})
+          report={'manifest_release':manifest['release'],'mismatches':mismatches,'count':len(manifest['assets'])}
+          pathlib.Path('snapshot/baseline-integrity.json').write_text(json.dumps(report,indent=2))
+          print(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pablicus-r0-baseline
+          path: snapshot/
+          retention-days: 3
+          if-no-files-found: error
