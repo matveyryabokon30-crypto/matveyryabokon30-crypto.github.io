@@ -72,7 +72,7 @@ try:
    page.get_by_role('button',name='Забыть',exact=True).click();page.wait_for_function('document.querySelectorAll(".s2-memory textarea").length===0')
    check(engine+' forget removes selected memory',not facts)
    page.locator('#dialogClose').click();page.locator('#openText').click()
-   page.evaluate("navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException('Denied','NotAllowedError')}")
+   page.evaluate("() => { navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException('Denied','NotAllowedError')}; }")
    page.locator('#micButton').click();page.wait_for_function('document.querySelector("#toast").textContent.includes("Микрофон не разрешён")')
    check(engine+' mic denial handled without paid call',sum(c['url'].endswith('/turn') for c in calls)==count)
    page.locator('#s2End').click();check(engine+' end clears local context',page.evaluate('window.SekkesS2.dirty') is False)
