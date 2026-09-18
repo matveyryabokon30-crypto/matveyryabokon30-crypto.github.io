@@ -77,6 +77,8 @@ try:
    check(engine+' mic denial handled without paid call',sum(c['url'].endswith('/turn') for c in calls)==count)
    page.locator('#s2End').click();check(engine+' end clears local context',page.evaluate('window.SekkesS2.dirty') is False)
    page.locator('#micButton').click();page.locator('#s2Password').wait_for();page.locator('#s2Password').fill('NOT-TO-RETAIN');page.locator('#dialogClose').click()
+   # HTMLDialogElement queues its close event; retain the disposal assertion and bound its completion.
+   page.wait_for_function('document.querySelector("#s2Password").value === ""',timeout=2000)
    check(engine+' dismissed form clears password',page.locator('#s2Password').input_value()=='')
    stored=page.evaluate('Object.keys(localStorage).map(k=>[k,localStorage.getItem(k)])')
    check(engine+' no auth or conversation in localStorage',all('TOKEN' not in str(x) and 'FAKE' not in str(x) and 'Тестовый' not in str(x) for x in stored))
