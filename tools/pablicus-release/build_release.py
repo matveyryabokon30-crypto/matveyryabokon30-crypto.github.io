@@ -61,6 +61,10 @@ def build(root, sha):
                       '<meta name="pablicus-release" content="' + identity + '">', html)
     if n != 1:
         raise ValueError('Expected exactly one release meta tag')
+    html, count = re.subn(r'(<p\b[^>]*\bid="releaseLabel"[^>]*>)[^<]*(</p>)',
+                          lambda m: m.group(1) + 'F02-R0 · ' + sha[:12] + m.group(2), html, count=1)
+    if count != 1:
+        raise ValueError('Expected one visible release label')
     script = '<script src="release-info.js"></script>'
     if script not in html:
         html = html.replace('</head>', script + '</head>', 1)
@@ -147,6 +151,8 @@ def check(root):
     html = (root / 'index.html').read_text()
     if not referenced(root, html).issubset(m['assets']):
         raise ValueError('Referenced resources missing from inventory')
+    if ('F02-R0 · ' + m['source_sha'][:12]) not in html:
+        raise ValueError('Visible release label diverges')
     if f'content="{m["build_id"]}"' not in html or json.dumps(m['build_id']) not in (root / 'release-info.js').read_text():
         raise ValueError('HTML/diagnostic build identity diverges')
     if f"const VERSION='{m['worker_version']}';" not in sw or 'const BUILD_ID=' + json.dumps(m['build_id']) + ';' not in sw:
