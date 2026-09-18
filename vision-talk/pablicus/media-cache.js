@@ -146,7 +146,14 @@
  }
  async function prepare(bucket,path){try{const s=session();check(bucket,path);if(g.PablicusPreviewClient)await g.PablicusPreviewClient.build(s,bucket,path,960,2);}catch{/* Never fail an upload because optional preparation failed. */}}
 
+ async function hydrateAuthorized(bucket,items,options={}){
+  const s=session(),width=options.width===0?0:(options.width||1280),variant=width?'image:'+width:'original',until=Math.min(Date.now()+Math.max(15,options.leaseSeconds||90)*1000,Number(options.expiresAt)||Infinity);
+  const unique=[...new Set((items||[]).filter(Boolean))];for(const path of unique)check(bucket,path);
+  // Caller must pass paths returned by an authenticated RLS-protected query in this session.
+  // Hydration only exposes bytes already stored for the same account; it never downloads.
+  await Promise.all(unique.map(async path=>{const key=k(s,bucket,path,variant);if(hit(key))return;const saved=await read(key,s);assert(s);if(saved)remember(key,saved.blob,until,s);}));
+ }
  function peek(bucket,path,options={}){try{const s=session(),width=options.width===0?0:(options.width||1280),e=hit(k(s,bucket,path,width?'image:'+width:'original'));return e?e.url:null;}catch{return null;}}
  function invalidate(bucket,path){const s=session();for(const[key,e]of memo){const[id,b,p]=JSON.parse(key);if(id===s.id&&b===bucket&&p===path){used-=e.bytes;URL.revokeObjectURL(e.url);memo.delete(key);}}for(const key of signs.keys()){const[id,b,p]=JSON.parse(key);if(id===s.id&&b===bucket&&p===path)signs.delete(key);}}
- g.PablicusMediaCache=Object.freeze({resolve,prepare,peek,invalidate,stats:()=>({...stats,activeDownloads:active,queuedDownloads:queue.length,memoryEntries:memo.size,memoryBytes:used}),settled:()=>diskWrites,clear(){changeOwner(null);}});
+ g.PablicusMediaCache=Object.freeze({resolve,prepare,hydrateAuthorized,peek,invalidate,stats:()=>({...stats,activeDownloads:active,queuedDownloads:queue.length,memoryEntries:memo.size,memoryBytes:used}),settled:()=>diskWrites,clear(){changeOwner(null);}});
 })(window);
