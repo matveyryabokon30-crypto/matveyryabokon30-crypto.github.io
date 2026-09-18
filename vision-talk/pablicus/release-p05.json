@@ -62,7 +62,7 @@
     "rich-store.js": "1b00b6ffc04f7bca57762e9d70fa26de03d0e1098179a7834459e2ed05ed6e32",
     "rich-composer.js": "c4c687b034eeda22b7e686f3226309959a95acd4dd0b6170ffd36f9dc14f9b76",
     "rich-composer.css": "a3b8dcc64a2525b92f2911ed7f56c438a216e8952c05c3b29d3dcd796f6c5870",
-    "rich-message.js": "c1065c41fbd39521ecc4c01b30f32269936bf92ec4366380f7581a85204b0d54",
+    "rich-message.js": "3034353d61f973c04c16c1c8a981d49ed83fe1e8342580d8c0b7913c880646fb",
     "rich-message.css": "0876004edd7309ae4b59665c99b3b68d7d9875976d03cf47a757aeea0f699683",
     "media-viewer.js": "bfe3620298c7140fae8459e4bef4d503d70200a5f2ec8b83bbe83ecde4f82b0c",
     "media-viewer.css": "e79d53499e473516cb06726aa66b21b2ea2ff1489aa8a0bb32bbf9610cd17a9f",
@@ -88,7 +88,7 @@
     "workspace-quick.css": "d5f87d0d6cda3895c0c4f9959b3f88f6b1208921b31dc8f829e53415b630fb29",
     "push-notifications.js": "d02fda496151815cd6c649af585fe07fbacc0f3e98a1ea21f9a94441df99149a",
     "chat.js": "85d811b3fd90bce3b7d12bdc199f3ce3607c208ead34ea3ffeb60733470fad5c",
-    "app.js": "139d5acf1c508052f81a086c457b08545ca2643e0fcd1218ddc53b98796fbe8e",
+    "app.js": "52ec085303765a03c4bee4acbfb863b3f2eef47338272dcbe3833de2585be8a4",
     "bots.js": "0abf8698cd9ccdcb6d0b245ae2fc6f455094c37249feb63b6ad05d74c1432f7b",
     "bot-chat-r2.js": "262f9ca4b97554d3892735390f82d5309de895600f4e0e91bf08f691afdff2dd",
     "bots.css": "69fb0256b9cdbcbc94d398a23af45d7d7c7151b016c86079cce36b2f87c90de7",
@@ -121,7 +121,7 @@
     "media-cache.js": "72e657d0d58bea6747a14e386854ea7985294dfff6eec5e8c2933bbc8fae2eac",
     "media-preview-client.js": "9259da0b68f83377139f5322df4fae3a14c93f1ed2b74e4521f1f533e1f6c98f",
     "home-data.js": "81c48bca9cac0c7474e4d609907d7da0adb19a6e42cee0e6225ab7b6b419860a",
-    "screen-data.js": "c00c6cf32ca0b4b177a479210dc5adeab2034058ca287777ea6967e8ec88d55e"
+    "screen-data.js": "d2a3fc95479597f9de8f28b6f651c39d07c9cfd1cf327f2bb6061e0e0f3149e1"
   },
   "push_sha256": "a5cc2f20984394168f0d8b51a9c5cad43db09ce97baf276efe3e3c6e29064422"
 }

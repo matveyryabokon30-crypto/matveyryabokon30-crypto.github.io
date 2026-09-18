@@ -2,7 +2,7 @@
   "baseline": {
     "firstColdFrames": [
       {
-        "t": 477.80000000001746,
+        "t": 387,
         "rows": 4,
         "photos": 0,
         "stories": 0,
@@ -10,7 +10,7 @@
         "initials": 4
       },
       {
-        "t": 488.6000000000058,
+        "t": 392.30000000001746,
         "rows": 4,
         "photos": 0,
         "stories": 0,
@@ -18,7 +18,7 @@
         "initials": 4
       },
       {
-        "t": 502.5,
+        "t": 405.5,
         "rows": 4,
         "photos": 0,
         "stories": 1,
@@ -28,7 +28,7 @@
     ],
     "firstWarmFrames": [
       {
-        "t": 373.6000000000058,
+        "t": 329.5999999999767,
         "rows": 4,
         "photos": 0,
         "stories": 0,
@@ -36,7 +36,7 @@
         "initials": 4
       },
       {
-        "t": 377.70000000001164,
+        "t": 341,
         "rows": 4,
         "photos": 0,
         "stories": 0,
@@ -44,7 +44,7 @@
         "initials": 4
       },
       {
-        "t": 393.5,
+        "t": 357.5999999999767,
         "rows": 4,
         "photos": 0,
         "stories": 1,
@@ -52,10 +52,10 @@
         "initials": 4
       }
     ],
-    "rowsMs": 483,
-    "storyMetadataMs": 705,
-    "avatarsMs": 1289,
-    "warmHomeMs": 797,
+    "rowsMs": 391,
+    "storyMetadataMs": 625,
+    "avatarsMs": 1192,
+    "warmHomeMs": 743,
     "coldImageDownloads": 5,
     "warmImageDownloads": 0,
     "initialRequests": [
@@ -84,7 +84,7 @@
   "candidate": {
     "firstColdFrames": [
       {
-        "t": 1211.4000000000233,
+        "t": 1148.7999999999884,
         "rows": 4,
         "photos": 4,
         "stories": 5,
@@ -92,7 +92,7 @@
         "initials": 0
       },
       {
-        "t": 1215.8000000000175,
+        "t": 1152.0999999999767,
         "rows": 4,
         "photos": 4,
         "stories": 5,
@@ -100,7 +100,7 @@
         "initials": 0
       },
       {
-        "t": 1228.2000000000116,
+        "t": 1167.0999999999767,
         "rows": 4,
         "photos": 4,
         "stories": 5,
@@ -110,7 +110,7 @@
     ],
     "firstWarmFrames": [
       {
-        "t": 408.20000000001164,
+        "t": 358.0999999999767,
         "rows": 4,
         "photos": 4,
         "stories": 5,
@@ -118,7 +118,7 @@
         "initials": 0
       },
       {
-        "t": 416.6000000000058,
+        "t": 371.69999999998254,
         "rows": 4,
         "photos": 4,
         "stories": 5,
@@ -126,7 +126,7 @@
         "initials": 0
       },
       {
-        "t": 433,
+        "t": 388.19999999998254,
         "rows": 4,
         "photos": 4,
         "stories": 5,
@@ -134,10 +134,10 @@
         "initials": 0
       }
     ],
-    "rowsMs": 1214,
-    "storyMetadataMs": 1223,
-    "avatarsMs": 1228,
-    "warmHomeMs": 411,
+    "rowsMs": 1151,
+    "storyMetadataMs": 1158,
+    "avatarsMs": 1163,
+    "warmHomeMs": 360,
     "coldImageDownloads": 5,
     "warmImageDownloads": 0,
     "initialRequests": [
@@ -206,7 +206,7 @@
       "pass": true,
       "details": {
         "networkImageDownloads": 0,
-        "homeMs": 411
+        "homeMs": 360
       }
     },
     {
@@ -219,7 +219,7 @@
       "pass": true,
       "details": [
         {
-          "t": 1211.4000000000233,
+          "t": 1148.7999999999884,
           "rows": 4,
           "photos": 4,
           "stories": 5,
@@ -227,7 +227,7 @@
           "initials": 0
         },
         {
-          "t": 1215.8000000000175,
+          "t": 1152.0999999999767,
           "rows": 4,
           "photos": 4,
           "stories": 5,
@@ -235,7 +235,7 @@
           "initials": 0
         },
         {
-          "t": 1228.2000000000116,
+          "t": 1167.0999999999767,
           "rows": 4,
           "photos": 4,
           "stories": 5,
@@ -249,7 +249,7 @@
       "pass": true,
       "details": [
         {
-          "t": 408.20000000001164,
+          "t": 358.0999999999767,
           "rows": 4,
           "photos": 4,
           "stories": 5,
@@ -257,7 +257,7 @@
           "initials": 0
         },
         {
-          "t": 416.6000000000058,
+          "t": 371.69999999998254,
           "rows": 4,
           "photos": 4,
           "stories": 5,
@@ -265,7 +265,7 @@
           "initials": 0
         },
         {
-          "t": 433,
+          "t": 388.19999999998254,
           "rows": 4,
           "photos": 4,
           "stories": 5,
@@ -311,8 +311,8 @@
       "name": "authenticated first-home avatars appear faster under equal latency",
       "pass": true,
       "details": {
-        "beforeMs": 1289,
-        "afterMs": 1228
+        "beforeMs": 1192,
+        "afterMs": 1163
       }
     },
     {
@@ -327,8 +327,8 @@
       "name": "warm first complete home is faster rather than just concealed",
       "pass": true,
       "details": {
-        "beforeMs": 797,
-        "afterMs": 411
+        "beforeMs": 743,
+        "afterMs": 360
       }
     }
   ],

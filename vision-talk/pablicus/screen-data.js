@@ -40,6 +40,7 @@
   for(const row of canvas.querySelectorAll('.row:not([hidden])')){const b=row.getBoundingClientRect();if(b.bottom<rect.top||b.top>rect.bottom)continue;for(const rich of row.querySelectorAll('.richMessage'))if(rich.prepareVisible)work.push(rich.prepareVisible(rect));for(const im of row.querySelectorAll('img.messageImage')){im.loading='eager';work.push(im._pablicusReady||im.decode().catch(()=>{}));}}
   await bounded(Promise.allSettled(work),800);if(!isCurrent())return;await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
  }
- g.PablicusScreenData=Object.freeze({profile,history,proof,image,preload,avatar,avatarReady,prepareProfile,prepareConversation,bounded,reset,stats:()=>({...counts,proofEntries:proofs.size,decodedEntries:decoded.size})});
+ function revealConversation(){const app=document.getElementById('app');if(!app||app.hidden||app.inert)return;for(const view of app.querySelectorAll('#canvas .row:not([hidden]) .richMessage'))view.syncPlayback?.();}
+ g.PablicusScreenData=Object.freeze({revealConversation,profile,history,proof,image,preload,avatar,avatarReady,prepareProfile,prepareConversation,bounded,reset,stats:()=>({...counts,proofEntries:proofs.size,decodedEntries:decoded.size})});
  g.PablicusController?.subscribe(s=>{if(account!==scope(s))reset();});
 })(window);

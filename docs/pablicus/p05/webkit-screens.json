@@ -1,35 +1,35 @@
 {
   "baseline": {
     "profileCold": {
-      "completeMs": 4242,
+      "completeMs": 3091,
       "first": {
-        "t": 3821,
+        "t": 2922,
         "avatar": false,
         "initials": "T",
         "tiles": []
       }
     },
     "chatCold": {
-      "completeMs": 950,
+      "completeMs": 739,
       "first": {
-        "t": 6203,
+        "t": 4803,
         "images": 2,
         "ready": 0
       }
     },
     "profileWarm": {
-      "completeMs": 362,
+      "completeMs": 346,
       "first": {
-        "t": 7319,
+        "t": 5638,
         "avatar": true,
         "initials": "",
         "tiles": []
       }
     },
     "chatWarm": {
-      "completeMs": 305,
+      "completeMs": 265,
       "first": {
-        "t": 7961,
+        "t": 6219,
         "images": 2,
         "ready": 0
       }
@@ -37,18 +37,18 @@
     "repeatDownloads": 0,
     "draft": "P05 saved draft",
     "profileAfterReload": {
-      "completeMs": 681,
+      "completeMs": 620,
       "first": {
-        "t": 686,
+        "t": 612,
         "avatar": false,
         "initials": "T",
         "tiles": []
       }
     },
     "chatAfterReload": {
-      "completeMs": 564,
+      "completeMs": 492,
       "first": {
-        "t": 1672,
+        "t": 1467,
         "images": 2,
         "ready": 0
       }
@@ -73,9 +73,9 @@
   },
   "candidate": {
     "profileCold": {
-      "completeMs": 1595,
+      "completeMs": 1294,
       "first": {
-        "t": 2685,
+        "t": 2293,
         "avatar": true,
         "initials": "",
         "tiles": [
@@ -85,17 +85,17 @@
       }
     },
     "chatCold": {
-      "completeMs": 1050,
+      "completeMs": 922,
       "first": {
-        "t": 4064,
+        "t": 3490,
         "images": 2,
         "ready": 2
       }
     },
     "profileWarm": {
-      "completeMs": 485,
+      "completeMs": 434,
       "first": {
-        "t": 4899,
+        "t": 4172,
         "avatar": true,
         "initials": "",
         "tiles": [
@@ -105,9 +105,9 @@
       }
     },
     "chatWarm": {
-      "completeMs": 364,
+      "completeMs": 324,
       "first": {
-        "t": 5387,
+        "t": 4602,
         "images": 2,
         "ready": 2
       }
@@ -115,9 +115,9 @@
     "repeatDownloads": 0,
     "draft": "P05 saved draft",
     "profileAfterReload": {
-      "completeMs": 502,
+      "completeMs": 445,
       "first": {
-        "t": 1016,
+        "t": 890,
         "avatar": true,
         "initials": "",
         "tiles": [
@@ -127,9 +127,9 @@
       }
     },
     "chatAfterReload": {
-      "completeMs": 419,
+      "completeMs": 346,
       "first": {
-        "t": 1559,
+        "t": 1340,
         "images": 2,
         "ready": 2
       }
@@ -154,9 +154,9 @@
       "name": "profileCold first visible frame already has avatar and publication thumbnails",
       "pass": true,
       "details": {
-        "completeMs": 1595,
+        "completeMs": 1294,
         "first": {
-          "t": 2685,
+          "t": 2293,
           "avatar": true,
           "initials": "",
           "tiles": [
@@ -170,9 +170,9 @@
       "name": "profileWarm first visible frame already has avatar and publication thumbnails",
       "pass": true,
       "details": {
-        "completeMs": 485,
+        "completeMs": 434,
         "first": {
-          "t": 4899,
+          "t": 4172,
           "avatar": true,
           "initials": "",
           "tiles": [
@@ -186,9 +186,9 @@
       "name": "profileAfterReload first visible frame already has avatar and publication thumbnails",
       "pass": true,
       "details": {
-        "completeMs": 502,
+        "completeMs": 445,
         "first": {
-          "t": 1016,
+          "t": 890,
           "avatar": true,
           "initials": "",
           "tiles": [
@@ -202,9 +202,9 @@
       "name": "chatCold first visible frame has decoded visible photos",
       "pass": true,
       "details": {
-        "completeMs": 1050,
+        "completeMs": 922,
         "first": {
-          "t": 4064,
+          "t": 3490,
           "images": 2,
           "ready": 2
         }
@@ -214,9 +214,9 @@
       "name": "chatWarm first visible frame has decoded visible photos",
       "pass": true,
       "details": {
-        "completeMs": 364,
+        "completeMs": 324,
         "first": {
-          "t": 5387,
+          "t": 4602,
           "images": 2,
           "ready": 2
         }
@@ -226,9 +226,9 @@
       "name": "chatAfterReload first visible frame has decoded visible photos",
       "pass": true,
       "details": {
-        "completeMs": 419,
+        "completeMs": 346,
         "first": {
-          "t": 1559,
+          "t": 1340,
           "images": 2,
           "ready": 2
         }
@@ -294,7 +294,7 @@
       "name": "contact header reuses already decoded avatar",
       "pass": true,
       "details": {
-        "t": 1870,
+        "t": 1646.0000000000002,
         "avatar": true
       }
     },
@@ -312,8 +312,8 @@
       "name": "warm profile complete frame is not slowed by readiness gate",
       "pass": true,
       "details": {
-        "before": 681,
-        "after": 502
+        "before": 620,
+        "after": 445
       }
     }
   ],

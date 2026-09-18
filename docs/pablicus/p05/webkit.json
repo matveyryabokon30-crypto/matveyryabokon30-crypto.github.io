@@ -188,7 +188,7 @@
         "errors": 1,
         "peakDownloads": 3,
         "evictions": 0,
-        "diskWrites": 2,
+        "diskWrites": 1,
         "diskErrors": 0,
         "lastDiskError": null,
         "serverPreviews": 0,

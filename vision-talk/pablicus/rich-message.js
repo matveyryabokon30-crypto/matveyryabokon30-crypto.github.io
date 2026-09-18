@@ -645,6 +645,7 @@
       if(disposed||!isLiveRow())return Promise.resolve();
       return Promise.allSettled(images.filter(item=>{const r=item.button.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>rect.top&&r.top<rect.bottom;}).slice(0,12).map(loadImage));
     };
+    root.syncPlayback = () => state.syncPlayback();
     root.activate = activate;
     root.dispose = state.dispose;
     mountFrame = frame(() => { mountFrame = null; activate(); });
