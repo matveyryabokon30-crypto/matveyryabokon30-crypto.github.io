@@ -1,0 +1,28 @@
+name: Pablicus R0 pinned diagnostic export
+on:
+  push:
+    branches: [diag/pablicus-r0-local-20260919]
+    paths: [.github/workflows/pablicus-r0-local-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Export exact public-only input and historical browser baseline
+        run: |
+          mkdir -p export
+          git archive d9d5b82c1fa219bc6b94860088c8d1a02e5fe322 vision-talk/pablicus tools .github/workflows | gzip > export/candidate.tar.gz
+          git archive 1c37273dcfe1c06dfb91d793bb59eb88d69bb76a vision-talk/pablicus | gzip > export/prior-release.tar.gz
+          printf '%s\n' d9d5b82c1fa219bc6b94860088c8d1a02e5fe322 > export/INPUT_SHA.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pablicus-r0-pinned-source
+          path: export/
+          retention-days: 3
+          if-no-files-found: error
