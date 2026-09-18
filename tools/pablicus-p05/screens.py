@@ -26,7 +26,7 @@ const ready=n=>!!(n?.complete&&n.naturalWidth>0);
 function capture(){
  const p=document.querySelector('.youPage'),app=document.getElementById('app'),vp=document.getElementById('vp'),contact=document.getElementById('pablicusContactCard');
  if(painted(p)&&p.querySelector('.youName')&&profileFrames.length<180){const face=p.querySelector('.contactPhotoButton');profileFrames.push({t:performance.now(),avatar:ready(face?.querySelector('img')),initials:face?.querySelector('.contactFace')?.textContent?.trim()||'',tiles:[...p.querySelectorAll('.youTile img')].map(ready)});}
- if(painted(app)&&painted(vp)&&chatFrames.length<180){const v=vp.getBoundingClientRect(),imgs=[...document.querySelectorAll('#canvas .row:not([hidden]) .richMedia-image')].filter(n=>{const r=n.getBoundingClientRect();return r.height>0&&r.bottom>v.top&&r.top<v.bottom;});if(imgs.length)chatFrames.push({t:performance.now(),images:imgs.length,ready:imgs.filter(n=>n.classList.contains('richImageReady')&&ready(n.querySelector('img'))).length});}
+ if(app&&!app.hidden&&painted(vp)&&chatFrames.length<180){const v=vp.getBoundingClientRect(),imgs=[...document.querySelectorAll('#canvas .row:not([hidden]) .richMedia-image')].filter(n=>{const r=n.getBoundingClientRect();return r.height>0&&r.bottom>v.top&&r.top<v.bottom;});if(imgs.length)chatFrames.push({t:performance.now(),images:imgs.length,ready:imgs.filter(n=>n.classList.contains('richImageReady')&&ready(n.querySelector('img'))).length});}
  if(contact?.open&&contact.querySelector('.contactName')&&contactFrames.length<120)contactFrames.push({t:performance.now(),avatar:ready(contact.querySelector('.contactPhotoButton img'))});
  requestAnimationFrame(capture);
 }requestAnimationFrame(capture);
@@ -40,11 +40,11 @@ async def run_case(browser,root,label):
  ctx=await browser.new_context(viewport={'width':390,'height':844},device_scale_factor=2,is_mobile=True,has_touch=True,service_workers='block')
  await ctx.add_init_script("localStorage.setItem('sb-ctcoqgsztdtsazdiwcmd-auth-token',"+json.dumps(json.dumps(SESSION))+");"+CAPTURE)
  await ctx.route_web_socket('**/realtime/**',lambda ws:ws.close())
- requests=[];downloads=[];slow=False
+ requests=[];downloads=[]
  async def route(r):
   req=r.request;u=urllib.parse.urlparse(req.url);path=urllib.parse.unquote(u.path);query=urllib.parse.parse_qs(u.query);data=json.loads(req.post_data or '{}') if req.method=='POST' else {}
   headers={'Access-Control-Allow-Origin':'*','Cache-Control':'no-store'}
-  if req.method=='OPTIONS':await r.fulfill(status=204,headers={**headers,'Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'*'});return
+  if req.method=='OPTIONS':await r.fulfill(status=204,headers={**headers,'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info,prefer,range,range-unit,accept,accept-profile,content-profile','Access-Control-Allow-Methods':'GET,POST,PATCH,DELETE,OPTIONS'});return
   requests.append(path);await asyncio.sleep(DELAY)
   if req.method=='GET' and ('/object/sign/' in path or '/preview/' in path):downloads.append(path);await r.fulfill(status=200,body=picture,content_type='image/png',headers=headers);return
   body=[]

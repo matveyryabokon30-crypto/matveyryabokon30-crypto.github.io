@@ -28,10 +28,10 @@ jobs:
           cp -a .p04-baseline/vision-talk/pablicus/. vision-talk/pablicus/
           cp tools/pablicus-p05/screen-data.js vision-talk/pablicus/
           python tools/pablicus-p05/patch.py vision-talk/pablicus
+          python tools/pablicus-p05/refine.py vision-talk/pablicus
           for f in vision-talk/pablicus/*.js; do node --check "$f"; done
           python - <<'PY'
           from pathlib import Path
-          import hashlib
           original=Path('.p04-baseline/vision-talk/pablicus')
           current=Path('vision-talk/pablicus')
           for name in ['home-data.js','avatar-stories.js','stories-v3-core.js','stories-v3-viewer.js','chat-list-view.js','auto-update.js','vault.js','outbox.js']:
