@@ -1,0 +1,73 @@
+name: SEKKES S2 published login smoke
+on:
+  push:
+    branches: [verify/sekkes-s2-login-r3]
+    paths: ['.github/workflows/sekkes-s2-live-r3.yml']
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: db5eb1bc6be2f04aedd109f4fb80a762229e573b
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          pip install playwright==1.55.0
+          python -m playwright install --with-deps webkit
+      - name: Read-only public release check
+        run: |
+          mkdir -p sekkes-live
+          python - <<'PY'
+          import hashlib,json,time,urllib.request
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          root=Path('sekkes-v2');out=Path('sekkes-live');base='https://matveyryabokon30-crypto.github.io/sekkes-v2/'
+          checks=[];files={}
+          def check(name,ok,detail=None):
+            checks.append({'name':name,'pass':bool(ok),'detail':detail});print(('PASS ' if ok else 'FAIL ')+name,flush=True)
+          try:
+            for p in sorted(root.rglob('*')):
+              if not p.is_file():continue
+              rel=p.relative_to(root).as_posix();expected=p.read_bytes();data=b'';error=None
+              for retry in range(8):
+                try:
+                  req=urllib.request.Request(base+rel+'?releasecheck='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=20) as r:data=r.read()
+                  if data==expected:break
+                except Exception as exc:error=str(exc)
+                time.sleep(4)
+              files[rel]={'sha256':hashlib.sha256(expected).hexdigest(),'git_blob':hashlib.sha1(b'blob '+str(len(expected)).encode()+b'\0'+expected).hexdigest()}
+              check('HTTP exact '+rel,data==expected,error if data!=expected else None)
+            with sync_playwright() as p:
+              b=p.webkit.launch(headless=True);ctx=b.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True)
+              page=ctx.new_page();errors=[];requests=[]
+              page.on('pageerror',lambda e:errors.append(str(e)))
+              page.on('request',lambda r:requests.append(r.url))
+              page.goto(base+'?v=2026.09.18-s2.3',wait_until='networkidle',timeout=60000)
+              page.wait_for_function('Boolean(window.SekkesS2)',timeout=15000)
+              check('Live build',page.locator('html').get_attribute('data-build')=='2026.09.18-s2.3')
+              box=page.locator('#hero').bounding_box();check('Live fullbleed',box['x']==0 and box['y']==0 and box['width']==390,box)
+              page.locator('#micButton').click();page.locator('#s2Login').wait_for(timeout=10000)
+              check('Live login form',page.locator('#s2Password').get_attribute('type')=='password' and page.locator('#s2Email').get_attribute('type')=='email')
+              check('No automatic login or provider call',not any('/auth/v1/token' in u or '/sekkes-s2/turn' in u for u in requests))
+              check('No browser errors',not errors,errors)
+              page.screenshot(path=str(out/'live-webkit-login.png'))
+              ctx.close();b.close()
+          except Exception as exc:check('Completed without exception',False,str(exc))
+          report={'commit':'db5eb1bc6be2f04aedd109f4fb80a762229e573b','build':'2026.09.18-s2.3','checks':checks,'passed':sum(x['pass'] for x in checks),'failed':sum(not x['pass'] for x in checks),'scope':'Read-only public assets and real WebKit login form, no credentials submitted, no AI/provider probes, no physical iPhone test'}
+          (out/'LIVE_RESULTS.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          (out/'STATIC_FILES.json').write_text(json.dumps(files,indent=2))
+          raise SystemExit(1 if report['failed'] else 0)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sekkes-s2-live-r3
+          path: sekkes-live/
+          retention-days: 7
