@@ -38,6 +38,10 @@ jobs:
             b=get(api+'/git/blobs/'+f['sha']);p.write_bytes(base64.b64decode(b['content']))
           check=Path('tools/sekkes-s2-client/browser_checks.py')
           text=check.read_text().replace('script[src="assets/voice-s2.mjs"]','script[src="assets/voice-s2-3.mjs"]')
+          # Published R3 preserves the settings sheet: Profile -> Entry/memory -> Login.
+          old="click();check(engine+' profile opens real login'"
+          assert text.count(old)==1
+          text=text.replace(old,"click();page.locator('#s2ProfileLogin').click();check(engine+' profile opens real login'")
           check.write_text(text)
           Path('sekkes-qa/SNAPSHOT.txt').write_text(ref+'\n')
           PY
