@@ -31,5 +31,4 @@ jobs:
           for engine in chromium webkit; do
             python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --engine "$engine"
             python tools/pablicus-p01r2/extended.py --root vision-talk/pablicus --engine "$engine"
-            python tools/pablicus-p04/shell-current.py --root vision-talk/pablicus --engine "$engine"
           done
