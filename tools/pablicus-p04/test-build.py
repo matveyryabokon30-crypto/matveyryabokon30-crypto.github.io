@@ -1,4 +1,6 @@
 from pathlib import Path
+import subprocess,sys
+subprocess.run([sys.executable,'tools/pablicus-p04/refine.py','vision-talk/pablicus'],check=True)
 s=Path('tools/pablicus-p03/startup.py').read_text()
 s=s.replace("'feed':stories(owners)}", "'feed':stories(owners),'avatars':[{'bucket':'profile-media','path':profiles[o]['avatar_url'],'object_id':o,'version':'fixture-v1','mime':'image/png'} for o in owners]}")
 s=s.replace(" await ctx.route_web_socket", ''' await ctx.add_init_script("""
