@@ -19,7 +19,7 @@ jobs:
           python-version: '3.12'
       - name: Install independent browser checks
         run: |
-          python -m pip install playwright==1.57.0
+          python -m pip install playwright==1.63.0
           python -m playwright install --with-deps chromium webkit
       - name: Verify actual Pages release and both browser engines
         run: python tools/pablicus-release/verify-public.py
