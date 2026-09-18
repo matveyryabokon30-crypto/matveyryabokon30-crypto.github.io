@@ -25,6 +25,10 @@ text=text[:a]+"""  function loadImage(k,width=expanded?1280:192){
 """+text[b:];p.write_text(text)
 patch('contact-motion.js','refreshPhotos:()=>gallery?.refresh(),','refreshPhotos:()=>gallery?.refresh(),preparePhoto:()=>gallery?.prepare(),')
 patch('profile-page.js','await scope.PablicusScreenData.prepareProfile(o.getProfile(),posts);','await Promise.allSettled([scope.PablicusScreenData.prepareProfile(o.getProfile(),posts),scope.PablicusScreenData.bounded(motion?.preparePhoto?.(),800)]);')
+# Resume only existing visible players after the conversation stops being inert.
+patch('rich-message.js','    root.activate = activate;','    root.syncPlayback = () => state.syncPlayback();\n    root.activate = activate;')
+patch('screen-data.js',' g.PablicusScreenData=Object.freeze({profile,history,proof,'," function revealConversation(){const app=document.getElementById('app');if(!app||app.hidden||app.inert)return;for(const view of app.querySelectorAll('#canvas .row:not([hidden]) .richMessage'))view.syncPlayback?.();}\n g.PablicusScreenData=Object.freeze({revealConversation,profile,history,proof,")
+patch('app.js','window.PablicusShell.conversationReady(true);connection();','window.PablicusShell.conversationReady(true);window.PablicusScreenData.revealConversation();connection();')
 p=R/'sw.js';s=p.read_text();old=json.loads(re.search(r'const ASSETS=(.*?);\n',s).group(1));manifest={name:hashlib.sha256((R/('index.html' if name=='./' else name)).read_bytes()).hexdigest() for name in old}
 p.write_text(re.sub(r'const ASSETS=.*?;\n',lambda m:'const ASSETS='+json.dumps(manifest,separators=(',',':'))+';\n',s,count=1))
 for file in ['release-p01r2.json','release-p05.json']:
