@@ -1,0 +1,21 @@
+name: Pablicus F01 share link
+on:
+  push:
+    branches: [feat/pablicus-share-link-preview-20260918]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Functional contract and syntax
+        run: |
+          python tools/pablicus-f01/test.py
+          for f in vision-talk/pablicus/*.js; do node --check "$f"; done
+      - name: Existing P06 performance contract
+        run: python tools/pablicus-p06/test.py
