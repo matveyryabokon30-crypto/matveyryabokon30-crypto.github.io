@@ -1,0 +1,53 @@
+name: SEKKES S2 client build and verification
+on:
+  push:
+    branches: [verify/sekkes-s2-client-20260918]
+    paths: ['.github/workflows/sekkes-s2-client.yml', 'tools/sekkes-s2-client/**', 'sekkes-v2/assets/voice-*', 'sekkes-v2/assets/s2-api.mjs']
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: verify/sekkes-s2-client-20260918
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build isolated candidate
+        run: |
+          python tools/sekkes-s2-client/build_candidate.py
+          for f in sekkes-qa/candidate/assets/*.js sekkes-qa/candidate/assets/*.mjs sekkes-qa/candidate/sw.js; do node --check "$f"; done
+      - name: Prepare test browsers
+        run: |
+          python -m pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Browser tests with synthetic Auth and AI only
+        run: python tools/sekkes-s2-client/browser_checks.py
+      - name: Save verified candidate to verification branch only
+        run: |
+          cp -a sekkes-qa/candidate/. sekkes-v2/
+          git add -- sekkes-v2/
+          python - <<'PY'
+          import subprocess
+          paths=subprocess.check_output(['git','diff','--cached','--name-only']).decode().splitlines()
+          assert paths and all(p.startswith('sekkes-v2/') for p in paths),paths
+          PY
+          git config user.name 'SEKKES candidate verification'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build(sekkes): verified S2 owner-login candidate [skip ci]'
+          git push origin HEAD:refs/heads/verify/sekkes-s2-client-20260918
+          git rev-parse HEAD > sekkes-qa/CANDIDATE_COMMIT.txt
+          git rev-parse HEAD:sekkes-v2 > sekkes-qa/CANDIDATE_TREE.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sekkes-s2-client-verified
+          path: sekkes-qa/
+          if-no-files-found: error
+          retention-days: 7
