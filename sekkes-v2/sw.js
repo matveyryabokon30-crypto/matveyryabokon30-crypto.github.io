@@ -1,10 +1,10 @@
 /* CacheStorage is origin-wide. Never delete caches belonging to Pablicus or another app. */
 'use strict';
-const BUILD = '2026.09.18-s1.1';
+const BUILD = '2026.09.18-s2.3';
 const PREFIX = 'sekkes-v2-';
 const CACHE = PREFIX + BUILD;
 const BASE = new URL('./', self.location.href);
-const SHELL = ['./', 'index.html', 'assets/ui-s1-1.css', 'assets/ui-s1-1.js', 'manifest.webmanifest'].map(p => new URL(p, BASE).href);
+const SHELL = ['./', 'index.html', 'assets/ui-s1-1.css', 'assets/ui-s2-3.js', 'assets/voice-s2.mjs', 'assets/voice-s2.css', 'assets/voice-capture.mjs', 'assets/voice-worklet.mjs', 'assets/s2-api.mjs', 'manifest.webmanifest'].map(p => new URL(p, BASE).href);
 const ownPath = url => url.origin === BASE.origin && url.pathname.startsWith(BASE.pathname);
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -29,7 +29,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url);
   if (request.method !== 'GET' || !ownPath(url)) return;
-  if (url.pathname === new URL('version.json', BASE).pathname) {
+  if (['version.json','s2-config.json'].some(p => url.pathname === new URL(p, BASE).pathname)) {
     event.respondWith(fetch(request, { cache: 'no-store' }).catch(() => new Response('', { status: 503 })));
     return;
   }
