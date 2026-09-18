@@ -1,0 +1,51 @@
+name: Pablicus P02 production verification
+on:
+  push:
+    branches: [perf/pablicus-p02-first-load-20260918]
+    paths: ['.github/workflows/pablicus-p02-public-check.yml']
+permissions:
+  contents: read
+jobs:
+  public-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8645e98417fa28c5be65bf2d2e414ef3f8201f97
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser verification dependencies
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Verify actual public P02 shell and all release hashes
+        env:
+          GITHUB_SHA: 8645e98417fa28c5be65bf2d2e414ef3f8201f97
+        run: python tools/pablicus-release/verify-public.py
+      - name: Verify hosted preview endpoint CORS and unauthenticated rejection
+        run: |
+          python - <<'PY'
+          import json,urllib.request,urllib.error,pathlib
+          url='https://ctcoqgsztdtsazdiwcmd.supabase.co/functions/v1/pablicus-media-preview'
+          req=urllib.request.Request(url,method='OPTIONS',headers={'Origin':'https://matveyryabokon30-crypto.github.io','Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'authorization,apikey,content-type,x-client-info'})
+          with urllib.request.urlopen(req,timeout=25) as r:
+            preflight={'status':r.status,'allowOrigin':r.headers.get('Access-Control-Allow-Origin'),'allowHeaders':r.headers.get('Access-Control-Allow-Headers')}
+          assert preflight['status'] in (200,204)
+          assert preflight['allowOrigin'] in ('https://matveyryabokon30-crypto.github.io','*')
+          req=urllib.request.Request(url,method='POST',headers={'Content-Type':'application/json'},data=b'{"action":"resolve","items":[]}')
+          try:
+            with urllib.request.urlopen(req,timeout=25) as r: status=r.status
+          except urllib.error.HTTPError as e: status=e.code
+          assert status==401,status
+          pathlib.Path('public-evidence/edge-verification.json').write_text(json.dumps({'preflight':preflight,'anonymousStatus':status,'passed':True,'boundary':'CORS and rejected anonymous request; no authenticated user test or private media access'},indent=2))
+          PY
+      - name: Save production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p02-public-verification
+          path: public-evidence/
+          retention-days: 14
