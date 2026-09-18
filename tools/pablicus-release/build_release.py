@@ -102,6 +102,20 @@ def build(root, sha):
     if n != 1:
         raise ValueError('Worker inventory declaration not found')
     sw = sw.replace('postMessage({version:VERSION})', 'postMessage({version:VERSION,buildId:BUILD_ID,sourceSha:BUILD_SOURCE_SHA})')
+    cache_diagnostic = """/* BUILD_CACHE_DIAGNOSTIC_START */
+self.addEventListener('message',event=>{if(event.data?.type!=='PABLICUS_RELEASE_CACHE')return;
+ event.waitUntil((async()=>{const names=await caches.keys(),present=names.includes(VERSION);
+ const entries=present?await(await caches.open(VERSION)).keys():[],urls=new Set(entries.map(r=>r.url));
+ event.ports?.[0]?.postMessage({version:VERSION,buildId:BUILD_ID,present,cacheEntries:entries.length,missing:[...allowed.keys()].filter(u=>!urls.has(u)),shellCaches:names.filter(n=>n.startsWith('pablicus-shell-')),error:null});
+ })().catch(()=>event.ports?.[0]?.postMessage({version:VERSION,error:'CACHE_READ_FAILED'})));
+});
+/* BUILD_CACHE_DIAGNOSTIC_END */
+"""
+    sw = re.sub(r'/\* BUILD_CACHE_DIAGNOSTIC_START \*/.*?/\* BUILD_CACHE_DIAGNOSTIC_END \*/\n', '', sw, flags=re.S)
+    marker = "self.addEventListener('activate',"
+    if marker not in sw:
+        raise ValueError('Activation handler missing')
+    sw = sw.replace(marker, cache_diagnostic + marker, 1)
     if 'buildId:BUILD_ID,sourceSha:BUILD_SOURCE_SHA' not in sw or push_digest(sw) != original_push:
         raise ValueError('Worker identity/push preservation failed')
     (root / 'sw.js').write_text(sw)

@@ -18,7 +18,7 @@ root = pathlib.Path(a.root).resolve()
 baseline = pathlib.Path(a.baseline).resolve()
 out = pathlib.Path('results');out.mkdir(exist_ok=True)
 m = json.loads((root / 'release.json').read_text())
-state = {'current': baseline, 'corrupt': False}
+state = {'current': baseline, 'corrupt': False, 'offline': False}
 probe = '''<!doctype html><meta charset="utf-8"><input id="draft"><div id="updateNotice" hidden></div>
 <script>sessionStorage.loads=String(+(sessionStorage.loads||0)+1);window.PablicusUpdateGuards={busy:()=>sessionStorage.busy==='1',prepare:async()=>{sessionStorage.prepared=String(+(sessionStorage.prepared||0)+1);}};</script><script src="auto-update.js"></script>'''
 
@@ -33,6 +33,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         self.directory = str(state['current'])
         path = urllib.parse.urlsplit(self.path).path
+        if state['offline']:
+            self.send_response(503);self.send_header('Cache-Control', 'no-store');self.end_headers();return
         if path == '/probe.html':
             text, mime = probe, 'text/html'
         elif path == '/sw.js' and state['corrupt']:
@@ -64,10 +66,12 @@ with sync_playwright() as pw:
     profile = tempfile.TemporaryDirectory(prefix='pablicus-r0-')
     ctx = getattr(pw, a.engine).launch_persistent_context(profile.name, headless=True)
     page = ctx.new_page()
-    ctx.route('https://ctcoqgsztdtsazdiwcmd.supabase.co/**', lambda r: r.fulfill(status=401, content_type='application/json', body='{"message":"No test account"}'))
 
     def version():
         return page.evaluate("""()=>new Promise(resolve=>{const ch=new MessageChannel();const t=setTimeout(()=>{ch.port1.close();resolve(null)},3000);ch.port1.onmessage=e=>{clearTimeout(t);ch.port1.close();resolve(e.data.version)};navigator.serviceWorker.controller.postMessage({type:'PABLICUS_RELEASE'},[ch.port2]);})""")
+
+    def cache_state():
+        return page.evaluate("""()=>new Promise((resolve,reject)=>{const ch=new MessageChannel();const t=setTimeout(()=>{ch.port1.close();reject(Error('Worker cache diagnostic timeout'))},5000);ch.port1.onmessage=e=>{clearTimeout(t);ch.port1.close();resolve(e.data)};navigator.serviceWorker.controller.postMessage({type:'PABLICUS_RELEASE_CACHE'},[ch.port2]);})""")
 
     try:
         page.goto(origin + '/probe.html');page.wait_for_function('navigator.serviceWorker.controller', timeout=60000);page.wait_for_timeout(6500)
@@ -90,13 +94,20 @@ with sync_playwright() as pw:
         preserved = page.evaluate("""async()=>{async function get(name,store,key){return new Promise((resolve,reject)=>{const o=indexedDB.open(name);o.onsuccess=()=>{const db=o.result,r=db.transaction(store).objectStore(store).get(key);r.onsuccess=()=>{const v=r.result;db.close();resolve(v)};r.onerror=reject;};});}return {draft:await (await get('r0-fixture','blobs','draft')).text(),owner:await get('pablicus-push-state','settings','recipient')};}""")
         record('IndexedDB original Blob survives', preserved['draft'] == 'draft-original-bytes')
         record('push account binding survives worker upgrade', preserved['owner'] == 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
-        installed = page.evaluate('(v)=>caches.open(v).then(c=>c.keys()).then(a=>a.length)', m['worker_version'])
-        record('all versioned icon and shell assets cached', installed == len(m['assets']), installed)
+        installed = cache_state()
+        record('worker confirms every shell and versioned icon cached', installed.get('cacheEntries') == len(m['assets']) and not installed.get('missing') and not installed.get('error'), installed)
+        state['offline'] = True
+        control = page.evaluate("fetch('network-control-not-precached',{cache:'no-store'}).then(r=>r.status)")
+        record('network fixture is unavailable during cache proof', control == 503)
+        offline = page.evaluate('''async(assets)=>{const result=[];const items=Object.entries(assets);let cursor=0;await Promise.all(Array.from({length:4},async()=>{while(cursor<items.length){const [name,hash]=items[cursor++];try{const r=await fetch(name,{cache:'no-store'});const got=[...new Uint8Array(await crypto.subtle.digest('SHA-256',await r.arrayBuffer()))].map(x=>x.toString(16).padStart(2,'0')).join('');if(!r.ok||got!==hash)result.push({name,status:r.status,hash:got})}catch(e){result.push({name,error:e.name})}}}));return result;}''', m['assets'])
+        record('all exact bytes served without a working origin', not offline, {'verified':len(m['assets']),'failed':offline})
+        state['offline'] = False
         state['corrupt'] = True
         page.evaluate('navigator.serviceWorker.getRegistration().then(r=>r.update())');page.wait_for_timeout(8500)
         record('corrupt candidate cannot replace good release', version() == m['worker_version'])
-        record('failed partial cache removed', m['worker_version'] + '-broken' not in page.evaluate('caches.keys()'))
+        record('failed partial worker cache removed', m['worker_version'] + '-broken' not in cache_state()['shellCaches'])
         state['corrupt'] = False
+        ctx.route('https://ctcoqgsztdtsazdiwcmd.supabase.co/**', lambda r: r.fulfill(status=401, content_type='application/json', body='{"message":"No test account"}'))
         errors = [];page.on('pageerror', lambda e: errors.append(str(e)))
         page.add_init_script('window.initialNativeFetch=window.fetch;')
         page.goto(origin + '/', wait_until='domcontentloaded')
