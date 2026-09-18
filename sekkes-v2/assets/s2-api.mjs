@@ -3,7 +3,7 @@ const PROTECTED=new Set(['ctcoqgsztdtsazdiwcmd','emenwjzhjsieivbfxmuo']);
 export class S2Error extends Error{constructor(code){super(code);this.code=code;}}
 export class S2Api {
   constructor(config,transport=fetch){
-    this.config=config;this.transport=transport;this.token=null;this.authEpoch=0;
+    this.config=config;this.transport=(...args)=>transport(...args);this.token=null;this.authEpoch=0;
     if(!config?.enabled)throw new S2Error('SETUP_REQUIRED');
     const ref=config.projectRef;
     if(!/^[a-z]{20}$/.test(ref||'')||PROTECTED.has(ref)||config.projectUrl!==`https://${ref}.supabase.co`||!config.publishableKey)throw new S2Error('INVALID_PROJECT');
