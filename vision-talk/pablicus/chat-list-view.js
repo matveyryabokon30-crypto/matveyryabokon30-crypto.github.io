@@ -99,7 +99,7 @@
  // Native vertical scrolling wins unless a pull starts at the very top.
  function gestures(workspace,{panel,toggle,isActive=()=>true,onIdle=()=>{}}){
   const lifetime=new AbortController(),signal=lifetime.signal,rows=new Map();
-  const avatars=createAvatars({isActive});
+  const avatars=root.PablicusHomeData?{mount(){},resetRows(){},destroy(){}}:createAvatars({isActive});
   let openRow=null,tracking=null,suppressUntil=0,panelOpen=false,panelHeight=0,idleTimer=0;
   const limit=()=>Math.min(220,panel.firstElementChild?.scrollHeight||120);
   function paintPanel(height,drag=false){
@@ -181,6 +181,7 @@
    isTracking:()=>!!tracking,
    snapshot:()=>openRow?{id:openRow.dataset.conversationId,side:Math.sign(rows.get(openRow)?.x||0)}:null,
    restore(saved){if(saved){const row=[...rows.keys()].find(n=>n.dataset.conversationId===saved.id);if(row)reveal(row,saved.side);}},
+   pruneRows(){for(const [row]of rows)if(!row.isConnected){if(openRow===row)openRow=null;rows.delete(row);}},
    resetRows(){end(true);closeRow();rows.clear();avatars.resetRows();},
    destroy(){end(true);closeRow();settlePanel(false);clearTimeout(idleTimer);lifetime.abort();rows.clear();avatars.destroy();}
   };

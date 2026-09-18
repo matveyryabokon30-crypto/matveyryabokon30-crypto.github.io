@@ -26,16 +26,16 @@
  async function feed(force=false){
   if(stopped||document.hidden||!state().sessionUserId||!owners.size)return;
   if(feedFlight){feedDirty=true;return;}
-  if(!force&&Date.now()-lastFeed<10000)return;
+  if(!force&&Date.now()-lastFeed<10000&&[...owners].every(id=>feeds.has(id)))return;
   const snapshot=state(),ids=[...owners];feedFlight=true;feedDirty=false;lastFeed=Date.now();
-  try{for(let i=0;i<ids.length;i+=100){const chunk=ids.slice(i,i+100),r=await client.rpc('pablicus_story_feed',{p_owners:chunk});if(!live(snapshot))return;if(r.error)throw r.error;
+  try{for(let i=0;i<ids.length;i+=100){const chunk=ids.slice(i,i+100),r=global.PablicusHomeData?{data:await global.PablicusHomeData.feed(chunk,force)}:await client.rpc('pablicus_story_feed',{p_owners:chunk});if(!live(snapshot))return;if(r.error)throw r.error;
    const data=r.data;if(!data||!Array.isArray(data.stories)||!Number.isFinite(Date.parse(data.server_now)))throw Error('Invalid story feed');
    serverOffset=Date.parse(data.server_now)-Date.now();for(const id of chunk)feeds.set(id,[]);
    for(const s of data.stories)if(chunk.includes(s.owner_id)&&UUID.test(s.id)&&Date.parse(s.expires_at)>storyNow())feeds.get(s.owner_id).push(s);
   }refreshRings();emitStories();
   }catch{if(live(snapshot))refreshRings();}finally{feedFlight=false;if(feedDirty){feedDirty=false;queueFeed();}}
  }
- function queueFeed(){clearTimeout(feedTimer);feedTimer=setTimeout(()=>void feed(true),100);}
+ function queueFeed(){clearTimeout(feedTimer);feedTimer=setTimeout(()=>void feed(false),24);}
  async function avatarUrl(p,snapshot){
   const path=p?.avatar_url;if(typeof path!=='string'||!path)return '';
   if(/^https:\/\//i.test(path)){try{const u=new URL(path);return !u.username&&!u.password?u.href:'';}catch{return '';}}
@@ -43,6 +43,7 @@
   try{const url=await global.PablicusMediaCache.resolve('profile-media',path,{type:'image',width:192});return live(snapshot)?url:'';}catch{return '';}
  }
  async function card(id,snapshot){
+  if(global.PablicusHomeData){const data=await global.PablicusHomeData.card(id,snapshot).catch(()=>null);if(!live(snapshot))return null;if(data?.kind==='self'){const p=services()?.getProfile?.();return p?{profile:p,personal:{}}:null;}return data?.kind==='contact'?data:null;}
   const k=key(snapshot)+':'+id,hit=cards.get(k);if(hit&&hit.until>Date.now())return hit.promise;
   const promise=Promise.resolve(client.rpc('pablicus_contact_card',{p_conversation_id:id})).then(r=>{
    if(!live(snapshot)||r.error)return null;
@@ -67,7 +68,8 @@
   const k=key(snapshot)+':'+id;if(rowTickets.get(row)===k)return;rowTickets.set(row,k);
   n.classList.add('pablicusStoryAvatar');n.dataset.pablicusStoryRing='none';
   const d=await card(id,snapshot);if(!live(snapshot)||!row.isConnected||!d)return;
-  const url=await avatarUrl(d.profile,snapshot);if(!live(snapshot)||!row.isConnected)return;remember(d.profile,url,id,d.personal?.first_name||row.querySelector('.chatText strong')?.textContent);paint(n,d.profile,url);queueFeed();
+  const name=d.personal?.first_name||row.querySelector('.chatText strong')?.textContent;remember(d.profile,'',id,name);ring(n,d.profile.id);queueFeed();
+  const url=await avatarUrl(d.profile,snapshot);if(!live(snapshot)||!row.isConnected)return;remember(d.profile,url,id,name);paint(n,d.profile,url);
  }
  let topTicket=0,topId=null,topData=null,topUrl='',topPending=null;
  async function hydrateTop(){
@@ -155,10 +157,13 @@
   const b=document.getElementById('storyHomeAction');if(b)b.hidden=!authorized||state().section!=='chats'||state().screen!=='home';
   const pencil=document.getElementById('newChat');if(pencil)pencil.classList.add('standardComposeAction');
  }
+ let ownNavFlight=null;
  async function hydrateOwnNav(){
   const own=services()?.getProfile?.(),nav=document.querySelector('#mainNav>[data-page="profile"]');if(!own||!nav||!UUID.test(own.id||''))return;
   owners.add(own.id);nav.classList.add('profileAvatarNav');let a=nav.querySelector('.profileNavAvatar');if(!a){a=el('span','profileNavAvatar');nav.replaceChildren(a,el('span','profileNavLabel','Вы'));}
-  ring(a,own.id);const snapshot=state(),url=await avatarUrl(own,snapshot);if(!live(snapshot)||!a.isConnected)return;remember(own,url);
+  ring(a,own.id);remember(own,'');const snapshot=state(),ticket=key(snapshot)+'|'+own.id+'|'+own.avatar_url;
+  if(a.dataset.sourceTicket===ticket&&(a.querySelector('img')||!own.avatar_url))return;if(ownNavFlight===ticket)return;ownNavFlight=ticket;queueFeed();
+  let url;try{url=await avatarUrl(own,snapshot);}finally{if(ownNavFlight===ticket)ownNavFlight=null;}if(!live(snapshot)||!a.isConnected)return;a.dataset.sourceTicket=ticket;remember(own,url);
   const stamp=own.id+'|'+(url||'');if(a.dataset.avatarStamp===stamp)return;a.dataset.avatarStamp=stamp;
   if(url){const img=el('img');img.alt='Ваш профиль';img.src=url;img.onload=()=>{if(a.isConnected&&a.dataset.avatarStamp===stamp)a.replaceChildren(img);};}else a.textContent=Array.from(own.display_name||own.username||'Я')[0]?.toUpperCase()||'Я';ring(a,own.id);
  }
@@ -168,12 +173,13 @@
   document.querySelectorAll('.chatCard[data-conversation-id]').forEach(row=>void hydrateRow(row));void hydrateTop();refreshRings();
  }
  function schedule(){if(!stopped&&!frame)frame=requestAnimationFrame(layout);}
- const observer=new MutationObserver(records=>{if(records.some(r=>!r.target.closest?.('.storyShelfV3,.storyViewerV3')))schedule();});observer.observe(document.body,{childList:true,subtree:true});
+ const observer=new MutationObserver(records=>{if(records.some(r=>!r.target.closest?.('.storyShelfV3,.storyViewerV3,[data-story-owner]')))schedule();});observer.observe(document.body,{childList:true,subtree:true});
  const unsubscribe=ctrl.subscribe(next=>{
   if(key(next)!==account){const av=document.getElementById('conversationAvatar');if(av){av.replaceChildren();delete av.dataset.avatarPerson;}account=key(next);closeModal(true);people.clear();emitStories();cards.clear();signed.clear();owners.clear();feeds.clear();topData=null;topId=null;topPending=null;topTicket++;lastFeed=0;feedDirty=false;document.querySelectorAll('[data-story-owner]').forEach(n=>{delete n.dataset.storyOwner;n.dataset.pablicusStoryRing='none';delete n.dataset.avatarStamp;});}
   if(next.conversationId!==topId){topId=null;topData=null;topPending=null;topTicket++;}schedule();
  });
  document.addEventListener('click',e=>{const trigger=e.target.closest?.('#conversationAvatar,.contactAvatarTrigger');if(!trigger)return;const n=trigger.matches('#conversationAvatar')?trigger:trigger.querySelector('[data-story-owner]'),owner=n?.dataset.storyOwner;if(!owner||!activeStories(owner).length)return;e.preventDefault();e.stopImmediatePropagation();void view(owner,trigger.closest('.chatCard')?.dataset.conversationId||state().conversationId);},{capture:true,signal:life.signal});
+ global.addEventListener('pablicus:home-feed',e=>{const d=e.detail;if(!live(d)||!Array.isArray(d.owners)||!Array.isArray(d.feed?.stories))return;const now=Date.parse(d.feed.server_now);if(!Number.isFinite(now))return;serverOffset=now-Date.now();for(const id of d.owners){owners.add(id);feeds.set(id,d.feed.stories.filter(s=>s.owner_id===id&&UUID.test(s.id)&&Date.parse(s.expires_at)>now));}lastFeed=Date.now();refreshRings();emitStories();},{signal:life.signal});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden){schedule();void feed(true);}},{signal:life.signal});
  global.addEventListener('online',()=>{cards.clear();schedule();void feed(true);},{signal:life.signal});
  timer=setInterval(()=>{if(!document.hidden){refreshRings();void feed();}},30000);

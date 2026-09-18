@@ -18,7 +18,7 @@
  async function feed(owner){
   if(!UUID.test(owner||'')||!state().sessionUserId)throw Error('Story session unavailable');
   const k=key(),ck=k+':feed:'+owner,hit=cache.get(ck);if(hit?.until>Date.now())return hit.promise;
-  const promise=(async()=>{const r=await S().client.rpc('pablicus_story_feed',{p_owners:[owner]});if(!valid(k))throw Error('Session changed');if(r.error)throw r.error;
+  const promise=(async()=>{const r=g.PablicusHomeData?{data:await g.PablicusHomeData.feed([owner])}:await S().client.rpc('pablicus_story_feed',{p_owners:[owner]});if(!valid(k))throw Error('Session changed');if(r.error)throw r.error;
    const now=Date.parse(r.data?.server_now);if(!Number.isFinite(now)||!Array.isArray(r.data?.stories))throw Error('Invalid stories');
    serverOffset=now-Date.now();return r.data.stories.filter(s=>s.owner_id===owner&&UUID.test(s.id)&&Date.parse(s.expires_at)>now).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));})();
   cache.set(ck,{until:Date.now()+8000,promise});try{return await promise;}catch(e){cache.delete(ck);throw e;}

@@ -1,0 +1,162 @@
+{
+  "baseline": {
+    "rowsMs": 758,
+    "storyMetadataMs": 1966,
+    "avatarsMs": 1969,
+    "warmHomeMs": 1297,
+    "coldImageDownloads": 9,
+    "warmImageDownloads": 4,
+    "initialRequests": [
+      "/rest/v1/profiles",
+      "/rest/v1/rpc/pablicus_touch_activity",
+      "/rest/v1/rpc/my_conversations_v3",
+      "/functions/v1/pablicus-media-preview",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/preview/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/avatar.png",
+      "/rest/v1/conversations",
+      "/rest/v1/rpc/pablicus_contact_card",
+      "/rest/v1/rpc/pablicus_contact_card",
+      "/rest/v1/rpc/pablicus_contact_card",
+      "/rest/v1/rpc/pablicus_contact_card",
+      "/rest/v1/conversation_members",
+      "/functions/v1/pablicus-media-preview",
+      "/functions/v1/pablicus-media-preview",
+      "/rest/v1/profiles",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000001/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/avatar.png",
+      "/storage/v1/object/sign/profile-media/bbbbbbbb-bbbb-4bbb-8bbb-000000000001/avatar.png",
+      "/storage/v1/object/sign/profile-media/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/avatar.png",
+      "/storage/v1/object/sign/profile-media/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/avatar.png",
+      "/storage/v1/object/sign/profile-media/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/avatar.png",
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_story_feed",
+      "/storage/v1/object/sign/profile-media/bbbbbbbb-bbbb-4bbb-8bbb-000000000001/avatar.png",
+      "/storage/v1/object/sign/profile-media/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/avatar.png",
+      "/storage/v1/object/sign/profile-media/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/avatar.png",
+      "/storage/v1/object/sign/profile-media/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/avatar.png",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/rest/v1/rpc/pablicus_story_feed"
+    ],
+    "quietRequests": [
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_chat_preferences"
+    ],
+    "stability": {
+      "rows": true,
+      "images": true,
+      "shelf": true
+    },
+    "errors": []
+  },
+  "candidate": {
+    "rowsMs": 397,
+    "storyMetadataMs": 632,
+    "avatarsMs": 1199,
+    "warmHomeMs": 767,
+    "coldImageDownloads": 5,
+    "warmImageDownloads": 0,
+    "initialRequests": [
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/rest/v1/profiles",
+      "/rest/v1/rpc/pablicus_touch_activity",
+      "/rest/v1/rpc/pablicus_home_cards",
+      "/functions/v1/pablicus-media-preview",
+      "/rest/v1/rpc/pablicus_story_feed",
+      "/preview/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/avatar.png",
+      "/functions/v1/pablicus-media-preview",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000001/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/avatar.png"
+    ],
+    "quietRequests": [],
+    "stability": {
+      "rows": true,
+      "images": true,
+      "shelf": true
+    },
+    "errors": []
+  },
+  "engine": "chromium",
+  "passed": 9,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "unchanged home rows and avatars retain their DOM identity",
+      "pass": true,
+      "details": {
+        "rows": true,
+        "images": true,
+        "shelf": true
+      }
+    },
+    {
+      "name": "idle homepage does not poll every 1.3 seconds",
+      "pass": true,
+      "details": {
+        "requestsIn6_5s": []
+      }
+    },
+    {
+      "name": "home has only one private-avatar download per identity",
+      "pass": true,
+      "details": {
+        "downloads": 5
+      }
+    },
+    {
+      "name": "a changed conversation does not rebuild other rows",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "shared-element story transition still uses the same nodes",
+      "pass": true,
+      "details": {
+        "same": true,
+        "p": "0.5000"
+      }
+    },
+    {
+      "name": "reopened home uses persistent avatar bytes without downloading again",
+      "pass": true,
+      "details": {
+        "networkImageDownloads": 0,
+        "homeMs": 767
+      }
+    },
+    {
+      "name": "whole application boot has no JavaScript errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "authenticated first-home avatars appear faster under equal latency",
+      "pass": true,
+      "details": {
+        "beforeMs": 1969,
+        "afterMs": 1199
+      }
+    },
+    {
+      "name": "home bootstrap uses fewer backend requests",
+      "pass": true,
+      "details": {
+        "before": 31,
+        "after": 13
+      }
+    }
+  ],
+  "fixture": "Real application modules and SDK; synthetic four-conversation accounts, 180 ms per API/image response; not owner-device timings"
+}
