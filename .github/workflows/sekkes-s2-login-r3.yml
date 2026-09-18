@@ -1,0 +1,55 @@
+name: SEKKES S2 login release candidate
+on:
+  push:
+    branches: [verify/sekkes-s2-login-r3]
+    paths:
+      - 'tools/sekkes-s2/**'
+      - 'sekkes-v2/assets/*-3.*'
+      - 'sekkes-v2/s2-config.json'
+      - '.github/workflows/sekkes-s2-login-r3.yml'
+permissions:
+  contents: write
+jobs:
+  candidate:
+    if: github.ref == 'refs/heads/verify/sekkes-s2-login-r3'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble from exact S1 baseline
+        run: |
+          python tools/sekkes-s2/assemble.py
+          node --check sekkes-v2/assets/ui-s2-3.js
+          node --check sekkes-v2/assets/voice-s2-3.mjs
+          node --check sekkes-v2/assets/s2-api-3.mjs
+          node --check sekkes-v2/sw.js
+      - name: Prepare test browsers
+        run: |
+          pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Test login and conversation using synthetic providers only
+        run: python tools/sekkes-s2/browser.py
+      - name: Save tested static candidate only to this verification branch
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'verify/sekkes-s2-login-r3'
+          git add -- sekkes-v2/index.html sekkes-v2/assets/ui-s2-3.js sekkes-v2/sw.js sekkes-v2/version.json
+          python - <<'PY'
+          import subprocess
+          paths=subprocess.check_output(['git','diff','--cached','--name-only']).decode().splitlines()
+          assert paths and all(p.startswith('sekkes-v2/') for p in paths),paths
+          PY
+          git -c user.name='SEKKES verification' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'build(sekkes): browser-verified S2 login candidate [skip ci]'
+          git push origin HEAD:refs/heads/verify/sekkes-s2-login-r3
+          git rev-parse HEAD > sekkes-qa/CANDIDATE_COMMIT.txt
+          git rev-parse HEAD:sekkes-v2 > sekkes-qa/STATIC_TREE.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sekkes-s2-login-r3
+          path: sekkes-qa/
+          if-no-files-found: error
+          retention-days: 7
