@@ -209,16 +209,10 @@
  function showPushConversation(){if(!user||!pendingPush)return;const target=pendingPush;pendingPush=null;try{sessionStorage.removeItem('pablicus:pending-push');const cleaned=new window.URL(location.href);for(const key of ['conversation','recipient','task','task_notice'])cleaned.searchParams.delete(key);history.replaceState(history.state,'',cleaned.href);}catch{}if(target.recipientId!==user.id)return;openPushConversation(target.id,target.recipientId,target.task).catch(problem);}
  async function openPerson(person,{isCurrent=()=>true}={}){const uid=user?.id,ep=epoch;if(!uid||opening)throw Error('Дождитесь открытия приложения');await PablicusChat.flush();if(user?.id!==uid||!isCurrent())return;const r=await sb.rpc('start_direct_conversation',{target_username:person.username});if(r.error)throw r.error;if(user?.id!==uid||!isCurrent())return;await loadDialogs();if(user?.id!==uid||epoch!==ep||!isCurrent())return;await openConversation(dialogs.find(d=>d.id===r.data)||{id:r.data,title:person.display_name||'@'+person.username});if(user?.id===uid&&current?.id!==r.data)throw Error('Не удалось открыть разговор');}
  async function shareApp(){
-  const url='https://matveyryabokon30-crypto.github.io/vision-talk/pablicus/';
-  if(typeof navigator.share==='function'){
-   try{await navigator.share({title:'Пабликус',text:'Присоединяйся к Пабликусу:',url});return}
-   catch(e){if(e?.name==='AbortError')return;}
-  }
-  try{await navigator.clipboard.writeText(url);toast('Ссылка на Пабликус скопирована')}
-  catch{
-   const c=dialog('Ссылка на Пабликус'),link=el('input');link.type='url';link.readOnly=true;link.value=url;link.setAttribute('aria-label','Ссылка на Пабликус');link.style.width='100%';link.style.boxSizing='border-box';
-   c.append(el('p','','Скопируйте ссылку и отправьте её друзьям.'),link);link.focus({preventScroll:true});link.select();
-  }
+  if(window.PablicusInvite?.share){const ok=await window.PablicusInvite.share({title:'Pablicus',text:'Присоединяйся ко мне в Pablicus'});if(ok)toast('Приглашение готово');return}
+  const url=new URL('./',location.href).href;
+  try{await navigator.clipboard.writeText(url);toast('Ссылка на Pablicus скопирована')}
+  catch{const c=dialog('Ссылка на Pablicus'),link=el('input');link.type='url';link.readOnly=true;link.value=url;link.setAttribute('aria-label','Ссылка на Pablicus');link.style.width='100%';link.style.boxSizing='border-box';c.append(el('p','','Скопируйте ссылку и отправьте её друзьям.'),link);link.focus({preventScroll:true});link.select();}
  }
  async function shareProfile(){const url=PablicusPeople.profileLink(profile.username);if(navigator.share){try{await navigator.share({title:'Pablicus · '+(profile.display_name||profile.username),url});return}catch(e){if(e.name==='AbortError')return;}}await navigator.clipboard.writeText(url);toast('Ссылка на профиль скопирована');}
  function polishIcons(){for(const [id,name]of [['newChat','compose'],['reportBtn','outbox'],['chatBack','back'],['chatLibraryOpen','search'],['attach','plus'],['send','send'],['cancelReply','close'],['dialogClose','close']]){const node=$(id);if(node)node.replaceChildren(PablicusMessageMenu.icon(name));}for(const node of document.querySelectorAll('#mainNav button'))node.querySelector('span')?.replaceChildren(PablicusMessageMenu.icon(node.dataset.page));}
