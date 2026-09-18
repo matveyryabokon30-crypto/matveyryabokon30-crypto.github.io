@@ -1,6 +1,6 @@
 /* CacheStorage is origin-wide. Never delete caches belonging to Pablicus or another app. */
 'use strict';
-const BUILD = '2026.09.18-s3.5';
+const BUILD = '2026.09.18-s3.6';
 const PREFIX = 'sekkes-v2-';
 const CACHE = PREFIX + BUILD;
 const BASE = new URL('./', self.location.href);
