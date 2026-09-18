@@ -1,0 +1,34 @@
+name: Pablicus P06 final performance
+on:
+  push:
+    branches: [perf/pablicus-p06-final-20260918]
+permissions:
+  contents: read
+concurrency:
+  group: pablicus-p06-final
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static performance contract and syntax
+        run: |
+          set -euo pipefail
+          python tools/pablicus-p06/test.py
+          for f in vision-talk/pablicus/*.js; do node --check "$f"; done
+      - name: Install browser verification
+        run: |
+          python -m pip install playwright==1.57.0 pillow
+          python -m playwright install --with-deps chromium webkit
+      - name: Existing media isolation and application regressions
+        run: |
+          set -euo pipefail
+          for engine in chromium webkit; do
+            python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --engine "$engine"
+            python tools/pablicus-p01r2/extended.py --root vision-talk/pablicus --engine "$engine"
+          done
