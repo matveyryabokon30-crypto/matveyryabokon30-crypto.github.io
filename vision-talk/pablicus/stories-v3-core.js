@@ -15,12 +15,17 @@
  const current=id=>snapshot.stories.filter(s=>s.owner_id===id&&Date.parse(s.expires_at)>Date.now()+serverOffset),active=id=>current(id).length>0;
  function avatar(id,cls='storyShelfAvatar'){const a=E('span',cls);a.dataset.storyOwner=id;a.dataset.pablicusStoryRing=active(id)?'active':'none';const u=picture(id);if(u){const i=D()?.imageFor?.(u)||E('img');i.alt='';i.draggable=false;i.decoding='sync';i.src=u;a.append(i);}else a.textContent=Array.from(title(id))[0]||'?';return a;}
  const valid=k=>key()===k&&!!state().sessionUserId;
+ function feedKey(owner){return 'pablicus:'+state().sessionUserId+':story-feed:'+owner}
+ function cachedFeed(owner){try{const v=JSON.parse(sessionStorage.getItem(feedKey(owner)));return v?.owner===owner&&v.savedAt>Date.now()-60000&&Array.isArray(v.items)?v.items.filter(x=>Date.parse(x.expires_at)>Date.now()):null}catch{return null}}
  async function feed(owner){
   if(!UUID.test(owner||'')||!state().sessionUserId)throw Error('Story session unavailable');
   const k=key(),ck=k+':feed:'+owner,hit=cache.get(ck);if(hit?.until>Date.now())return hit.promise;
+  const local=cachedFeed(owner);if(local?.length){const promise=Promise.resolve(local);cache.set(ck,{until:Date.now()+1500,promise});void refreshFeed(owner,k,ck);return promise;}
+  return refreshFeed(owner,k,ck);
+ }
+ async function refreshFeed(owner,k=key(),ck=k+':feed:'+owner){
   const promise=(async()=>{const r=g.PablicusHomeData?{data:await g.PablicusHomeData.feed([owner])}:await S().client.rpc('pablicus_story_feed',{p_owners:[owner]});if(!valid(k))throw Error('Session changed');if(r.error)throw r.error;
-   const now=Date.parse(r.data?.server_now);if(!Number.isFinite(now)||!Array.isArray(r.data?.stories))throw Error('Invalid stories');
-   serverOffset=now-Date.now();return r.data.stories.filter(s=>s.owner_id===owner&&UUID.test(s.id)&&Date.parse(s.expires_at)>now).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));})();
+   const now=Date.parse(r.data?.server_now);if(!Number.isFinite(now)||!Array.isArray(r.data?.stories))throw Error('Invalid stories');serverOffset=now-Date.now();const items=r.data.stories.filter(s=>s.owner_id===owner&&UUID.test(s.id)&&Date.parse(s.expires_at)>now).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));try{sessionStorage.setItem(feedKey(owner),JSON.stringify({owner,savedAt:Date.now(),items}))}catch{}return items;})();
   cache.set(ck,{until:Date.now()+8000,promise});try{return await promise;}catch(e){cache.delete(ck);throw e;}
  }
  async function media(story,retry=false){
