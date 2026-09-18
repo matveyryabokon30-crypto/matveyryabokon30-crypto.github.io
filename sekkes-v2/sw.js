@@ -1,10 +1,10 @@
 /* CacheStorage is origin-wide. Never delete caches belonging to Pablicus or another app. */
 'use strict';
-const BUILD = '2026.09.18-s2.3';
+const BUILD = '2026.09.18-s3.0';
 const PREFIX = 'sekkes-v2-';
 const CACHE = PREFIX + BUILD;
 const BASE = new URL('./', self.location.href);
-const SHELL = ['./', 'index.html', 'assets/ui-s1-1.css', 'assets/ui-s2-3.js','assets/voice-s2-3.mjs','assets/voice-s2-3.css','assets/s2-api-3.mjs','assets/voice-capture-3.mjs','assets/voice-worklet-3.mjs', 'manifest.webmanifest'].map(p => new URL(p, BASE).href);
+const SHELL = ['./', 'index.html', 'assets/ui-s1-1.css', 'assets/ui-s2-3.js','assets/voice-s3-0.mjs','assets/voice-s3-0.css','assets/s3-api.mjs', 'manifest.webmanifest'].map(p => new URL(p, BASE).href);
 const ownPath = url => url.origin === BASE.origin && url.pathname.startsWith(BASE.pathname);
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
