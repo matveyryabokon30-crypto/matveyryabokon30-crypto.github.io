@@ -1,0 +1,35 @@
+name: Pablicus P05 instant surfaces
+on:
+  push:
+    branches: [perf/pablicus-p05-instant-surfaces-20260918]
+permissions:
+  contents: read
+concurrency:
+  group: pablicus-p05-regression
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static contract and syntax
+        run: |
+          set -euo pipefail
+          python tools/pablicus-p05/test.py
+          for f in vision-talk/pablicus/*.js; do node --check "$f"; done
+      - name: Install browser verification
+        run: |
+          python -m pip install playwright==1.57.0 pillow
+          python -m playwright install --with-deps chromium webkit
+      - name: Existing media isolation and shell regression
+        run: |
+          set -euo pipefail
+          for engine in chromium webkit; do
+            python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --engine "$engine"
+            python tools/pablicus-p01r2/extended.py --root vision-talk/pablicus --engine "$engine"
+            python tools/pablicus-p04/shell-current.py --root vision-talk/pablicus --engine "$engine"
+          done
