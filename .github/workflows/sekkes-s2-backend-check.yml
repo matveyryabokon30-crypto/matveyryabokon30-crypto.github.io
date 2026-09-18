@@ -1,0 +1,63 @@
+name: SEKKES S2 isolated backend check
+on:
+  push:
+    branches: [verify/sekkes-s2-backend-20260918]
+    paths: [.github/workflows/sekkes-s2-backend-check.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read-only network checks, no account and no AI calls
+        run: |
+          mkdir -p qa
+          python3 - <<'PY'
+          import urllib.request, urllib.error, json, pathlib, time
+          root='https://wqwqhagyevbszadqcoqj.supabase.co'
+          base=root+'/functions/v1/sekkes-s2'
+          origin='https://matveyryabokon30-crypto.github.io'
+          public_key='sb_publishable__Y12i4WC2tzQiwKgKYk2dA_tsOmmHgd'
+          checks=[]
+          def request(path,method='GET',headers=None,data=None):
+              req=urllib.request.Request(path,method=method,headers=headers or {},data=json.dumps(data).encode() if data is not None else None)
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r: status=r.status;h=dict(r.headers);raw=r.read()
+              except urllib.error.HTTPError as e:status=e.code;h=dict(e.headers);raw=e.read()
+              try: body=json.loads(raw)
+              except:body={'non_json':True}
+              return status,body,h
+          def check(name,ok,detail):
+              checks.append({'name':name,'pass':bool(ok),'detail':detail})
+              print(('PASS ' if ok else 'FAIL ')+name,flush=True)
+          try:
+              status,b,h=request(base+'/status')
+              check('deployed status responds',status==200 and b.get('release')=='2026.09.18-s2.2',{'http':status,'body':b})
+              check('no false live-validation claim',b.get('liveValidated') is False and b.get('requiresLogin') is True,b)
+              status,b,h=request(base+'/memory',headers={'Origin':origin,'apikey':public_key})
+              check('private memory rejects anonymous request',status==401 and b.get('code')=='AUTH_REQUIRED',{'http':status,'body':b})
+              status,b,h=request(base+'/turn',method='POST',headers={'Origin':origin,'apikey':public_key,'Content-Type':'application/json'},data={})
+              check('paid turn rejects anonymous request',status==401 and b.get('code')=='AUTH_REQUIRED',{'http':status,'body':b})
+              status,b,h=request(base+'/memory',headers={'Origin':origin,'apikey':public_key,'Authorization':'Bearer '+('x'*64)})
+              check('forged token is checked with Supabase Auth',status==401 and b.get('code')=='AUTH_REQUIRED',{'http':status,'body':b})
+              status,b,h=request(base+'/status',headers={'Origin':'https://example.invalid'})
+              check('unapproved browser origin rejected',status==403 and b.get('code')=='ORIGIN_DENIED',{'http':status,'body':b})
+              status,b,h=request(root+'/rest/v1/rpc/sekkes_s2_memory',method='POST',headers={'apikey':public_key,'Content-Type':'application/json'},data={'p_uid':'11111111-1111-4111-8111-111111111111','p_action':'list'})
+              check('public key cannot call private memory RPC',status in (401,403,404),{'http':status,'body':b})
+              status,b,h=request(base+'/memory',method='OPTIONS',headers={'Origin':origin,'Access-Control-Request-Method':'GET','Access-Control-Request-Headers':'authorization,apikey,content-type'})
+              lower={k.lower():v for k,v in h.items()}
+              check('browser preflight works for allowed origin',status==204 and lower.get('access-control-allow-origin')==origin,{'http':status,'allow_origin':lower.get('access-control-allow-origin')})
+          except Exception as e:
+              check('network suite completed',False,str(e))
+          result={'scope':'Real isolated deployed backend without account or provider calls. No real AI, no memory writes, no Pablicus calls.','checks':checks,'passed':sum(x['pass'] for x in checks),'failed':sum(not x['pass'] for x in checks),'provider_calls':0}
+          pathlib.Path('qa/S2_BACKEND_NETWORK.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+          print(json.dumps(result,ensure_ascii=False,indent=2),flush=True)
+          raise SystemExit(bool(result['failed']))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sekkes-s2-backend-check
+          path: qa/
+          retention-days: 7
