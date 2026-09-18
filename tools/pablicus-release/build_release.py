@@ -105,8 +105,9 @@ def build(root, sha):
     cache_diagnostic = """/* BUILD_CACHE_DIAGNOSTIC_START */
 self.addEventListener('message',event=>{if(event.data?.type!=='PABLICUS_RELEASE_CACHE')return;
  event.waitUntil((async()=>{const names=await caches.keys(),present=names.includes(VERSION);
- const entries=present?await(await caches.open(VERSION)).keys():[],urls=new Set(entries.map(r=>r.url));
- event.ports?.[0]?.postMessage({version:VERSION,buildId:BUILD_ID,present,cacheEntries:entries.length,missing:[...allowed.keys()].filter(u=>!urls.has(u)),shellCaches:names.filter(n=>n.startsWith('pablicus-shell-')),error:null});
+ const cache=present?await caches.open(VERSION):null,urls=new Set();
+ if(cache)for(const url of allowed.keys()){const response=await cache.match(url);if(response){urls.add(url);await response.body?.cancel();}}
+ event.ports?.[0]?.postMessage({version:VERSION,buildId:BUILD_ID,present,cacheEntries:urls.size,missing:[...allowed.keys()].filter(u=>!urls.has(u)),shellCaches:names.filter(n=>n.startsWith('pablicus-shell-')),error:null});
  })().catch(()=>event.ports?.[0]?.postMessage({version:VERSION,error:'CACHE_READ_FAILED'})));
 });
 /* BUILD_CACHE_DIAGNOSTIC_END */
