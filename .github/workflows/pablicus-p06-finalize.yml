@@ -1,0 +1,36 @@
+name: Pablicus P06 manifest finalize
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/pablicus-p06-finalize.yml']
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild exact release manifest
+        run: |
+          python - <<'PY'
+          import hashlib,json,re
+          from pathlib import Path
+          root=Path('vision-talk/pablicus')
+          p=root/'release-p01r2.json'; data=json.loads(p.read_text())
+          data['release']='P06'; data['base']='73464666955ccd285559f88e1b128e8c05c810fc'
+          for name in list(data['assets']):
+              q=root/('index.html' if name=='./' else name)
+              data['assets'][name]=hashlib.sha256(q.read_bytes()).hexdigest()
+          p.write_text(json.dumps(data,indent=2)+'\n')
+          sw=root/'sw.js'; s=sw.read_text()
+          s=re.sub(r"const ASSETS=.*?;\n",lambda m:'const ASSETS='+json.dumps(data['assets'],separators=(',',':'))+';\n',s,count=1)
+          s=s.replace("pablicus-shell-p05-20260918","pablicus-shell-p06-20260918")
+          sw.write_text(s)
+          PY
+      - name: Commit exact P06 manifest
+        run: |
+          git config user.name 'Pablicus release'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vision-talk/pablicus/release-p01r2.json vision-talk/pablicus/sw.js
+          git commit -m 'release(pablicus): finalize exact P06 manifest'
+          git push
