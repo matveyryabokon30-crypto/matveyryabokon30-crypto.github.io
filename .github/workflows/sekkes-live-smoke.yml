@@ -1,0 +1,25 @@
+name: SEKKES Live smoke
+on:
+  push:
+    branches: [verify/sekkes-live-smoke-20260918]
+    paths: [.github/workflows/sekkes-live-smoke.yml]
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check server-side OpenAI Live schema
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 https://wqwqhagyevbszadqcoqj.supabase.co/functions/v1/sekkes-live-smoke | tee result.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('result.json'))
+          print(json.dumps(d,ensure_ascii=False))
+          if d.get('status') not in (400,422):
+              raise SystemExit('unexpected provider status')
+          msg=(d.get('message') or '').lower()
+          if 'sdp' not in msg and 'offer' not in msg and 'webrtc' not in msg:
+              raise SystemExit('request failed before SDP validation')
+          PY
