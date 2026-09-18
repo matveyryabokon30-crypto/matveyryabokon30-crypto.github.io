@@ -2,7 +2,7 @@ name: Pablicus R0 verified release
 on:
   push:
     branches: [fix/pablicus-f02-r0-release-20260919]
-    paths: ['tools/pablicus-release/**', '.github/workflows/pablicus-release-r0.yml']
+    paths: ['tools/pablicus-release/**', 'tools/pablicus-f02/**', '.github/workflows/pablicus-release-r0.yml']
 permissions:
   contents: write
 concurrency:
@@ -30,6 +30,7 @@ jobs:
           python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
           python tools/pablicus-release/test_release.py 2>&1 | tee results/unit.txt
           python tools/pablicus-f01/test.py
+          python tools/pablicus-f02/test.py
           python tools/pablicus-p06/test.py
           for f in vision-talk/pablicus/*.js; do node --check "$f"; done
       - name: Install browser verification

@@ -4,6 +4,7 @@ import http.server
 import json
 import pathlib
 import threading
+import tempfile
 import traceback
 import urllib.parse
 from playwright.sync_api import sync_playwright
@@ -60,8 +61,9 @@ def record(name, passed, details=None):
 
 
 with sync_playwright() as pw:
-    browser = getattr(pw, a.engine).launch(headless=True)
-    ctx = browser.new_context();page = ctx.new_page()
+    profile = tempfile.TemporaryDirectory(prefix='pablicus-r0-')
+    ctx = getattr(pw, a.engine).launch_persistent_context(profile.name, headless=True)
+    page = ctx.new_page()
     ctx.route('https://ctcoqgsztdtsazdiwcmd.supabase.co/**', lambda r: r.fulfill(status=401, content_type='application/json', body='{"message":"No test account"}'))
 
     def version():
@@ -71,7 +73,7 @@ with sync_playwright() as pw:
         page.goto(origin + '/probe.html');page.wait_for_function('navigator.serviceWorker.controller', timeout=60000);page.wait_for_timeout(6500)
         initial = version()
         record('previous production worker controls fixture', initial == 'pablicus-shell-f01-20260918', initial)
-        page.evaluate("""async()=>{sessionStorage.busy='1';localStorage.setItem('r0-sentinel','keep');await new Promise((resolve,reject)=>{const o=indexedDB.open('r0-fixture',1);o.onupgradeneeded=()=>o.result.createObjectStore('blobs');o.onsuccess=()=>{const db=o.result,t=db.transaction('blobs','readwrite');t.objectStore('blobs').put(new Blob(['draft-original-bytes']),'draft');t.oncomplete=()=>{db.close();resolve()};t.onerror=reject;};});await new Promise(resolve=>{const ch=new MessageChannel();ch.port1.onmessage=()=>{ch.port1.close();resolve()};navigator.serviceWorker.controller.postMessage({type:'PABLICUS_PUSH_BIND',recipientId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'},[ch.port2]);});}""")
+        page.evaluate("""async()=>{sessionStorage.busy='1';localStorage.setItem('r0-sentinel','keep');await new Promise((resolve,reject)=>{const o=indexedDB.open('r0-fixture',1);o.onupgradeneeded=()=>o.result.createObjectStore('blobs');o.onsuccess=()=>{const db=o.result,t=db.transaction('blobs','readwrite');t.objectStore('blobs').put(new Blob(['draft-original-bytes']),'draft');t.oncomplete=()=>{db.close();resolve()};t.onerror=t.onabort=()=>reject(Error('Blob transaction: '+(t.error?.name||'unknown')+' '+(t.error?.message||'')));};o.onerror=()=>reject(Error('Open DB: '+o.error?.message));});await new Promise(resolve=>{const ch=new MessageChannel();ch.port1.onmessage=()=>{ch.port1.close();resolve()};navigator.serviceWorker.controller.postMessage({type:'PABLICUS_PUSH_BIND',recipientId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'},[ch.port2]);});}""")
         loads = page.evaluate('Number(sessionStorage.loads)')
         state['current'] = root
         page.evaluate('navigator.serviceWorker.getRegistration().then(r=>r.update())')
@@ -113,6 +115,6 @@ with sync_playwright() as pw:
     finally:
         result = dict(engine=a.engine, build_id=m['build_id'], passed=sum(c['passed'] for c in checks), failed=sum(not c['passed'] for c in checks), checks=checks, boundary='Synthetic browser origin, no real users or push delivery. Not physical iPhone acceptance.')
         (out / (a.engine + '-r0.json')).write_text(json.dumps(result, ensure_ascii=False, indent=2))
-        browser.close();server.shutdown()
+        ctx.close();profile.cleanup();server.shutdown()
 if result['failed']:
     raise SystemExit(1)
