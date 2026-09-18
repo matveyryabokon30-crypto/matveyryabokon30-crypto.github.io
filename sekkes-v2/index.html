@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru" data-build="2026.09.18-s1.1">
+<html lang="ru" data-build="2026.09.18-s2.3">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -11,6 +11,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="assets/ui-s1-1.css">
+<link rel="stylesheet" href="assets/voice-s2-3.css">
 <title>SEKKES</title>
 </head>
 <body>
@@ -70,16 +71,16 @@
 <p>Твоё пространство разговора</p>
 </div>
 <section id="aiFull" class="ai-full" aria-label="Пространство AI" hidden>
-<div class="quiet-tag"><span></span><span id="aiStateLabel">AI пока не подключён</span></div>
+<div class="quiet-tag"><span></span><span id="aiStateLabel">Войди в SEKKES для разговора</span></div>
 <div class="voice-view" id="voiceView">
 <div class="wave" id="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-<p id="voiceHint">Голос или текст.<br>Выбирай, как тебе удобнее.</p>
-<button class="text-link" id="micTestLink">Проверить микрофон</button>
+<p id="voiceHint">Скажи одну фразу и отправь.<br>Ответ можно слушать или читать.</p>
+<button class="text-link" id="micTestLink">Войти и начать</button>
 </div>
 <div class="text-view" id="textView" hidden>
 <label for="draft">О чём ты хочешь поговорить?</label>
-<textarea id="draft" rows="4" maxlength="4000" placeholder="Можно начать с одной мысли…"></textarea>
-<p>Пока AI не подключён, текст никуда не отправляется и не сохраняется.</p>
+<textarea id="draft" rows="4" maxlength="2000" placeholder="Можно начать с одной мысли…"></textarea>
+<p>Текст отправляется после входа и согласия. Долгосрочная память по умолчанию выключена.</p>
 </div>
 </section>
 <div class="composer-wrap">
@@ -123,5 +124,6 @@
 <dialog id="dialog" aria-labelledby="dialogTitle"><div class="dialog-card"><button id="dialogClose" class="circle dialog-close" aria-label="Закрыть"><svg><use href="#i-close"/></svg></button><div id="dialogContent"></div></div></dialog>
 </main>
 <noscript><div class="noscript">Для жестов и переходов SEKKES нужен JavaScript.</div></noscript>
-<script src="assets/ui-s1-1.js" defer></script>
+<script src="assets/ui-s2-3.js" defer></script>
+<script type="module" src="assets/voice-s2-3.mjs"></script>
 </body></html>
