@@ -1,1 +1,1 @@
-{"app":"sekkes-v2","version":"2026.09.18-s2.3","stage":"S2_OWNER_PILOT_REAL_TEST_PENDING","ai_server_wired":true,"ai_connected":false,"live_validated":false,"game001_playable":false,"world_running":false}
+{"app":"sekkes-v2","version":"2026.09.18-s3.0","stage":"S3_SOL_PLUS_LIVE_OWNER_PILOT","ai_server_wired":true,"ai_connected":true,"text_model":"gpt-5.6-sol","voice_model":"gpt-live-1","voice_reasoning_model":"gpt-5.6-sol","live_validated":false,"game001_playable":false,"world_running":false}\n
