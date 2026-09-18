@@ -1,0 +1,29 @@
+name: Pablicus P04 production verification
+on:
+  push:
+    branches: [perf/pablicus-p04-first-frame-20260918]
+    paths: ['.github/workflows/pablicus-p04-public-check.yml']
+permissions:
+  contents: read
+jobs:
+  public-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install verification dependencies
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Verify actual published P04 release and all asset hashes
+        run: python tools/pablicus-release/verify-public.py
+      - name: Save production verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p04-public-verification
+          path: public-evidence/
+          retention-days: 14
