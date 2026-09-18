@@ -2,7 +2,7 @@ name: Pablicus R0 verified release
 on:
   push:
     branches: [fix/pablicus-f02-r0-release-20260919]
-    paths: ['tools/pablicus-release/**', 'tools/pablicus-f02/**', '.github/workflows/pablicus-release-r0.yml']
+    paths: ['tools/pablicus-release/**', 'tools/pablicus-p01r2/**', 'tools/pablicus-f01/**', 'tools/pablicus-f02/**', 'tools/pablicus-p06/**', '.github/workflows/pablicus-release-r0.yml']
 permissions:
   contents: write
 concurrency:
