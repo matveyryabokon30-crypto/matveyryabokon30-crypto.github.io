@@ -1,0 +1,35 @@
+name: Pablicus isolated cache probe
+on:
+  push:
+    branches: [fix/pablicus-f02-r0-release-20260919]
+    paths: ['tools/pablicus-cache-probe/**', '.github/workflows/pablicus-cache-probe.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare isolated exact inputs
+        run: |
+          mkdir baseline
+          git archive 1c37273dcfe1c06dfb91d793bb59eb88d69bb76a vision-talk/pablicus | tar -x -C baseline
+          python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Observe cache lifecycle and independent controls
+        run: python tools/pablicus-cache-probe/probe.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pablicus-isolated-cache-observations
+          path: probe-results/
+          retention-days: 7
+          if-no-files-found: error
