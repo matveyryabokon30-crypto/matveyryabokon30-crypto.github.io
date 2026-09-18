@@ -1,0 +1,81 @@
+name: SEKKES S2 deployed snapshot verification
+on:
+  push:
+    branches: [verify/sekkes-s2-client-20260918]
+    paths: [.github/workflows/sekkes-s2-live-final.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: verify/sekkes-s2-client-20260918
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read exact published browser assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sekkes-qa/candidate
+          python - <<'PY'
+          import os,json,urllib.request,base64
+          from pathlib import Path
+          ref='db5eb1bc6be2f04aedd109f4fb80a762229e573b'
+          repo='matveyryabokon30-crypto/matveyryabokon30-crypto.github.io'
+          api='https://api.github.com/repos/'+repo
+          def get(url):
+            return json.load(urllib.request.urlopen(urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'}),timeout=20))
+          tree=get(api+'/git/trees/dfbeac20ff6fbf9f330d8f91f5353265b3287521?recursive=1')
+          assert not tree['truncated']
+          for f in tree['tree']:
+            if f['type']!='blob':continue
+            p=Path('sekkes-qa/candidate')/f['path'];p.parent.mkdir(parents=True,exist_ok=True)
+            b=get(api+'/git/blobs/'+f['sha']);p.write_bytes(base64.b64decode(b['content']))
+          check=Path('tools/sekkes-s2-client/browser_checks.py')
+          text=check.read_text().replace('script[src="assets/voice-s2.mjs"]','script[src="assets/voice-s2-3.mjs"]')
+          check.write_text(text)
+          Path('sekkes-qa/SNAPSHOT.txt').write_text(ref+'\n')
+          PY
+      - name: Verify live static bytes and public backend readiness
+        run: |
+          python - <<'PY'
+          import json,time,hashlib,urllib.request,urllib.error
+          from pathlib import Path
+          checks=[];root=Path('sekkes-qa/candidate');base='https://matveyryabokon30-crypto.github.io/sekkes-v2/'
+          def get(url,headers={}):
+            r=urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=25)
+            return r.status,r.read(),dict(r.headers)
+          for p in sorted(root.rglob('*')):
+            if not p.is_file():continue
+            name=p.relative_to(root).as_posix();status,data,h=get(base+name+'?verify=s2-final-'+str(time.time_ns()))
+            checks.append({'name':'live bytes '+name,'pass':status==200 and data==p.read_bytes(),'sha256':hashlib.sha256(data).hexdigest()})
+          server='https://wqwqhagyevbszadqcoqj.supabase.co/functions/v1/sekkes-s2'
+          origin='https://matveyryabokon30-crypto.github.io'
+          status,data,h=get(server+'/status',{'Origin':origin});j=json.loads(data)
+          checks.append({'name':'dedicated backend configured','pass':status==200 and j.get('configured') is True and j.get('liveValidated') is False,'observed':j})
+          try:
+            status,data,h=get(server+'/memory',{'Origin':origin});denied=False
+          except urllib.error.HTTPError as e:denied=e.code==401
+          checks.append({'name':'memory without owner login denied','pass':denied})
+          out={'scope':'Live public assets and non-paid backend readiness only. No account impersonation, no password or OpenAI calls.','checks':checks,'passed':sum(x['pass'] for x in checks),'failed':sum(not x['pass'] for x in checks)}
+          Path('sekkes-qa/LIVE_RESULTS.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          print(json.dumps(out,ensure_ascii=False))
+          assert out['failed']==0
+          PY
+      - name: Test browser interaction with explicit synthetic Auth and AI
+        run: |
+          python -m pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium webkit
+          python tools/sekkes-s2-client/browser_checks.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sekkes-s2-deployed-snapshot
+          path: sekkes-qa/
+          if-no-files-found: error
+          retention-days: 7
