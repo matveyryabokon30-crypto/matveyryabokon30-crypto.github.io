@@ -3,7 +3,7 @@ import hashlib,json,re,sys
 R=Path(sys.argv[1])
 def patch(f,a,b,n=1):
  p=R/f;s=p.read_text();assert s.count(a)==n,(f,s.count(a),a[:120]);p.write_text(s.replace(a,b))
-patch('index.html','<script src="home-data.js"></script>','<script src="home-data.js"></script><script src="screen-data.js"></script>')
+patch('index.html','<script defer src="home-data.js"></script>','<script defer src="home-data.js"></script><script defer src="screen-data.js"></script>')
 patch('index.html','content="P04"','content="P05"')
 patch('app.js',"VERSION='P04'","VERSION='P05'")
 patch('media-cache.js','homeProofHits:0};','homeProofHits:0,screenProofHits:0};')
