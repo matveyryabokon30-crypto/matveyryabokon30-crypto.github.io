@@ -1,0 +1,90 @@
+name: Pablicus P03 home startup regression
+on:
+  push:
+    branches: [perf/pablicus-p03-home-start-20260918]
+    paths: ['tools/pablicus-p03/**', '.github/workflows/pablicus-p03-regression.yml']
+permissions:
+  contents: write
+concurrency:
+  group: pablicus-p03-regression
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build candidate from confirmed P02 and preserve other applications
+        run: |
+          set -euo pipefail
+          mkdir -p .p03-baseline results
+          git archive 48254f491f6375c4bfc8a964e62f480e53ec7c46 vision-talk/pablicus | tar -x -C .p03-baseline
+          cp -a .p03-baseline/vision-talk/pablicus/. vision-talk/pablicus/
+          cp tools/pablicus-p03/home-data.js vision-talk/pablicus/
+          python tools/pablicus-p03/patch.py vision-talk/pablicus
+          for f in vision-talk/pablicus/*.js; do node --check "$f"; done
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tools/pablicus-release/verify-public.py')
+          s=p.read_text().replace('P02','P03').replace('pablicus-shell-p02-20260918','pablicus-shell-p03-20260918')
+          p.write_text(s)
+          p=Path('tools/pablicus-p01r2/shell.py')
+          s=p.read_text().replace('P01-R2','P03').replace('pablicus-shell-p01r2-20260917','pablicus-shell-p03-20260918')
+          Path('tools/pablicus-p03/shell-current.py').write_text(s)
+          PY
+      - name: Install verification tools
+        run: |
+          python -m pip install playwright==1.57.0 pillow
+          python -m playwright install --with-deps chromium webkit
+      - name: Compare actual authenticated home before and after
+        shell: bash
+        run: |
+          failed=0
+          for engine in chromium webkit; do
+            python tools/pablicus-p03/startup.py --root vision-talk/pablicus --baseline .p03-baseline/vision-talk/pablicus --engine "$engine" || failed=1
+          done
+          exit "$failed"
+      - name: Preserve P02 media, scope isolation and safe update contracts
+        shell: bash
+        run: |
+          failed=0
+          for engine in chromium webkit; do
+            python tools/pablicus-p01r2/browser.py --root vision-talk/pablicus --engine "$engine" || failed=1
+            python tools/pablicus-p01r2/extended.py --root vision-talk/pablicus --engine "$engine" || failed=1
+            python tools/pablicus-p03/shell-current.py --root vision-talk/pablicus --engine "$engine" || failed=1
+          done
+          exit "$failed"
+      - name: Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p03-regression-evidence
+          path: |
+            results/
+            vision-talk/pablicus/release-p03.json
+          retention-days: 14
+      - name: Inspectable candidate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p03-runtime
+          path: vision-talk/pablicus/
+          retention-days: 14
+      - name: Save passing candidate only to its feature branch
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = perf/pablicus-p03-home-start-20260918
+          git config user.name 'Pablicus verification'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          mkdir -p docs/pablicus/p03
+          cp results/*.json docs/pablicus/p03/
+          git add vision-talk/pablicus docs/pablicus/p03 tools/pablicus-release/verify-public.py
+          if ! git diff --cached --quiet; then
+            git commit -m 'perf(pablicus): verified P03 home startup candidate'
+            git push origin HEAD:refs/heads/perf/pablicus-p03-home-start-20260918
+          fi
