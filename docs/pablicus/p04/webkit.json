@@ -1,0 +1,276 @@
+{
+  "engine": "webkit",
+  "passed": 13,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "parallel consumers share one transfer",
+      "pass": true,
+      "details": {
+        "same": true,
+        "stats": {
+          "imageDownloads": 1,
+          "downloadBytes": 116931,
+          "memoryHits": 0,
+          "diskHits": 0,
+          "signRequests": 1,
+          "coalesced": 7,
+          "errors": 0,
+          "peakDownloads": 1,
+          "evictions": 0,
+          "diskWrites": 2,
+          "diskErrors": 0,
+          "lastDiskError": null,
+          "serverPreviews": 0,
+          "sourceBytesAvoided": 0,
+          "parallelDiskReads": 1,
+          "previewFallbacks": 0,
+          "homeProofHits": 0,
+          "activeDownloads": 0,
+          "queuedDownloads": 0,
+          "memoryEntries": 1,
+          "memoryBytes": 116931
+        }
+      }
+    },
+    {
+      "name": "cached bytes decode without network",
+      "pass": true,
+      "details": {
+        "width": 512,
+        "stats": {
+          "imageDownloads": 1,
+          "downloadBytes": 116931,
+          "memoryHits": 1,
+          "diskHits": 0,
+          "signRequests": 1,
+          "coalesced": 7,
+          "errors": 0,
+          "peakDownloads": 1,
+          "evictions": 0,
+          "diskWrites": 2,
+          "diskErrors": 0,
+          "lastDiskError": null,
+          "serverPreviews": 0,
+          "sourceBytesAvoided": 0,
+          "parallelDiskReads": 1,
+          "previewFallbacks": 0,
+          "homeProofHits": 0,
+          "activeDownloads": 0,
+          "queuedDownloads": 0,
+          "memoryEntries": 1,
+          "memoryBytes": 116931
+        }
+      }
+    },
+    {
+      "name": "scroll down and back does not redownload viewed images",
+      "pass": true,
+      "details": {
+        "cold": 21,
+        "after_two_returns": 21
+      }
+    },
+    {
+      "name": "warm rows remain painted and bounded",
+      "pass": true,
+      "details": {
+        "rows": 16,
+        "live": 4,
+        "ready": true,
+        "audit": {
+          "rows": 4,
+          "max_overlap_px": 0,
+          "max_gap_px": 0,
+          "model_error_px": 0,
+          "clipped": 0,
+          "width_errors": 0,
+          "active": 1
+        }
+      }
+    },
+    {
+      "name": "reopen conversation reuses loaded media",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "reopened story performs no second image transfer",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "document reload uses IndexedDB image, not network body",
+      "pass": true,
+      "details": {
+        "imageDownloads": 0,
+        "downloadBytes": 0,
+        "memoryHits": 0,
+        "diskHits": 1,
+        "signRequests": 1,
+        "coalesced": 0,
+        "errors": 0,
+        "peakDownloads": 0,
+        "evictions": 0,
+        "diskWrites": 0,
+        "diskErrors": 0,
+        "lastDiskError": null,
+        "serverPreviews": 0,
+        "sourceBytesAvoided": 0,
+        "parallelDiskReads": 1,
+        "previewFallbacks": 0,
+        "homeProofHits": 0,
+        "activeDownloads": 0,
+        "queuedDownloads": 0,
+        "memoryEntries": 1,
+        "memoryBytes": 116931
+      }
+    },
+    {
+      "name": "private cache still requests fresh authorization",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "account switch removes in-memory capabilities",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "denied account does not receive cached media",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "video is a range URL, not a full-blob download",
+      "pass": true,
+      "details": {
+        "network": true,
+        "stats": {
+          "imageDownloads": 0,
+          "downloadBytes": 0,
+          "memoryHits": 0,
+          "diskHits": 1,
+          "signRequests": 3,
+          "coalesced": 0,
+          "errors": 1,
+          "peakDownloads": 0,
+          "evictions": 0,
+          "diskWrites": 0,
+          "diskErrors": 0,
+          "lastDiskError": null,
+          "serverPreviews": 0,
+          "sourceBytesAvoided": 0,
+          "parallelDiskReads": 2,
+          "previewFallbacks": 0,
+          "homeProofHits": 0,
+          "activeDownloads": 0,
+          "queuedDownloads": 0,
+          "memoryEntries": 0,
+          "memoryBytes": 0
+        }
+      }
+    },
+    {
+      "name": "network work is bounded to three image transfers",
+      "pass": true,
+      "details": {
+        "imageDownloads": 7,
+        "downloadBytes": 818517,
+        "memoryHits": 0,
+        "diskHits": 1,
+        "signRequests": 10,
+        "coalesced": 0,
+        "errors": 1,
+        "peakDownloads": 3,
+        "evictions": 0,
+        "diskWrites": 2,
+        "diskErrors": 0,
+        "lastDiskError": null,
+        "serverPreviews": 0,
+        "sourceBytesAvoided": 0,
+        "parallelDiskReads": 9,
+        "previewFallbacks": 0,
+        "homeProofHits": 0,
+        "activeDownloads": 0,
+        "queuedDownloads": 0,
+        "memoryEntries": 7,
+        "memoryBytes": 26964
+      }
+    },
+    {
+      "name": "no browser runtime exceptions",
+      "pass": true,
+      "details": []
+    }
+  ],
+  "network": {
+    "get": {
+      "/storage/v1/object/sign/message-media/shared.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-29.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-30.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-31.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-23.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-24.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-25.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-26.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-16.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-17.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-18.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-19.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-9.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-10.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-11.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-12.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-2.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-3.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-4.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-5.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-1.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-0.png": 1,
+      "/storage/v1/object/sign/pablicus-story-media/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/story.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-0.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-1.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-2.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-3.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-4.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-5.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-6.png": 1
+    },
+    "post": {
+      "/storage/v1/object/sign/message-media/shared.png": 2,
+      "/storage/v1/object/sign/message-media/conversation/photo-29.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-30.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-31.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-23.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-24.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-25.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-26.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-16.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-17.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-18.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-19.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-9.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-10.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-11.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-12.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-2.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-3.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-4.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-5.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-1.png": 1,
+      "/storage/v1/object/sign/message-media/conversation/photo-0.png": 1,
+      "/storage/v1/object/sign/pablicus-story-media/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/story.png": 1,
+      "/storage/v1/object/sign/message-media/clip.mp4": 1,
+      "/storage/v1/object/sign/profile-media/profile-0.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-1.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-2.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-3.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-4.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-5.png": 1,
+      "/storage/v1/object/sign/profile-media/profile-6.png": 1
+    }
+  },
+  "browser_errors": [],
+  "fixture": "synthetic authorized media, not owner iPhone"
+}

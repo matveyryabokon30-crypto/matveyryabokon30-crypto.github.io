@@ -13,7 +13,7 @@
  const person=id=>snapshot.people.find(p=>p.id===id),title=id=>person(id)?.name||(id===own()?.id?own()?.display_name:'')||'Сторис';
  const picture=id=>person(id)?.url||'',conversation=id=>person(id)?.conversationId||null;
  const current=id=>snapshot.stories.filter(s=>s.owner_id===id&&Date.parse(s.expires_at)>Date.now()+serverOffset),active=id=>current(id).length>0;
- function avatar(id,cls='storyShelfAvatar'){const a=E('span',cls);a.dataset.storyOwner=id;a.dataset.pablicusStoryRing=active(id)?'active':'none';const u=picture(id);if(u){const i=E('img');i.alt='';i.draggable=false;i.src=u;a.append(i);}else a.textContent=Array.from(title(id))[0]||'?';return a;}
+ function avatar(id,cls='storyShelfAvatar'){const a=E('span',cls);a.dataset.storyOwner=id;a.dataset.pablicusStoryRing=active(id)?'active':'none';const u=picture(id);if(u){const i=D()?.imageFor?.(u)||E('img');i.alt='';i.draggable=false;i.decoding='sync';i.src=u;a.append(i);}else a.textContent=Array.from(title(id))[0]||'?';return a;}
  const valid=k=>key()===k&&!!state().sessionUserId;
  async function feed(owner){
   if(!UUID.test(owner||'')||!state().sessionUserId)throw Error('Story session unavailable');
@@ -35,7 +35,7 @@
   ids.forEach((id,index)=>{let n=ui.nodes.get(id);if(!n){n=item(id);ui.nodes.set(id,n);}if(ui.rail.children[index]!==n)ui.rail.insertBefore(n,ui.rail.children[index]||null);
    n.style.left=(16+index*G.step)+'px';const label=id===me?'Моя история':title(id);if(n.lastChild.textContent!==label)n.lastChild.textContent=label;n.setAttribute('aria-label',label);
    const a=n.firstChild,ring=active(id)?'active':'none';if(a.dataset.pablicusStoryRing!==ring)a.dataset.pablicusStoryRing=ring;
-   const url=picture(id);if(url&&a.querySelector('img')?.getAttribute('src')!==url&&a.dataset.pendingUrl!==url){a.dataset.pendingUrl=url;const img=E('img');img.alt='';img.draggable=false;img.onload=()=>{if(n.isConnected&&picture(id)===url){a.replaceChildren(img);delete a.dataset.pendingUrl;}};img.onerror=()=>{delete a.dataset.pendingUrl;};img.src=url;}
+   const url=picture(id);if(url&&a.querySelector('img')?.getAttribute('src')!==url&&a.dataset.pendingUrl!==url){a.dataset.pendingUrl=url;const decoded=D()?.imageFor?.(url);if(decoded){a.replaceChildren(decoded);delete a.dataset.pendingUrl;return;}const img=E('img');img.alt='';img.draggable=false;img.onload=()=>{if(n.isConnected&&picture(id)===url){a.replaceChildren(img);delete a.dataset.pendingUrl;}};img.onerror=()=>{delete a.dataset.pendingUrl;};img.src=url;}
   });ui.widthPad.style.width=Math.max(ui.ws.clientWidth,32+ids.length*G.step-12)+'px';paint();
  }
  function measure(){if(!ui)return;const pad=parseFloat(getComputedStyle(ui.ws).paddingBottom)||0;const value=Math.max(0,ui.ws.clientHeight-G.compact-pad)+'px';if(ui.ws.style.getPropertyValue('--story-min-list')!==value)ui.ws.style.setProperty('--story-min-list',value);paint();}
@@ -81,5 +81,5 @@ g.addEventListener('click',intercept,{capture:true,signal:life.signal});g.addEve
  // Media dialogs retain their own zoom. Application chrome is not a zoomable canvas.
  function noPinch(e){if(!(e.target instanceof Element)||e.target.closest('dialog,[role="dialog"],.mediaViewer')||!e.target.closest('#home,#app'))return;if((e.type.startsWith('gesture')||e.touches?.length>1)&&e.cancelable)e.preventDefault();}
  for(const type of ['touchstart','touchmove','gesturestart','gesturechange'])document.addEventListener(type,noPinch,{capture:true,passive:false,signal:life.signal});
- g.PablicusStoriesCore=Object.freeze({C,S,E,$,UUID,state,own,title,picture,conversation,avatar,feed,media,cache,current,active,key,refresh,now:()=>Date.now()+serverOffset,notify:t=>S()?.notify?.(t),destroy(){life.abort();unsubscribe();unmount();cancelAnimationFrame(dataFrame);cache.clear();}});refresh();
+ g.PablicusStoriesCore=Object.freeze({flush:update,C,S,E,$,UUID,state,own,title,picture,conversation,avatar,feed,media,cache,current,active,key,refresh,now:()=>Date.now()+serverOffset,notify:t=>S()?.notify?.(t),destroy(){life.abort();unsubscribe();unmount();cancelAnimationFrame(dataFrame);cache.clear();}});refresh();
 })(window);

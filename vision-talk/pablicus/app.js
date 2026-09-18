@@ -2,7 +2,7 @@
    Ordered multimodal messages keep a single server sequence. Shared plans and
    tasks are conversation-scoped. Feed/AI and video transcoding remain separate. */
 (() => {'use strict';
- const URL='https://ctcoqgsztdtsazdiwcmd.supabase.co',KEY='sb_publishable_kMGqZAM2vadfXbBr8r5uzw_l9EiBtIw',BUCKET='message-media',VERSION='P03';
+ const URL='https://ctcoqgsztdtsazdiwcmd.supabase.co',KEY='sb_publishable_kMGqZAM2vadfXbBr8r5uzw_l9EiBtIw',BUCKET='message-media',VERSION='P04';
  const $=x=>document.getElementById(x),el=(tag,cls,text)=>{const n=document.createElement(tag); window.PablicusUI?.prepareControl?.(n);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n};
  const safeGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}},safeSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
  const timeoutFetch=async(u,opts={},ms=25000)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);const abort=()=>c.abort();opts.signal?.addEventListener('abort',abort,{once:true});try{return await fetch(u,{...opts,signal:c.signal})}finally{clearTimeout(t);opts.signal?.removeEventListener('abort',abort)}};
@@ -277,13 +277,19 @@
   if(user&&user.id!==session.user.id)clearSessionView();
   await sessionCleanup;if(attempt!==authVersion||signal?.aborted)return;
   user=session.user;sessionViewCleared=false;profile=null;const uid=user.id;
-  if(navigator.onLine)void fetchDialogSnapshot().catch(()=>{});
+  const previousDialogs=safeGet(cacheKey())||[];
+  window.PablicusHomeData?.prime(previousDialogs.map(d=>d.id));
+  if(navigator.onLine)void fetchDialogSnapshot().then(([ds])=>{if(user?.id===uid)window.PablicusHomeData?.prime(ds.map(d=>d.id));}).catch(()=>{});
   let r;try{r=await sb.from('profiles').select('id,username,display_name,avatar_url,is_approved').eq('id',uid).single()}
   catch(error){if(attempt!==authVersion||signal?.aborted)return;throw error}
   if(attempt!==authVersion||signal?.aborted)return;
   if(r.error){const cached=safeGet('pablicus:'+uid+':profile');if(!verifiedPasskey&&!navigator.onLine&&cached)profile=cached;else{user=null;throw Error('Не удалось проверить доступ к аккаунту. '+r.error.message)}}else profile=r.data;
   if(!profile.is_approved){profile=null;user=null;throw Error('Аккаунт ещё не одобрен. Свяжитесь с владельцем Pablicus.')}
-  safeSet('pablicus:'+uid+':profile',profile);window.PablicusHomeData?.mark('approved');window.PablicusShell.authentication(true);dialogs=safeGet(cacheKey())||[];renderHome();$('home').classList.remove('auth-booting');await loadDialogs();if(attempt!==authVersion||user?.id!==uid)return;startInbox();pump();showPersonLink();showPushConversation();pushNotifications.refresh();
+  safeSet('pablicus:'+uid+':profile',profile);window.PablicusHomeData?.mark('approved');dialogs=previousDialogs;
+  if(dialogsRequest?.uid===uid){try{let timer;const first=await Promise.race([dialogsRequest.promise,new Promise(resolve=>{timer=setTimeout(()=>resolve(null),300);})]);clearTimeout(timer);if(attempt!==authVersion||user?.id!==uid)return;if(first){const [ds,prefs]=first;chatPrefs.clear();for(const p of prefs)chatPrefs.set(p.conversation_id,p);dialogs=ds.map(withChatPreference);}}catch{}}
+  await window.PablicusAvatarStoriesUI?.prepareHome(profile,dialogs);
+  if(attempt!==authVersion||signal?.aborted||user?.id!==uid)return;
+  renderHome();window.PablicusAvatarStoriesUI?.flushHome();window.PablicusStoriesCore?.flush();window.PablicusShell.authentication(true);window.PablicusShell.project(window.PablicusController.state());$('home').classList.remove('auth-booting');window.PablicusHomeData?.mark('home-visible');await loadDialogs();if(attempt!==authVersion||user?.id!==uid)return;startInbox();pump();showPersonLink();showPushConversation();pushNotifications.refresh();
  }
  $('loginForm').onsubmit=async e=>{e.preventDefault();if(passkeySigninActive)return;$('loginSubmit').disabled=true;$('loginError').textContent='';try{const r=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(r.error)throw r.error;$('password').value='';trustExplicitSignIn();await authenticate(r.data.session)}catch(e){$('loginError').textContent=e.message}finally{$('loginSubmit').disabled=false}};
  const authConfig=globalThis.PablicusAuthConfig;
@@ -496,8 +502,8 @@
    const focused=new Set(safeGet(focusKey())||[]),q=$('searchChats').value.toLowerCase(),visible=dialogs.filter(d=>!chatHidden(d)&&!!d.archived===chatArchive&&(chatArchive||filter!=='focus'||focused.has(d.id))&&(!q||String(d.title).toLowerCase().includes(q)));const ds=window.PablicusChatListView?PablicusChatListView.ordered(visible,focused):visible;
    if(chatArchive){const back=el('button','chatArchiveBack','← К чатам');back.id='chatArchiveBack';back.onclick=()=>{chatArchive=false;renderHome();};output.append(back);}
    if(!ds.length){c.replaceChildren(el('p','empty',chatArchive?'В архиве пока нет чатов.':filter==='focus'?'Здесь появятся отмеченные вами разговоры.':'Разговоров пока нет. Найдите человека по имени или откройте его ссылку профиля.'));chatListGestures.pruneRows?.();return}
-   for(const d of ds){const signature=JSON.stringify([d,focused.has(d.id)]),old=previousRows.get(d.id);if(old?.dataset.renderSignature===signature){output.append(old);continue;}const row=el('section','chatCard');row.dataset.conversationId=d.id;row.dataset.renderSignature=signature;const button=el('button','chatMain'),avatar=el('span','avatar',(d.title||'?').replace('@','').slice(0,1).toUpperCase()),body=el('span','chatText');body.append(el('strong','',d.title||'Разговор'),el('span','previewText',d.last_message||'Начните разговор'));button.append(avatar,body);if(+d.unread_count||d.marked_unread){const badge=el('span','unread',+d.unread_count||'•');badge.setAttribute('aria-label','Непрочитанные сообщения');button.append(badge);}if(d.pinned||d.muted){const flags=el('span','chatFlags');if(d.pinned){const flag=el('span','','Закреплён');flag.prepend(PablicusMessageMenu.icon('pin'));flags.append(flag);}if(d.muted){const flag=el('span','','Без звука');flag.prepend(PablicusMessageMenu.icon('volumeOff'));flags.append(flag);}body.append(flags);}button.onclick=()=>goConversation(d).catch(problem);const focus=el('button','focusBtn',focused.has(d.id)?'★':'☆');focus.setAttribute('aria-label','Изменить Фокус');focus.onclick=()=>{focused.has(d.id)?focused.delete(d.id):focused.add(d.id);safeSet(focusKey(),[...focused]);renderHome()};decorateChatRow(row,d,button,focus);output.append(row)}
-   c.replaceChildren(output);chatListGestures.pruneRows?.();chatListGestures.restore(openActions);window.PablicusHomeData?.prime(ds.map(d=>d.id));window.PablicusHomeData?.mark('home-rows');
+   for(const d of ds){const signature=JSON.stringify([d,focused.has(d.id)]),old=previousRows.get(d.id);if(old?.dataset.renderSignature===signature){output.append(old);continue;}const row=el('section','chatCard');row.dataset.conversationId=d.id;row.dataset.renderSignature=signature;const button=el('button','chatMain'),avatar=el('span','avatar',''),body=el('span','chatText');body.append(el('strong','',d.title||'Разговор'),el('span','previewText',d.last_message||'Начните разговор'));button.append(avatar,body);if(+d.unread_count||d.marked_unread){const badge=el('span','unread',+d.unread_count||'•');badge.setAttribute('aria-label','Непрочитанные сообщения');button.append(badge);}if(d.pinned||d.muted){const flags=el('span','chatFlags');if(d.pinned){const flag=el('span','','Закреплён');flag.prepend(PablicusMessageMenu.icon('pin'));flags.append(flag);}if(d.muted){const flag=el('span','','Без звука');flag.prepend(PablicusMessageMenu.icon('volumeOff'));flags.append(flag);}body.append(flags);}button.onclick=()=>goConversation(d).catch(problem);const focus=el('button','focusBtn',focused.has(d.id)?'★':'☆');focus.setAttribute('aria-label','Изменить Фокус');focus.onclick=()=>{focused.has(d.id)?focused.delete(d.id):focused.add(d.id);safeSet(focusKey(),[...focused]);renderHome()};decorateChatRow(row,d,button,focus);output.append(row)}
+   c.replaceChildren(output);chatListGestures.pruneRows?.();chatListGestures.restore(openActions);window.PablicusHomeData?.prime(ds.map(d=>d.id));window.PablicusAvatarStoriesUI?.flushHome();window.PablicusHomeData?.mark('home-rows');
   }else if(page==='profile'){
    profilePage.mount(c);
   }else if(page==='tasks'){

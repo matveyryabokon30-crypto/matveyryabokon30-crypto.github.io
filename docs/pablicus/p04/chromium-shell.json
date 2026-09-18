@@ -1,0 +1,73 @@
+{
+  "engine": "chromium",
+  "passed": 12,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "complete verified shell is installed",
+      "pass": true,
+      "details": "pablicus-shell-p04-20260918"
+    },
+    {
+      "name": "all shell assets installed atomically",
+      "pass": true,
+      "details": {
+        "installed": 119,
+        "expected": 119
+      }
+    },
+    {
+      "name": "new release waits while upload or draft guard is busy",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "idle release activates and reloads automatically",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "draft preparation occurs before activation",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "application data survives shell update",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mismatched asset cannot replace the working release",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "failed installation leaves no partial release cache",
+      "pass": true,
+      "details": [
+        "pablicus-shell-p04-20260918-next"
+      ]
+    },
+    {
+      "name": "real application shell reaches the current release",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "native fetch is not monkey patched",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "retired manual update banner stays hidden",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "real shell has no runtime exceptions",
+      "pass": true,
+      "details": []
+    }
+  ],
+  "fixture": "isolated HTTP origin, real candidate shell, synthetic upgrade only"
+}

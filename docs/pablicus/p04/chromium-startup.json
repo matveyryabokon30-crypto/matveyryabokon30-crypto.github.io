@@ -1,0 +1,335 @@
+{
+  "baseline": {
+    "firstColdFrames": [
+      {
+        "t": 426.70000000001164,
+        "rows": 4,
+        "photos": 0,
+        "stories": 0,
+        "storyPhotos": 0,
+        "initials": 4
+      },
+      {
+        "t": 433.1000000000058,
+        "rows": 4,
+        "photos": 0,
+        "stories": 0,
+        "storyPhotos": 0,
+        "initials": 4
+      },
+      {
+        "t": 450.5,
+        "rows": 4,
+        "photos": 0,
+        "stories": 1,
+        "storyPhotos": 0,
+        "initials": 4
+      }
+    ],
+    "firstWarmFrames": [
+      {
+        "t": 374.80000000001746,
+        "rows": 4,
+        "photos": 0,
+        "stories": 0,
+        "storyPhotos": 0,
+        "initials": 4
+      },
+      {
+        "t": 395.20000000001164,
+        "rows": 4,
+        "photos": 0,
+        "stories": 0,
+        "storyPhotos": 0,
+        "initials": 4
+      },
+      {
+        "t": 401.4000000000233,
+        "rows": 4,
+        "photos": 0,
+        "stories": 1,
+        "storyPhotos": 0,
+        "initials": 4
+      }
+    ],
+    "rowsMs": 431,
+    "storyMetadataMs": 666,
+    "avatarsMs": 1233,
+    "warmHomeMs": 806,
+    "coldImageDownloads": 5,
+    "warmImageDownloads": 0,
+    "initialRequests": [
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/rest/v1/profiles",
+      "/rest/v1/rpc/pablicus_touch_activity",
+      "/rest/v1/rpc/pablicus_home_cards",
+      "/functions/v1/pablicus-media-preview",
+      "/rest/v1/rpc/pablicus_story_feed",
+      "/preview/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/avatar.png",
+      "/functions/v1/pablicus-media-preview",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000001/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/avatar.png"
+    ],
+    "quietRequests": [],
+    "stability": {
+      "rows": true,
+      "images": true,
+      "shelf": true
+    },
+    "errors": []
+  },
+  "candidate": {
+    "firstColdFrames": [
+      {
+        "t": 1196.3999999999942,
+        "rows": 4,
+        "photos": 4,
+        "stories": 5,
+        "storyPhotos": 5,
+        "initials": 0
+      },
+      {
+        "t": 1205.5999999999767,
+        "rows": 4,
+        "photos": 4,
+        "stories": 5,
+        "storyPhotos": 5,
+        "initials": 0
+      },
+      {
+        "t": 1226.6999999999825,
+        "rows": 4,
+        "photos": 4,
+        "stories": 5,
+        "storyPhotos": 5,
+        "initials": 0
+      }
+    ],
+    "firstWarmFrames": [
+      {
+        "t": 411.80000000001746,
+        "rows": 4,
+        "photos": 4,
+        "stories": 5,
+        "storyPhotos": 5,
+        "initials": 0
+      },
+      {
+        "t": 419.30000000001746,
+        "rows": 4,
+        "photos": 4,
+        "stories": 5,
+        "storyPhotos": 5,
+        "initials": 0
+      },
+      {
+        "t": 435.8999999999942,
+        "rows": 4,
+        "photos": 4,
+        "stories": 5,
+        "storyPhotos": 5,
+        "initials": 0
+      }
+    ],
+    "rowsMs": 1199,
+    "storyMetadataMs": 1205,
+    "avatarsMs": 1211,
+    "warmHomeMs": 414,
+    "coldImageDownloads": 5,
+    "warmImageDownloads": 0,
+    "initialRequests": [
+      "/rest/v1/rpc/my_conversations_v3",
+      "/rest/v1/rpc/pablicus_chat_preferences",
+      "/rest/v1/rpc/pablicus_touch_activity",
+      "/rest/v1/profiles",
+      "/rest/v1/rpc/pablicus_home_cards",
+      "/functions/v1/pablicus-media-preview",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000001/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/avatar.png",
+      "/preview/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/avatar.png",
+      "/preview/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/avatar.png"
+    ],
+    "quietRequests": [],
+    "stability": {
+      "rows": true,
+      "images": true,
+      "shelf": true
+    },
+    "errors": []
+  },
+  "engine": "chromium",
+  "passed": 14,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "unchanged home rows and avatars retain their DOM identity",
+      "pass": true,
+      "details": {
+        "rows": true,
+        "images": true,
+        "shelf": true
+      }
+    },
+    {
+      "name": "idle homepage does not poll every 1.3 seconds",
+      "pass": true,
+      "details": {
+        "requestsIn6_5s": []
+      }
+    },
+    {
+      "name": "home has only one private-avatar download per identity",
+      "pass": true,
+      "details": {
+        "downloads": 5
+      }
+    },
+    {
+      "name": "a changed conversation does not rebuild other rows",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "shared-element story transition still uses the same nodes",
+      "pass": true,
+      "details": {
+        "same": true,
+        "p": "0.5000"
+      }
+    },
+    {
+      "name": "reopened home uses persistent avatar bytes without downloading again",
+      "pass": true,
+      "details": {
+        "networkImageDownloads": 0,
+        "homeMs": 414
+      }
+    },
+    {
+      "name": "whole application boot has no JavaScript errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "cold first visible home contains final avatars, no letters",
+      "pass": true,
+      "details": [
+        {
+          "t": 1196.3999999999942,
+          "rows": 4,
+          "photos": 4,
+          "stories": 5,
+          "storyPhotos": 5,
+          "initials": 0
+        },
+        {
+          "t": 1205.5999999999767,
+          "rows": 4,
+          "photos": 4,
+          "stories": 5,
+          "storyPhotos": 5,
+          "initials": 0
+        },
+        {
+          "t": 1226.6999999999825,
+          "rows": 4,
+          "photos": 4,
+          "stories": 5,
+          "storyPhotos": 5,
+          "initials": 0
+        }
+      ]
+    },
+    {
+      "name": "reopened first visible home contains final avatars, no letters",
+      "pass": true,
+      "details": [
+        {
+          "t": 411.80000000001746,
+          "rows": 4,
+          "photos": 4,
+          "stories": 5,
+          "storyPhotos": 5,
+          "initials": 0
+        },
+        {
+          "t": 419.30000000001746,
+          "rows": 4,
+          "photos": 4,
+          "stories": 5,
+          "storyPhotos": 5,
+          "initials": 0
+        },
+        {
+          "t": 435.8999999999942,
+          "rows": 4,
+          "photos": 4,
+          "stories": 5,
+          "storyPhotos": 5,
+          "initials": 0
+        }
+      ]
+    },
+    {
+      "name": "warm avatars use the existing home RLS proof, not another image authorization",
+      "pass": true,
+      "details": {
+        "imageDownloads": 0,
+        "downloadBytes": 0,
+        "memoryHits": 0,
+        "diskHits": 5,
+        "signRequests": 0,
+        "coalesced": 0,
+        "errors": 0,
+        "peakDownloads": 0,
+        "evictions": 0,
+        "diskWrites": 0,
+        "diskErrors": 0,
+        "lastDiskError": null,
+        "serverPreviews": 0,
+        "sourceBytesAvoided": 0,
+        "parallelDiskReads": 5,
+        "previewFallbacks": 0,
+        "homeProofHits": 5,
+        "activeDownloads": 0,
+        "queuedDownloads": 0,
+        "memoryEntries": 5,
+        "memoryBytes": 584655
+      }
+    },
+    {
+      "name": "account change discards prepared first-frame photos",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "authenticated first-home avatars appear faster under equal latency",
+      "pass": true,
+      "details": {
+        "beforeMs": 1233,
+        "afterMs": 1211
+      }
+    },
+    {
+      "name": "home bootstrap does not add backend requests",
+      "pass": true,
+      "details": {
+        "before": 13,
+        "after": 11
+      }
+    },
+    {
+      "name": "warm first complete home is faster rather than just concealed",
+      "pass": true,
+      "details": {
+        "beforeMs": 806,
+        "afterMs": 414
+      }
+    }
+  ],
+  "fixture": "Real application modules and SDK; synthetic four-conversation accounts, 180 ms per API/image response; not owner-device timings"
+}

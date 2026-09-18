@@ -8,7 +8,7 @@
  const MAX_DISK=128*1024*1024,MAX_MEMORY=48*1024*1024,MAX_FILE=50*1024*1024,MAX_ENTRIES=96;
  const memo=new Map(),signs=new Map(),pending=new Map(),controllers=new Set();
  let owner=null,generation=0,subscribed=false,dbPromise=null,diskWrites=Promise.resolve(),active=0,queue=[],used=0;
- const stats={imageDownloads:0,downloadBytes:0,memoryHits:0,diskHits:0,signRequests:0,coalesced:0,errors:0,peakDownloads:0,evictions:0,diskWrites:0,diskErrors:0,lastDiskError:null,serverPreviews:0,sourceBytesAvoided:0,parallelDiskReads:0,previewFallbacks:0};
+ const stats={imageDownloads:0,downloadBytes:0,memoryHits:0,diskHits:0,signRequests:0,coalesced:0,errors:0,peakDownloads:0,evictions:0,diskWrites:0,diskErrors:0,lastDiskError:null,serverPreviews:0,sourceBytesAvoided:0,parallelDiskReads:0,previewFallbacks:0,homeProofHits:0};
  const aborted=()=>new DOMException('Media scope changed','AbortError');
  function diskError(e){stats.diskErrors++;stats.lastDiskError=e?.name||'StorageError';}
  function session(){
@@ -121,6 +121,12 @@
    try{
     // Disk I/O and authorization overlap, but bytes are not exposed before authorization.
     stats.parallelDiskReads++;const diskRead=read(key,s);diskRead.catch(()=>{});
+    if(bucket==='profile-media'&&width===192){
+     const proof=g.PablicusHomeData?.avatarProof(path);
+     if(proof){const local=await diskRead;assert(s);const current=g.PablicusHomeData?.avatarProof(path);
+      if(local&&current&&current.object_id===proof.object_id&&current.version===proof.version&&local.sourceVersion===proof.version){stats.diskHits++;stats.homeProofHits++;return remember(key,local.blob,Math.min(proof.until,expiry),s);}
+     }
+    }
     let lease=await imageLease(s,bucket,path,width,ttl,priority);assert(s);
     const until=Math.min(lease.until,expiry),mem=memo.get(key);if(mem){mem.until=until;stats.memoryHits++;return mem.url;}
     const saved=await diskRead;assert(s);
