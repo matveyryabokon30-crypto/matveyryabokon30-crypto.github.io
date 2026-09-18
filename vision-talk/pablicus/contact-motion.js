@@ -116,7 +116,7 @@
   const ro=root.ResizeObserver?new ResizeObserver(()=>{if(!g||page.clientWidth!==g.w||bar.offsetHeight!==g.barH)resize();}):null;ro?.observe(page);ro?.observe(bar);
   const mo=new MutationObserver(resize);mo.observe(status,{childList:true,characterData:true,subtree:true});mo.observe(name,{childList:true,characterData:true,subtree:true});
   page.scrollTop=0;paint();document.fonts?.ready.then(()=>{if(!dead)resize();});
-  return{expand,collapse:()=>settle(0),refreshPhotos:()=>gallery?.refresh(),get rest(){return 0;},get end(){return g?.collapse||0;},destroy(){if(dead)return;dead=true;life.abort();stopAnimation();ro?.disconnect();mo.disconnect();gallery?.destroy();if(frame)root.cancelAnimationFrame(frame);space.remove();shade.remove();page.classList.remove('contactGestureMotion');page.style.removeProperty('--contact-bar-height');delete page.dataset.profilePresentation;delete page.dataset.albumProgress;}};
+  return{expand,collapse:()=>settle(0),refreshPhotos:()=>gallery?.refresh(),preparePhoto:()=>gallery?.prepare(),get rest(){return 0;},get end(){return g?.collapse||0;},destroy(){if(dead)return;dead=true;life.abort();stopAnimation();ro?.disconnect();mo.disconnect();gallery?.destroy();if(frame)root.cancelAnimationFrame(frame);space.remove();shade.remove();page.classList.remove('contactGestureMotion');page.style.removeProperty('--contact-bar-height');delete page.dataset.profilePresentation;delete page.dataset.albumProgress;}};
  }
  root.PablicusContactMotion={mount};
 })(window);

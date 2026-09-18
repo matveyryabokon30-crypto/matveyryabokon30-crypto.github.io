@@ -1,0 +1,117 @@
+{
+  "engine": "chromium",
+  "passed": 11,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "fixture identity is intact before test",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "multi-megabyte photo is decoded once into bounded preview",
+      "pass": true,
+      "details": {
+        "width": 960,
+        "height": 864,
+        "stats": {
+          "imageDownloads": 1,
+          "downloadBytes": 6512265,
+          "memoryHits": 0,
+          "diskHits": 0,
+          "signRequests": 1,
+          "coalesced": 0,
+          "errors": 0,
+          "peakDownloads": 1,
+          "evictions": 0,
+          "diskWrites": 2,
+          "diskErrors": 0,
+          "lastDiskError": null,
+          "serverPreviews": 0,
+          "sourceBytesAvoided": 0,
+          "parallelDiskReads": 1,
+          "previewFallbacks": 0,
+          "homeProofHits": 0,
+          "screenProofHits": 0,
+          "activeDownloads": 0,
+          "queuedDownloads": 0,
+          "memoryEntries": 1,
+          "memoryBytes": 477770
+        }
+      }
+    },
+    {
+      "name": "full-resolution original is preserved without another transfer",
+      "pass": true,
+      "details": {
+        "width": 2000,
+        "stats": {
+          "imageDownloads": 1,
+          "downloadBytes": 6512265,
+          "memoryHits": 0,
+          "diskHits": 1,
+          "signRequests": 1,
+          "coalesced": 0,
+          "errors": 0,
+          "peakDownloads": 1,
+          "evictions": 0,
+          "diskWrites": 2,
+          "diskErrors": 0,
+          "lastDiskError": null,
+          "serverPreviews": 0,
+          "sourceBytesAvoided": 0,
+          "parallelDiskReads": 2,
+          "previewFallbacks": 0,
+          "homeProofHits": 0,
+          "screenProofHits": 0,
+          "activeDownloads": 0,
+          "queuedDownloads": 0,
+          "memoryEntries": 2,
+          "memoryBytes": 6990035
+        }
+      }
+    },
+    {
+      "name": "expired authorization is rechecked before cached private media",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "signed permissions are not extended to one hour",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "expired story cannot be served from cache",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "old-account async completion is rejected",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "old-account in-memory images were released",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "HTTP failure is not cached as image",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "failed image can be retried successfully",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no uncaught runtime error in edge cases",
+      "pass": true,
+      "details": []
+    }
+  ],
+  "fixture": "synthetic 2000x1800 JPEG; actual media-cache.js; no production identity",
+  "large_photo_bytes": 6512265
+}

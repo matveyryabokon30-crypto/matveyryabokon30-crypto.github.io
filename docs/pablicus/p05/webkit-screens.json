@@ -1,0 +1,321 @@
+{
+  "baseline": {
+    "profileCold": {
+      "completeMs": 4242,
+      "first": {
+        "t": 3821,
+        "avatar": false,
+        "initials": "T",
+        "tiles": []
+      }
+    },
+    "chatCold": {
+      "completeMs": 950,
+      "first": {
+        "t": 6203,
+        "images": 2,
+        "ready": 0
+      }
+    },
+    "profileWarm": {
+      "completeMs": 362,
+      "first": {
+        "t": 7319,
+        "avatar": true,
+        "initials": "",
+        "tiles": []
+      }
+    },
+    "chatWarm": {
+      "completeMs": 305,
+      "first": {
+        "t": 7961,
+        "images": 2,
+        "ready": 0
+      }
+    },
+    "repeatDownloads": 0,
+    "draft": "P05 saved draft",
+    "profileAfterReload": {
+      "completeMs": 681,
+      "first": {
+        "t": 686,
+        "avatar": false,
+        "initials": "T",
+        "tiles": []
+      }
+    },
+    "chatAfterReload": {
+      "completeMs": 564,
+      "first": {
+        "t": 1672,
+        "images": 2,
+        "ready": 0
+      }
+    },
+    "reloadDownloads": 0,
+    "reloadRequests": [
+      "/rest/v1/rpc/pablicus_profile_photos_list",
+      "/rest/v1/pablicus_profile_details",
+      "/rest/v1/pablicus_profile_posts",
+      "/rest/v1/pablicus_profile_albums",
+      "/functions/v1/pablicus-media-preview",
+      "/functions/v1/pablicus-media-preview",
+      "/rest/v1/rpc/pablicus_contact_card",
+      "/rest/v1/messages",
+      "/functions/v1/pablicus-media-preview",
+      "/rest/v1/rpc/get_message_actions",
+      "/rest/v1/rpc/pablicus_list_tasks_v2",
+      "/rest/v1/rpc/pablicus_list_projects",
+      "/rest/v1/rpc/get_pinned_messages"
+    ],
+    "errors": []
+  },
+  "candidate": {
+    "profileCold": {
+      "completeMs": 1595,
+      "first": {
+        "t": 2685,
+        "avatar": true,
+        "initials": "",
+        "tiles": [
+          true,
+          true
+        ]
+      }
+    },
+    "chatCold": {
+      "completeMs": 1050,
+      "first": {
+        "t": 4064,
+        "images": 2,
+        "ready": 2
+      }
+    },
+    "profileWarm": {
+      "completeMs": 485,
+      "first": {
+        "t": 4899,
+        "avatar": true,
+        "initials": "",
+        "tiles": [
+          true,
+          true
+        ]
+      }
+    },
+    "chatWarm": {
+      "completeMs": 364,
+      "first": {
+        "t": 5387,
+        "images": 2,
+        "ready": 2
+      }
+    },
+    "repeatDownloads": 0,
+    "draft": "P05 saved draft",
+    "profileAfterReload": {
+      "completeMs": 502,
+      "first": {
+        "t": 1016,
+        "avatar": true,
+        "initials": "",
+        "tiles": [
+          true,
+          true
+        ]
+      }
+    },
+    "chatAfterReload": {
+      "completeMs": 419,
+      "first": {
+        "t": 1559,
+        "images": 2,
+        "ready": 2
+      }
+    },
+    "reloadDownloads": 0,
+    "reloadRequests": [
+      "/rest/v1/rpc/pablicus_profile_photos_list",
+      "/rest/v1/rpc/pablicus_profile_screen",
+      "/rest/v1/rpc/pablicus_contact_card",
+      "/rest/v1/rpc/pablicus_conversation_screen",
+      "/rest/v1/rpc/get_message_actions",
+      "/rest/v1/rpc/pablicus_list_tasks_v2",
+      "/rest/v1/rpc/pablicus_list_projects"
+    ],
+    "errors": []
+  },
+  "engine": "webkit",
+  "passed": 15,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "profileCold first visible frame already has avatar and publication thumbnails",
+      "pass": true,
+      "details": {
+        "completeMs": 1595,
+        "first": {
+          "t": 2685,
+          "avatar": true,
+          "initials": "",
+          "tiles": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "name": "profileWarm first visible frame already has avatar and publication thumbnails",
+      "pass": true,
+      "details": {
+        "completeMs": 485,
+        "first": {
+          "t": 4899,
+          "avatar": true,
+          "initials": "",
+          "tiles": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "name": "profileAfterReload first visible frame already has avatar and publication thumbnails",
+      "pass": true,
+      "details": {
+        "completeMs": 502,
+        "first": {
+          "t": 1016,
+          "avatar": true,
+          "initials": "",
+          "tiles": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "name": "chatCold first visible frame has decoded visible photos",
+      "pass": true,
+      "details": {
+        "completeMs": 1050,
+        "first": {
+          "t": 4064,
+          "images": 2,
+          "ready": 2
+        }
+      }
+    },
+    {
+      "name": "chatWarm first visible frame has decoded visible photos",
+      "pass": true,
+      "details": {
+        "completeMs": 364,
+        "first": {
+          "t": 5387,
+          "images": 2,
+          "ready": 2
+        }
+      }
+    },
+    {
+      "name": "chatAfterReload first visible frame has decoded visible photos",
+      "pass": true,
+      "details": {
+        "completeMs": 419,
+        "first": {
+          "t": 1559,
+          "images": 2,
+          "ready": 2
+        }
+      }
+    },
+    {
+      "name": "repeat visits do not download previously displayed images",
+      "pass": true,
+      "details": 0
+    },
+    {
+      "name": "document reload reuses stored profile and chat image bytes",
+      "pass": true,
+      "details": 0
+    },
+    {
+      "name": "fresh screen metadata avoids separate preview authorization on warm start",
+      "pass": true,
+      "details": [
+        "/rest/v1/rpc/pablicus_profile_photos_list",
+        "/rest/v1/rpc/pablicus_profile_screen",
+        "/rest/v1/rpc/pablicus_contact_card",
+        "/rest/v1/rpc/pablicus_conversation_screen",
+        "/rest/v1/rpc/get_message_actions",
+        "/rest/v1/rpc/pablicus_list_tasks_v2",
+        "/rest/v1/rpc/pablicus_list_projects"
+      ]
+    },
+    {
+      "name": "chat draft survives screen preparation and navigation",
+      "pass": true,
+      "details": "P05 saved draft"
+    },
+    {
+      "name": "existing cache uses fresh screen proofs",
+      "pass": true,
+      "details": {
+        "imageDownloads": 0,
+        "downloadBytes": 0,
+        "memoryHits": 1,
+        "diskHits": 7,
+        "signRequests": 0,
+        "coalesced": 0,
+        "errors": 0,
+        "peakDownloads": 0,
+        "evictions": 0,
+        "diskWrites": 0,
+        "diskErrors": 0,
+        "lastDiskError": null,
+        "serverPreviews": 0,
+        "sourceBytesAvoided": 0,
+        "parallelDiskReads": 7,
+        "previewFallbacks": 0,
+        "homeProofHits": 2,
+        "screenProofHits": 5,
+        "activeDownloads": 0,
+        "queuedDownloads": 0,
+        "memoryEntries": 7,
+        "memoryBytes": 818517
+      }
+    },
+    {
+      "name": "contact header reuses already decoded avatar",
+      "pass": true,
+      "details": {
+        "t": 1870,
+        "avatar": true
+      }
+    },
+    {
+      "name": "account change discards transient screen proofs and decoded images",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no uncaught runtime exceptions",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "warm profile complete frame is not slowed by readiness gate",
+      "pass": true,
+      "details": {
+        "before": 681,
+        "after": 502
+      }
+    }
+  ],
+  "fixture": "Actual application + SDK + IndexedDB; isolated synthetic account, 180ms API/image responses; not physical iPhone"
+}

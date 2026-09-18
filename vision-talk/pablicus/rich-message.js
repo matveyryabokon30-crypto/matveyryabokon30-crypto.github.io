@@ -186,31 +186,20 @@
       else item.video.pause();
     }
 
-    async function loadImage(item) {
-      if (disposed || !isLiveRow() || item.status === 'loading' || item.status === 'ready') return;
-      item.status = 'loading';
-      item.button.classList.remove('richMediaError');
-      item.statusNode.textContent = 'Загрузка фото…';
-      if (observer) observer.unobserve(item.button);
-      try {
-        if (typeof options.resolveUrl !== 'function') throw new Error('Media resolver is unavailable');
-        const warm = options.peekUrl?.(item.block.path || item.block.assetId || item.block.id, item.block);
-        const box=item.button.getBoundingClientRect();
-        const resolved = warm || await options.resolveUrl(item.block.path || item.block.assetId || item.block.id, item.block,{priority:box.bottom>0&&box.top<innerHeight?0:2});
-        if (disposed || !isLiveRow()) return;
-        const url = safeResolvedUrl(resolved);
-        if (!url) throw new Error('Invalid media URL');
-        item.image.onload = () => {
-          if (disposed || !isLiveRow()) return;
-          item.status = 'ready';
-          item.button.classList.add('richImageReady');
-          item.statusNode.textContent = '';
-          releaseObserverWhenFinished();
-          notifyResize();
-        };
-        item.image.onerror = () => imageFailed(item);
-        item.image.src = url;
-      } catch (_) { imageFailed(item); }
+    function loadImage(item) {
+      if(disposed||!isLiveRow()||item.status==='ready')return Promise.resolve();
+      if(item.loadingPromise)return item.loadingPromise;
+      item.loadingPromise=(async()=>{
+       item.status='loading';item.button.classList.remove('richMediaError');item.statusNode.textContent='Загрузка фото…';observer?.unobserve(item.button);
+       try{
+        if(typeof options.resolveUrl!=='function')throw Error('Media resolver is unavailable');
+        const warm=options.peekUrl?.(item.block.path||item.block.assetId||item.block.id,item.block),box=item.button.getBoundingClientRect();
+        const resolved=warm||await options.resolveUrl(item.block.path||item.block.assetId||item.block.id,item.block,{priority:box.bottom>0&&box.top<innerHeight?0:2});
+        if(disposed||!isLiveRow())return;const url=safeResolvedUrl(resolved);if(!url)throw Error('Invalid media URL');
+        item.image.src=url;await item.image.decode();if(disposed||!isLiveRow())return;
+        item.status='ready';item.button.classList.add('richImageReady');item.statusNode.textContent='';releaseObserverWhenFinished();notifyResize();
+       }catch{imageFailed(item);}
+      })();item.loadingPromise.finally(()=>{item.loadingPromise=null;}).catch(()=>{});return item.loadingPromise;
     }
 
     async function loadVideo(item) {
@@ -652,6 +641,10 @@
       notifyResize();
     }
     // Virtualized lists append synchronously. A host mounting later may call activate().
+    root.prepareVisible = rect => {
+      if(disposed||!isLiveRow())return Promise.resolve();
+      return Promise.allSettled(images.filter(item=>{const r=item.button.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>rect.top&&r.top<rect.bottom;}).slice(0,12).map(loadImage));
+    };
     root.activate = activate;
     root.dispose = state.dispose;
     mountFrame = frame(() => { mountFrame = null; activate(); });
