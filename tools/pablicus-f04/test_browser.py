@@ -46,8 +46,8 @@ with sync_playwright() as pw:
   # The real index.html, all application scripts and bundled Supabase SDK run here.
   # Only server HTTP responses are synthetic; no real OAuth provider or device-picker claim.
   ctx=browser.new_context(service_workers='block');ctx.route_web_socket('**',lambda ws:ws.close());page=ctx.new_page();page.set_default_timeout(25000);errors=[];rpc=[];traffic=[];network_failures=[];console_errors=[]
-  page.on('pageerror',lambda e:errors.append(str(e)))
-  page.on('console',lambda m:console_errors.append(m.text) if m.type=='error' else None)
+  page.on('pageerror',lambda e:(errors.append(str(e)),print('PAGE ERROR '+str(e),flush=True)))
+  page.on('console',lambda m:(console_errors.append(m.text),print('CONSOLE ERROR '+m.text,flush=True)) if m.type=='error' else None)
   page.on('requestfailed',lambda r:network_failures.append({'path':urllib.parse.urlsplit(r.url).path,'failure':r.failure}))
   uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';sender={'id':'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','username':'fixture_sender','display_name':'Fixture Sender'}
   user={'id':uid,'aud':'authenticated','role':'authenticated','email':'fixture@example.test','app_metadata':{'provider':'email'},'user_metadata':{},'identities':[]}
@@ -56,7 +56,7 @@ with sync_playwright() as pw:
   session={'access_token':jwt,'refresh_token':'synthetic-refresh','expires_in':3600,'expires_at':int(time.time())+3600,'token_type':'bearer','user':user}
   def route(r):
    path=urllib.parse.urlsplit(r.request.url).path
-   traffic.append({'method':r.request.method,'path':path})
+   traffic.append({'method':r.request.method,'path':path});print('HTTP '+r.request.method+' '+path,flush=True)
    cors={'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'GET,POST,PUT,PATCH,DELETE,OPTIONS','Access-Control-Allow-Headers':r.request.headers.get('access-control-request-headers','authorization,apikey,content-type,x-client-info,x-supabase-api-version'),'Access-Control-Max-Age':'0'}
    if r.request.method=='OPTIONS':
     r.fulfill(status=204,headers=cors,body='');return
@@ -93,15 +93,14 @@ with sync_playwright() as pw:
   ctx.close();browser.close();server.shutdown()
  except Exception as exc:
   out=pathlib.Path(a.output or f'results/f04-{a.engine}.json');out.parent.mkdir(parents=True,exist_ok=True)
-  try:page.screenshot(path=str(out.with_suffix('.failure.png')))
-  except Exception:pass
+  print('FAILURE '+str(exc),flush=True)
   diagnostics={}
-  try:diagnostics=page.evaluate("()=>({userId:window.PablicusDebug?.user||null,sessionUserId:window.PablicusController?.state()?.sessionUserId||null,loginError:document.getElementById('loginError')?.textContent||'',pendingInvite:!!sessionStorage.getItem('pablicus:pending-invite')})")
-  except Exception:pass
   if 'traffic' in locals():diagnostics.update({'traffic':traffic,'networkFailures':network_failures,'consoleErrors':console_errors})
   if 'rpc' in locals():diagnostics['rpcActions']=[{'name':name,'action':args.get('p_action')} for name,args in rpc]
   out.write_text(json.dumps({'engine':a.engine,'passed':len(checks),'failed':1,'checks':checks,'error':str(exc),'diagnostics':diagnostics},ensure_ascii=False,indent=2))
   print(json.dumps({'failure':str(exc),'diagnostics':diagnostics},ensure_ascii=False),flush=True)
+  try:page.screenshot(path=str(out.with_suffix('.failure.png')),timeout=2000)
+  except Exception:pass
   browser.close();server.shutdown();raise
 
 result={'engine':a.engine,'passed':len(checks),'checks':checks,'boundary':'Synthetic contacts/accounts and backend HTTP. Real modules plus real index/app/Supabase SDK authentication integration. No real OAuth provider, SMS, external messages, native share acceptance or physical iPhone claim.'}
