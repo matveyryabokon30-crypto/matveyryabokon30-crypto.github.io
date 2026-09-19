@@ -1,5 +1,5 @@
 {
-  "version": "2026.09.19-p3.2",
+  "version": "2026.09.19-p3.3",
   "status": "owner_approved_catalog_runtime_release_pending",
   "defaults": {
     "female": "bossa",
@@ -19,22 +19,24 @@
         "audio_received": true,
         "session_closed": true,
         "no_orphan_session": true,
-        "artifact_sha256": "6f8f18184d4449ea6e46f59953f42da623771ae48556afb1239fbc025f5d1fa5",
-        "artifact_path": "apps/sekkes/p3/qa/live-female-samples-20260919/result.json",
+        "artifact_sha256": "562f71b30341c248b6ada192086b2c966a939616c36ca46ef093df6eb37382d0",
+        "artifact_path": "apps/sekkes/production-voice/qa/female-samples-v2/result.json",
         "model": "gpt-live-1",
         "voice": "bossa",
         "scope": "primary_websocket_sample"
       },
       "preview": {
         "kind": "static_asset",
-        "url": "/sekkes-female-voice-review-20260919/bossa.mp3",
-        "sha256": "67be6392f04bb063c23be0477eb8e18874fa5e85fb7ba27df1336eab685983c6",
-        "phrase_version": "ru-sekkes-20260919-v1",
+        "url": "/sekkes-female-voice-review-20260919/bossa-female-v2.mp3",
+        "sha256": "38b6355d2cefe503b232b4fb0fd6630d35b6ca7b47b0a0ec361eab317c710e2f",
+        "phrase_version": "ru-sekkes-female-20260919-v2",
         "language": "ru",
-        "duration_seconds": 13.94,
+        "duration_seconds": 14.28,
         "model": "gpt-live-1",
         "voice": "bossa",
-        "origin": "live_generated"
+        "origin": "live_generated",
+        "transcript": "Привет! Я рядом и готова тебя выслушать. Можно не торопиться. Расскажи, что сейчас для тебя важно.",
+        "transcript_checked": true
       }
     },
     {
@@ -50,22 +52,24 @@
         "audio_received": true,
         "session_closed": true,
         "no_orphan_session": true,
-        "artifact_sha256": "6f8f18184d4449ea6e46f59953f42da623771ae48556afb1239fbc025f5d1fa5",
-        "artifact_path": "apps/sekkes/p3/qa/live-female-samples-20260919/result.json",
+        "artifact_sha256": "562f71b30341c248b6ada192086b2c966a939616c36ca46ef093df6eb37382d0",
+        "artifact_path": "apps/sekkes/production-voice/qa/female-samples-v2/result.json",
         "model": "gpt-live-1",
         "voice": "delta",
         "scope": "primary_websocket_sample"
       },
       "preview": {
         "kind": "static_asset",
-        "url": "/sekkes-female-voice-review-20260919/delta.mp3",
-        "sha256": "ac6c3005ff2ddeb9e8e4f0ddcbe6bef1eda7c90708cd92567ec5f6772d544f03",
-        "phrase_version": "ru-sekkes-20260919-v1",
+        "url": "/sekkes-female-voice-review-20260919/delta-female-v2.mp3",
+        "sha256": "912c27d99768dac43952b29b4cfd5f8ff7626916a0fc32d6289415aeda877129",
+        "phrase_version": "ru-sekkes-female-20260919-v2",
         "language": "ru",
-        "duration_seconds": 14.04,
+        "duration_seconds": 14.568,
         "model": "gpt-live-1",
         "voice": "delta",
-        "origin": "live_generated"
+        "origin": "live_generated",
+        "transcript": "Привет! Я рядом и готова тебя выслушать. Можно не торопиться. Расскажи, что сейчас для тебя важно.",
+        "transcript_checked": true
       }
     },
     {

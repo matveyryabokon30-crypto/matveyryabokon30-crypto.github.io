@@ -1,7 +1,7 @@
-import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.19-s3.14';
-import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.19-s3.14';
-import {VoicePicker} from './voice-picker.mjs?v=2026.09.19-s3.14';
-import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.19-s3.14';
+import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.19-s3.15';
+import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.19-s3.15';
+import {VoicePicker} from './voice-picker.mjs?v=2026.09.19-s3.15';
+import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.19-s3.15';
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
 const msg={SETUP_REQUIRED:'Сервер SEKKES недоступен.',AUTH_REQUIRED:'Войди в SEKKES.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Лимит теста остановил новый запрос.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
 let api=null,config=null,accepted=false,pending=null,live=null,textHistory=[],loginBusy=false,selectedVoice='bossa',preferences=null,picker=null,voiceManifest=null;
