@@ -40,7 +40,7 @@ with sync_playwright() as pw:
   check('list supports explicit revocation',page.evaluate("calls.at(-1).p_input.id==='one'"))
   page.evaluate("api.close();mode='late';void api.open()");page.wait_for_function("typeof resolveLate==='function'");page.evaluate("user={id:'other'};api.clear();resolveLate({data:{ok:true,invites:[]}})")
   check('late previous-account response cannot reopen dialog',page.locator('dialog').evaluate('(d)=>!d.open'))
-  page.goto(origin+'/f04-probe.html#invite='+token);page.evaluate(fixture);page.evaluate("mode='unavailable';api.ready()");page.wait_for_function("document.querySelector('[role=status]').textContent.includes('недоступно')")
+  page.goto(origin+'/f04-probe.html?case=unavailable#invite='+token);page.evaluate(fixture);page.evaluate("mode='unavailable';api.ready()");page.wait_for_function("document.querySelector('[role=status]').textContent.includes('недоступно')")
   check('revoked expired or used link offers no acceptance',page.get_by_role('button',name='Принять приглашение',exact=True).count()==0)
   ctx.close()
   # The real index.html, all application scripts and bundled Supabase SDK run here.
