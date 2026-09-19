@@ -1,4 +1,4 @@
-import {normalizePreference} from './registry-foundation.mjs?v=2026.09.19-s3.24';
+import {normalizePreference} from './registry-foundation.mjs?v=2026.09.20-s3.25';
 
 // A voice preference is user-editable data, never an authorization claim.
 export class VoicePreferences {
@@ -50,3 +50,4 @@ export function supabaseVoiceProfile(api) {
   }
   return {read:()=>request('GET'),write:voice=>request('PUT',voice)};
 }
+

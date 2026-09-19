@@ -1,7 +1,7 @@
 /* SEKKES S0/S1. Real interface; no simulated AI, client records or therapeutic sessions. */
 (() => {
   'use strict';
-  const BUILD = '2026.09.19-s3.24';
+  const BUILD = '2026.09.20-s3.25';
   const $ = (s) => document.querySelector(s);
   const app = $('#app'), hero = $('#hero'), portals = $('#portals'), dock = $('#dock');
   const root = document.documentElement;
@@ -299,4 +299,5 @@
   setInterval(checkUpdate, 60000);
   geometry(); renderRoute(location.hash.slice(1) || 'home', true); checkUpdate();
 })();
+
 

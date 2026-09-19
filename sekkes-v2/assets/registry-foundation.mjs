@@ -91,3 +91,4 @@ export function assessRelease(release) {
   if (release.target==='production' && !release.voices?.some(v=>v.enabled===true)) errors.push('NO_VERIFIED_VOICES');
   return errors;
 }
+

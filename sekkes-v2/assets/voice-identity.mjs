@@ -17,3 +17,4 @@ export class VoiceIdentityHandshake {
   }
   dispose(){this.disposed=true;this.clearTimer(this.timer);}
 }
+

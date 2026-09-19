@@ -4,3 +4,4 @@
 .voice-tabs{display:flex;gap:8px;margin:16px 0 8px}.voice-tabs button{flex:1;min-height:44px;border:1px solid #c9d6d6;border-radius:16px;background:#e8f0ef;color:#15333b;font:inherit}.voice-tabs button[aria-selected="true"]{background:#15333b;color:#fff;border-color:#15333b}.voice-tabs button:focus-visible{outline:3px solid #83dce8;outline-offset:2px}
 
 .memory-card{border-bottom:1px solid #d3dfdf;padding:12px 0}.memory-card p{white-space:pre-wrap;overflow-wrap:anywhere}.memory-card button{margin:4px 16px 4px 0;min-height:44px}#dialogContent textarea{width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #bacdce;border-radius:16px;resize:vertical}
+
