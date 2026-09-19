@@ -1,0 +1,42 @@
+name: Pablicus R1 deployed backend boundary smoke
+on:
+  push:
+    branches: [diag/pablicus-r1-toolchain-20260919]
+    paths: [.github/workflows/pablicus-r1-backend-smoke.yml]
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Test live API rejection boundaries, no real sessions or messages
+        run: |
+          mkdir -p evidence
+          python - <<'PY'
+          import json,pathlib,urllib.request,urllib.error,uuid
+          base='https://ctcoqgsztdtsazdiwcmd.supabase.co/functions/v1/pablicus-push'
+          origin='https://matveyryabokon30-crypto.github.io'
+          bad={'attempt_id':str(uuid.uuid4()),'event_id':str(uuid.uuid4()),'installation_id':str(uuid.uuid4()),'token':'0'*64,'state':'worker_received'}
+          tests=[('unauthenticated config','GET','',None,{},401),('unauthenticated subscribe','POST','',{'action':'subscribe'},{},401),('unauthenticated dispatch','POST','/dispatch',{}, {},401),('receipt requires POST','GET','/receipt',None,{},405),('empty receipt rejected','POST','/receipt',{}, {},400),('forged capability rejected','POST','/receipt',bad,{},401),('wrong origin rejected','POST','/receipt',bad,{'Origin':'https://invalid.example'},403),('legitimate CORS preflight','OPTIONS','/receipt',None,{'Origin':origin,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'},204)]
+          results=[]
+          for name,method,path,body,headers,expected in tests:
+              req=urllib.request.Request(base+path,data=json.dumps(body).encode() if body is not None else None,method=method,headers={'Content-Type':'application/json',**headers})
+              try:
+                  with urllib.request.urlopen(req,timeout=15) as r: code=r.status; response_headers=dict(r.headers)
+              except urllib.error.HTTPError as r:code=r.code;response_headers=dict(r.headers)
+              except Exception as e:code=0;response_headers={}
+              ok=code==expected
+              if method=='OPTIONS':ok=ok and response_headers.get('Access-Control-Allow-Origin',response_headers.get('access-control-allow-origin'))==origin
+              results.append({'name':name,'status':code,'expected':expected,'passed':ok})
+              print(('PASS ' if ok else 'FAIL ')+name+' '+str(code))
+          report={'passed':sum(x['passed'] for x in results),'failed':sum(not x['passed'] for x in results),'checks':results,'boundary':'Live authorization/error routes only. No authenticated users, real subscriptions or delivered notifications.'}
+          pathlib.Path('evidence/r1-backend-smoke.json').write_text(json.dumps(report,indent=2))
+          if report['failed']:raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pablicus-r1-backend-smoke
+          path: evidence/
+          retention-days: 14
