@@ -1,5 +1,5 @@
 import {assessVoice} from '../../vnext-foundation/foundation.mjs';
-import {StaticVoicePreview} from '../../vnext-foundation/preview-player.mjs';
+import {StaticVoicePreview} from '../../vnext-foundation/preview-player.mjs?v=20260919.2';
 
 const errors={AUDIO_GESTURE_REQUIRED:'Нажми «Послушать» ещё раз, чтобы включить звук.',AUDIO_ASSET_ERROR:'Не удалось загрузить пример. Попробуй ещё раз.',AUDIO_LOAD_TIMEOUT:'Пример загружается слишком долго. Попробуй ещё раз.'};
 export class VoicePicker {
