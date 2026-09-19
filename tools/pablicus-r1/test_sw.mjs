@@ -3,14 +3,15 @@ const whole=readFileSync('vision-talk/pablicus/sw.js','utf8');const code=whole.s
 const A='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',B='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',C='cccccccc-cccc-4ccc-8ccc-cccccccccccc',D='dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 const P={message_id:C,recipient_id:A,conversation_id:B,sender_name:'Synthetic sender',preview:'Synthetic text',_r1:{attempt_id:D,event_id:C,installation_id:B,token:'a'.repeat(64)}};
 const checks=[];function check(n,v){assert.ok(v,n);checks.push({name:n,pass:true});console.log('PASS '+n);}
-function fixture({owner=A,networkFail=false,showFail=false,blockReceipt=false}={}){
+function fixture({owner=A,networkFail=false,showFail=false,blockReceipt=false,delayRecent=false}={}){
  const h={},receipts=[],shown=[],opened=[],stores={recent:[]};let release;
+ let unblockRecent;const recentWait=delayRecent?new Promise(r=>unblockRecent=r):Promise.resolve();
  const blocking=blockReceipt?new Promise(r=>release=r):Promise.resolve();
- const context={PUSH_UUID:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,URL,Date,AbortSignal,Promise,JSON,Set,Number,String,queue:f=>f(),pushOwner:async()=>owner,pushState:async(w,v,k)=>w?(stores[k]=v):stores[k],validClient:u=>u.startsWith('https://app.invalid/'),fetch:async(url,opts)=>{receipts.push({url,options:opts,data:JSON.parse(opts.body)});await blocking;if(networkFail)throw Error('offline');return new Response('{}');},self:{addEventListener:(t,f)=>h[t]=f,registration:{scope:'https://app.invalid/',showNotification:async(t,o)=>{if(showFail)throw Object.assign(Error('secret details'),{name:'NotAllowedError'});shown.push({title:t,...o});}},clients:{matchAll:async()=>[],openWindow:async u=>opened.push(u)}}};
+ const context={PUSH_UUID:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,URL,Date,AbortSignal,Promise,JSON,Set,Number,String,queue:f=>f(),pushOwner:async()=>owner,pushState:async(w,v,k)=>{if(!w&&k==='recent')await recentWait;return w?(stores[k]=v):stores[k];},validClient:u=>u.startsWith('https://app.invalid/'),fetch:async(url,opts)=>{receipts.push({url,options:opts,data:JSON.parse(opts.body)});await blocking;if(networkFail)throw Error('offline');return new Response('{}');},self:{addEventListener:(t,f)=>h[t]=f,registration:{scope:'https://app.invalid/',showNotification:async(t,o)=>{if(showFail)throw Object.assign(Error('secret details'),{name:'NotAllowedError'});shown.push({title:t,...o});}},clients:{matchAll:async()=>[],openWindow:async u=>opened.push(u)}}};
  vm.runInNewContext(code,context);
  const push=p=>{let work;h.push({data:{json:()=>p},waitUntil:p=>work=p});return work;};
  const click=d=>{let work;h.notificationclick({notification:{data:d,close(){}},waitUntil:p=>work=p});return work;};
- return{push,click,receipts,shown,opened,release:()=>release?.(),stores};
+ return{push,click,receipts,shown,opened,release:()=>release?.(),stores,unblockRecent:()=>unblockRecent?.(),context};
 }
 try{
  let f=fixture();await f.push(P);check('visible message retains sender text',f.shown.length===1&&f.shown[0].title===P.sender_name&&f.shown[0].body===P.preview);
@@ -29,5 +30,21 @@ try{
   f=fixture();await f.push({...P,kind,notification_id:C,task_id:D,expires_at:new Date(Date.now()+60000).toISOString(),body:'Task'});check(kind+' retains presentation and receipts',f.shown.length===1&&f.shown[0].data.taskId===D&&f.receipts.at(-1).data.state==='show_resolved');
  }
  f=fixture();await f.push({...P,kind:'task_reminder',notification_id:C,task_id:D,expires_at:new Date(0).toISOString()});check('expired task is not presented',f.shown.length===0&&f.receipts.at(-1).data.state==='expired');
+
+ for(const expiry of [new Date(0).toISOString(), 'invalid', null, 123, '']){
+  f=fixture();await f.push({...P,expires_at:expiry});check('message rejects expired or invalid deadline '+JSON.stringify(expiry),f.shown.length===0&&f.receipts.at(-1).data.state==='expired'&&f.stores.recent.length===0);
+ }
+ f=fixture();await f.push({...P,expires_at:new Date(Date.now()+60000).toISOString()});check('unexpired message retains content and receipts',f.shown.length===1&&f.shown[0].body===P.preview&&f.receipts.at(-1).data.state==='show_resolved');
+ f=fixture();await f.push({...P,expires_at:new Date(0).toISOString(),_r1:undefined});check('expired message is suppressed without telemetry too',f.shown.length===0&&f.receipts.length===0);
+ f=fixture({owner:B});await f.push({...P,expires_at:new Date(0).toISOString()});check('owner check precedes deadline observation',f.shown.length===0&&f.receipts.at(-1).data.state==='suppressed_owner');
+ f=fixture();await f.push({...P,sender_name:'x'.repeat(79)+'😀!',preview:'x'.repeat(239)+'😀!'});check('name and preview truncate without broken surrogate pairs',f.shown[0].title==='x'.repeat(79)+'😀'&&f.shown[0].body==='x'.repeat(239)+'😀');
+ for(const [kind,preview,expected] of [['image','','Фото'],['video','','Видео'],['audio','','Голосовое сообщение'],['text','','Новое сообщение'],['document','Документ','Документ'],['image','Подпись','Подпись'],['text','<b>literal</b>','<b>literal</b>']]){
+  f=fixture();await f.push({...P,content_kind:kind,preview});check('preview '+kind+' '+JSON.stringify(preview),f.shown.length===1&&f.shown[0].body===expected);
+ }
+ f=fixture();await f.push({...P,kind:'task_reminder',notification_id:C,task_id:D});check('task still requires expiry',f.shown.length===0&&f.receipts.at(-1).data.state==='expired');
+
+ for(const task of [false,true]){
+  f=fixture({delayRecent:true});const at=Date.now()+60000;const work=f.push({...P,expires_at:new Date(at).toISOString(),...(task?{kind:'task_reminder',notification_id:C,task_id:D}:{})});await new Promise(r=>setImmediate(r));f.context.Date={parse:Date.parse,now:()=>at};f.unblockRecent();await work;check('deadline rechecked after storage wait '+(task?'task':'message'),f.shown.length===0&&f.receipts.at(-1).data.state==='expired');
+ }
  f=fixture();await f.push({...P,recipient_id:'invalid'});check('malformed payload cannot display or send receipt',f.shown.length===0&&f.receipts.length===0);
 }finally{writeFileSync('results/r1-sw-tests.json',JSON.stringify({passed:checks.length,checks,environment:'Exact SW handlers in deterministic VM. Not a physical push delivery test.'},null,2));}
