@@ -1,7 +1,7 @@
 /* SEKKES S0/S1. Real interface; no simulated AI, client records or therapeutic sessions. */
 (() => {
   'use strict';
-  const BUILD = '2026.09.19-p23-stage.4';
+  const BUILD = '2026.09.19-p23-stage.5';
   const $ = (s) => document.querySelector(s);
   const app = $('#app'), hero = $('#hero'), portals = $('#portals'), dock = $('#dock');
   const root = document.documentElement;
@@ -103,7 +103,7 @@
   addEventListener('popstate', () => { if (dialog.open) dialog.close(); renderRoute(location.hash.slice(1)); });
   addEventListener('hashchange', () => { const next = location.hash.slice(1); if (next !== route) renderRoute(next); });
   document.addEventListener('click', e => {
-    const target = e.target.closest('[data-route]');
+    const target = e.target.closest('button[data-route]');
     if (target) setRoute(target.dataset.route);
     const trigger = e.target.closest('[data-open]');
     if (trigger) openDialog(trigger.dataset.open);

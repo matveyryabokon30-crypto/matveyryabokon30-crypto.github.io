@@ -1,5 +1,5 @@
-import {initialSession,transitionSession} from './foundation.mjs?v=2026.09.19-p23-stage.4';
-import {TechnicalLog,greetingCommand} from './protocol.mjs?v=2026.09.19-p23-stage.4';
+import {initialSession,transitionSession} from './foundation.mjs?v=2026.09.19-p23-stage.5';
+import {TechnicalLog,greetingCommand} from './protocol.mjs?v=2026.09.19-p23-stage.5';
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return{promise,resolve};};
 async function bounded(promise,ms,fallback){let timer;try{return await Promise.race([promise,new Promise(r=>{timer=setTimeout(()=>r(fallback),ms);})]);}finally{clearTimeout(timer);}}
 const terminal=new Set(['idle','closed','permission_denied','network_error','session_error','limit_reached']);
