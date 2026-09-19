@@ -1,15 +1,15 @@
 {
   "schema": 1,
-  "release": "F04",
-  "build_id": "git:1f2862bdc8d0d74f896a73ec79d2d8f71ba732d4",
-  "source_sha": "1f2862bdc8d0d74f896a73ec79d2d8f71ba732d4",
-  "worker_version": "pablicus-shell-1f2862bdc8d0d74f896a73ec79d2d8f71ba732d4",
+  "release": "F05",
+  "build_id": "git:674719f099255f6c914cb5441d516e24eabb7dc7",
+  "source_sha": "674719f099255f6c914cb5441d516e24eabb7dc7",
+  "worker_version": "pablicus-shell-674719f099255f6c914cb5441d516e24eabb7dc7",
   "assets": {
-    "./": "cb9118d876893318316876ffd282fc77fe93a7242bb5662c4a4b40f4e0b4d370",
+    "./": "ab6286c2ca9794d98d0350990c17534ccd7d4f8830f4264a1de0c5206806c5c0",
     "ai-client.js": "7ae0268b2fb428cdde39de01d8cb49c0e92b7175d7a61ac46617cb15cfd4e3f9",
     "app-controller.js": "e8d37eb4431733211c61bb50b3ccc2529ef230d9b0d89b7459710d8520082148",
     "app-shell.js": "82a40533678b1377e486c2bee30afbe053585cd7aa36a71b5d7a943c8627763a",
-    "app.js": "7e39512565ddf47f74b9d2fc64bcad556f3f24e13fbe9708a728245caf5d2511",
+    "app.js": "71d498abd3df5c4a261121bf797ea09573df39ebb55d1685f297c79e02873efb",
     "assets/control-check.svg": "28456e1870cf4b0a4d52ec1738b7397797198b855f1c62a3d693b645e0f0c46d",
     "assets/icon-180.png": "ae7243f1240cba5157abfec0a77f1c2bff7bd6074bfc584c5eed160fb95bc692",
     "assets/icon-192.png": "19f130f1ac62d6531f158ce14ac5f44ae0396d1de994296c2872fc06b8bf7f99",
@@ -76,7 +76,9 @@
     "icons-r2.js": "1d034c41aecb366eda9c847555159f0bfbcd62115909489dea41542bac5ee482",
     "inbox-monitor.css": "489e0532490d7b7f0bd09b3ac372945e6de5af70d258fe0cbe613f701926d581",
     "inbox-monitor.js": "947c478af0cac109bcda30d98b6634f554e58ddcfb5d5eb436820e89d0e5f7b6",
-    "index.html": "cb9118d876893318316876ffd282fc77fe93a7242bb5662c4a4b40f4e0b4d370",
+    "index.html": "ab6286c2ca9794d98d0350990c17534ccd7d4f8830f4264a1de0c5206806c5c0",
+    "joined-notifications.css": "d123b8b53a7331bf1752419cd357cf13b3cd20b5ec42059843ea35e4f2464f47",
+    "joined-notifications.js": "cd762bf2106316ccdd14d2afd4334c5825577b304c41890a2e1b199c6e239cf6",
     "manifest.webmanifest": "2f88a98181838f256503f0245d7a7a4afb45615219eea2bf75758f131540415b",
     "media-cache.js": "017a6cd4696210669b8e37ca4568fc7a9e663f8908eb3ce9b21e8773c044015d",
     "media-preview-client.js": "9259da0b68f83377139f5322df4fae3a14c93f1ed2b74e4521f1f533e1f6c98f",
@@ -108,7 +110,7 @@
     "public-passkey.js": "5bd310e0433e7b34bfecf726e332f15499ba4a8d478d3ddd88885d9bc42af238",
     "public-ui-foundation.css": "5bea6c13b2375948b0dff2c1885f672413989d9e78a29b4179cabecb602d1020",
     "push-notifications.js": "2bb01fd1ed2a6550e96f63f4458d580f332363689a6606da839326dd8569f37b",
-    "release-info.js": "e82c2b27d635d35d9a197da7de41b7e6c94689adce9ecbfc6a425c14e8a505fe",
+    "release-info.js": "06dd79737077d44e0fc3f0322df08132f4db5b81eac58bad7e7b037dc55f7204",
     "rich-composer.css": "a3b8dcc64a2525b92f2911ed7f56c438a216e8952c05c3b29d3dcd796f6c5870",
     "rich-composer.js": "c4c687b034eeda22b7e686f3226309959a95acd4dd0b6170ffd36f9dc14f9b76",
     "rich-message.css": "0876004edd7309ae4b59665c99b3b68d7d9875976d03cf47a757aeea0f699683",
@@ -134,6 +136,6 @@
     "workspace-quick.js": "8d99edeaf282d549eef9ac60554de13a6e4def1c6343945a010810920bd7a0ce",
     "writing-surface.css": "893788a7b0b0418eb900c084cd462517d85cb47de09e2b88d794074fcf33c280"
   },
-  "sw_sha256": "b1ce203b3aaf54d01a99cb135aa4932a527284d8f4c731dcd02e3ce2ce378278",
-  "push_sha256": "2cc947a1f4a899dbbb93492b733a5ac6a04a5ef2deefac9537bd9ca62ae79ff7"
+  "sw_sha256": "b3533c8c231a852ffc081454c95ec6008607b88b4a2ee19284158e5eedbf38ef",
+  "push_sha256": "be5d2bd7d4414e93afa9bad07170801a97aef0fd8a124ff213a8bb83696d6cbf"
 }
