@@ -9,6 +9,7 @@
   if(typeof options.getSession!=='function'||typeof options.getUserId!=='function')throw Error('Push account callbacks are required');
   const endpoint=new URL('/functions/v1/pablicus-push',options.projectUrl).href;
   const scope=new URL('./',root.location.href).href;
+  let installationId=null,trackingState="unknown";
   let generation=0,enabled=false,busy=false,destroyed=false,refreshing=null,section=null,button=null,status=null;
   const readOwner=()=>{try{return root.localStorage.getItem(OWNER)||'';}catch{return '';}};
   const writeOwner=id=>{try{if(id)root.localStorage.setItem(OWNER,id);else root.localStorage.removeItem(OWNER);}catch{}};
@@ -27,11 +28,20 @@
   async function bind(recipientId,reg){
    reg=reg||await registration();await limited(new Promise((resolve,reject)=>{const channel=new MessageChannel();channel.port1.onmessage=e=>{channel.port1.close();e.data?.ok?resolve():reject(Error('Не удалось настроить уведомления.'));};channel.port1.onmessageerror=()=>{channel.port1.close();reject(Error('Не удалось настроить уведомления.'));};reg.active.postMessage({type:'PABLICUS_PUSH_BIND',recipientId:recipientId||null},[channel.port2]);}));
   }
-  async function request(method,body,uid){
+  function installationMetadata(uid){
+    try{const key='pablicus:r1:client:'+uid;let id=root.localStorage.getItem(key);
+     if(!UUID.test(id||'')){id=root.crypto.randomUUID();root.localStorage.setItem(key,id);}
+     const build=root.PablicusBuild?.id;if(!/^git:[a-f0-9]{40}$/.test(build||''))return null;
+     const platform=needsInstall()?'web_ios':/Android/.test(navigator.userAgent)?'web_android':'web_other';
+     return{client_id:id,build_id:build,platform};
+    }catch{return null;}
+   }
+   async function request(method,body,uid){
+   if(body?.action==='subscribe'){const meta=installationMetadata(uid);if(meta)body={...body,installation:meta};}
    const raw=await options.getSession(),session=raw?.data?.session||raw?.session||raw;
    if(!session?.access_token||session.user?.id!==uid||options.getUserId()!==uid)throw Error('Аккаунт изменился. Откройте профиль повторно.');
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
-   try{const response=await fetch(endpoint,{method,headers:{Authorization:'Bearer '+session.access_token,apikey:options.apiKey,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:controller.signal,cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(response.status===401?'Войдите снова, чтобы включить уведомления.':'Не удалось подключить уведомления. Повторите попытку.');return data;}
+   try{const response=await fetch(endpoint,{method,headers:{Authorization:'Bearer '+session.access_token,apikey:options.apiKey,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:controller.signal,cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(response.status===401?'Войдите снова, чтобы включить уведомления.':'Не удалось подключить уведомления. Повторите попытку.');if(body?.action==='subscribe'&&options.getUserId()===uid){installationId=UUID.test(data.installation_id||'')?data.installation_id:null;trackingState=data.tracking||'unknown';}return data;}
    finally{clearTimeout(timer);}
   }
   async function refresh(){
@@ -61,7 +71,7 @@
    finally{if(token===generation){busy=false;view(status?.textContent);}}
   }
   async function signOut({remote=true}={}){
-   const uid=options.getUserId(),priorOwner=readOwner();++generation;enabled=false;busy=false;writeOwner('');view();let detached=false,serverRemoved=false;
+   const uid=options.getUserId(),priorOwner=readOwner();installationId=null;trackingState='detached';++generation;enabled=false;busy=false;writeOwner('');view();let detached=false,serverRemoved=false;
    if(!supported())return{detached:true,serverRemoved:false};
    if(!priorOwner&&Notification.permission!=='granted')return{detached:true,serverRemoved:false};
    try{const reg=await registration();try{await bind(null,reg);detached=true;}catch{}
@@ -84,7 +94,8 @@
   function clear(){return signOut({remote:false});}
   function destroy(){destroyed=true;++generation;navigator.serviceWorker?.removeEventListener('message',onMessage);section?.remove();section=button=status=null;}
   if(options.container)mount(options.container);
-  return{mount,refresh,enable,disable,signOut,clear,destroy,get enabled(){return enabled;}};
+  async function inspect(){const uid=options.getUserId();if(!uid||!installationId)return{tracking:trackingState,installation_id:null,banner_visibility:'unknown'};return request('POST',{action:'status',installation_id:installationId},uid);}
+  return{mount,refresh,enable,disable,signOut,clear,destroy,inspect,get enabled(){return enabled;}};
  }
  root.PablicusPush={create,keyBytes};
 })(typeof window!=='undefined'?window:globalThis);

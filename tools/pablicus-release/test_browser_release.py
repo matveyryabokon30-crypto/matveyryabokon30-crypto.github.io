@@ -53,7 +53,7 @@ with sync_playwright() as pw:
  try:
   page.goto(origin+'/probe.html');page.wait_for_function('navigator.serviceWorker.controller',timeout=60000);page.wait_for_timeout(6500)
   initial=version()
-  record('previous production worker controls fixture',initial=='pablicus-shell-f01-20260918',initial)
+  record('previous production worker controls fixture',initial==json.loads((baseline/'release.json').read_text())['worker_version'],initial)
   control=page.evaluate("""async()=>{await(await caches.open('r0-environment-control')).put('r0-control',new Response('CONTROL'));const response=await(await caches.open('r0-environment-control')).match('r0-control');return response?await response.text():null;}""")
   record('independent Cache API control persists before testing candidate',control=='CONTROL',control)
   page.evaluate("""async()=>{sessionStorage.busy='1';localStorage.setItem('r0-sentinel','keep');await new Promise((resolve,reject)=>{const o=indexedDB.open('r0-fixture',1);o.onupgradeneeded=()=>o.result.createObjectStore('blobs');o.onsuccess=()=>{const db=o.result,t=db.transaction('blobs','readwrite');t.objectStore('blobs').put(new Blob(['draft-original-bytes']),'draft');t.oncomplete=()=>{db.close();resolve()};t.onerror=t.onabort=()=>reject(Error('Blob transaction: '+(t.error?.name||'unknown')+' '+(t.error?.message||'')));};o.onerror=()=>reject(Error('Open DB: '+o.error?.message));});await new Promise(resolve=>{const ch=new MessageChannel();ch.port1.onmessage=()=>{ch.port1.close();resolve()};navigator.serviceWorker.controller.postMessage({type:'PABLICUS_PUSH_BIND',recipientId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'},[ch.port2]);});}""")
