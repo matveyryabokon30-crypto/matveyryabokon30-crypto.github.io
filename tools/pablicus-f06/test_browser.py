@@ -28,6 +28,7 @@ with sync_playwright() as pw:
   window.b=PablicusCalls.create({onSignal:s=>relay('a',s),onState:s=>{connected.b=s==='connected';},onRemoteStream:s=>{streams.b=s;document.getElementById('remote').srcObject=s;}});
   document.getElementById('begin').onclick=()=>void a.start({video:true}).catch(e=>errors.push(String(e)));""")
   page.locator('#begin').click();page.wait_for_function('connected.a&&connected.b',timeout=30000)
+  print('RTC diagnostics '+json.dumps(page.evaluate('({asked,errors,connected,trackKinds:tracks.map(t=>t.kind)})')),flush=True)
   check('actual paired RTCPeerConnection connects with synthetic audio/video',page.evaluate('asked===2&&errors.length===0'))
   page.wait_for_function("streams.a?.getAudioTracks().length===1&&streams.a?.getVideoTracks().length===1&&streams.b?.getAudioTracks().length===1&&streams.b?.getVideoTracks().length===1")
   check('both peers receive real remote audio and video tracks',True)
@@ -48,5 +49,11 @@ with sync_playwright() as pw:
   page.evaluate("user=null;api.clear()")
   check('logout removes incoming call and availability',page.evaluate('!api.snapshot().call&&!api.snapshot().available'))
   print(json.dumps({'engine':a.engine,'checks':checks,'count':len(checks),'result':'PASS','limits':'Loopback synthetic media; no production TURN or physical iPhone/background evidence.'},ensure_ascii=False),flush=True)
+  if not a.output:
+   pathlib.Path('results').mkdir(exist_ok=True);a.output='results/f06-'+a.engine+'.json'
   if a.output:pathlib.Path(a.output).write_text(json.dumps({'engine':a.engine,'checks':checks,'count':len(checks),'result':'PASS','limits':'Loopback synthetic media; no production TURN or physical iPhone/background evidence.'},ensure_ascii=False,indent=2))
+ except Exception:
+  try:print('RTC failure diagnostics '+json.dumps(page.evaluate('({asked:window.asked,errors:window.errors,connected:window.connected})')),flush=True)
+  except Exception:pass
+  raise
  finally:ctx.close();browser.close();server.shutdown()
