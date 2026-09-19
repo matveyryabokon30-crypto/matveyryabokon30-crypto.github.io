@@ -201,7 +201,7 @@
  let pendingPerson=new window.URL(location.href).searchParams.get('person')||'';
  try{if(pendingPerson)sessionStorage.setItem('pablicus:pending-person',pendingPerson);else pendingPerson=sessionStorage.getItem('pablicus:pending-person')||'';}catch{}
  function showPersonLink(){if(!user||!pendingPerson)return;const query=pendingPerson;pendingPerson='';try{sessionStorage.removeItem('pablicus:pending-person')}catch{}people.open(query);}
- const pushNotifications=PablicusPush.create({getSession:()=>sb.auth.getSession(),getUserId:()=>user?.id,projectUrl:URL,apiKey:KEY,onInstall:install,onOpenConversation:(id,recipientId,task)=>openPushConversation(id,recipientId,task).catch(problem)});
+ const pushNotifications=PablicusPush.create({enableHealthTracking:true,getSession:()=>sb.auth.getSession(),getUserId:()=>user?.id,projectUrl:URL,apiKey:KEY,onInstall:install,onOpenConversation:(id,recipientId,task)=>openPushConversation(id,recipientId,task).catch(problem)});
  let pendingPush=null;const entryUrl=new window.URL(location.href),pushConversation=entryUrl.searchParams.get('conversation'),pushRecipient=entryUrl.searchParams.get('recipient'),validUuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value||'');
  function pushTask(value){return validUuid(value?.taskId)&&['task_reminder','task_followup'].includes(value?.kind)?{taskId:value.taskId,kind:value.kind}:null;}
  try{if(validUuid(pushConversation)&&validUuid(pushRecipient)){pendingPush={id:pushConversation,recipientId:pushRecipient,task:pushTask({taskId:entryUrl.searchParams.get('task'),kind:entryUrl.searchParams.get('task_notice')})};sessionStorage.setItem('pablicus:pending-push',JSON.stringify(pendingPush));}else{const saved=JSON.parse(sessionStorage.getItem('pablicus:pending-push')||'null');if(validUuid(saved?.id)&&validUuid(saved?.recipientId))pendingPush={id:saved.id,recipientId:saved.recipientId,task:pushTask(saved.task)};}}catch{}
@@ -264,7 +264,7 @@
   if(!session){const attempt=++authVersion;await window.PablicusController?.sessionChanged(null);if(attempt===authVersion&&!signal?.aborted)clearSessionView();return}
   if(!PablicusPublicPasskey.identityValid(session.user)){const attempt=++authVersion;await window.PablicusController?.sessionChanged(null);if(attempt!==authVersion||signal?.aborted)return;clearSessionView();throw Error('Ключ не удалось связать с прежним аккаунтом. Войдите прежним способом.')}
   if(!verifiedPasskey&&(passkeyUnvalidated||safeGet(passkeyGuardKey)===true)){const attempt=++authVersion;await window.PablicusController?.sessionChanged(null);if(attempt===authVersion&&!signal?.aborted)clearSessionView();return}
-  if(user?.id===session.user.id&&profile){await window.PablicusController?.sessionChanged(session.user.id);return}
+  if(user?.id===session.user.id&&profile){void pushNotifications.sessionRestored(session);await window.PablicusController?.sessionChanged(session.user.id);return}
   const attempt=++authVersion;
   await window.PablicusController?.sessionChanged(session.user.id);
   if(attempt!==authVersion||signal?.aborted)return;
@@ -381,7 +381,7 @@
   if(identityChanged&&user)clearSessionView();
   setTimeout(()=>{
    if(observed!==authEventSerial)return;
-   if(session?.user.id===user?.id&&profile&&!blocked)return;
+   if(session?.user.id===user?.id&&profile&&!blocked){void pushNotifications.sessionRestored(session);return;}
    authenticate(blocked?null:session).catch(e=>{if(observed===authEventSerial)$('loginError').textContent=e.message});
   },0);
  });
