@@ -34,7 +34,7 @@ export class VoicePicker {
         if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
         // Audio.play executes synchronously inside this click, preserving iOS activation.
         if(this.playingVoice===voice.id){this.stopPreview();return;}
-        try{this.player.play(voice).catch(()=>{this.message.textContent='Не удалось включить пример. Нажми ещё раз.';});}catch{this.message.textContent='Не удалось включить пример. Нажми ещё раз.';}
+        try{this.player.play(voice).catch(e=>{this.message.dataset.audioError=(e?.name||'Error')+': '+(e?.message||'');this.message.textContent='Не удалось включить пример. Нажми ещё раз.';});}catch(e){this.message.dataset.audioError=(e?.name||'Error')+': '+(e?.message||'');this.message.textContent='Не удалось включить пример. Нажми ещё раз.';}
       };
       const choose=document.createElement('button');choose.type='button';choose.dataset.select=voice.id;choose.textContent=selected?'✓ Выбран':'Выбрать';choose.setAttribute('aria-label','Выбрать '+name.textContent);choose.setAttribute('aria-pressed',String(selected));choose.disabled=!ready||this.preferences.busy;
       choose.onclick=async()=>{
