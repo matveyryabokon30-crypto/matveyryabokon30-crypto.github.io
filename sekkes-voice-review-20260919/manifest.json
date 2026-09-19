@@ -1,0 +1,50 @@
+[
+  {
+    "id": "echo",
+    "model": "gpt-live-1",
+    "origin": "live_generated",
+    "language_requested": "ru",
+    "owner_review": "pending",
+    "duration": 14.24,
+    "rms": 1427.4182262484967,
+    "source_wav_sha256": "540ec9a6bf8e618ee5a7dc7e1f460d00f14c5f8525f6762f4bd8c042f1afeca6",
+    "mp3_sha256": "7dd839ab09cf4d98ce42d9abc87082159b9675c0c6ab09506106927369289b71",
+    "bytes": 86061
+  },
+  {
+    "id": "willow",
+    "model": "gpt-live-1",
+    "origin": "live_generated",
+    "language_requested": "ru",
+    "owner_review": "pending",
+    "duration": 14.24,
+    "rms": 1393.5023323830412,
+    "source_wav_sha256": "41260d007c8bf92d29ff6bcb3bbb925803d3d8efa968672fc2d1b7b13e205183",
+    "mp3_sha256": "de69400535594a2720bb36c89d5e350314554c56351e908cd2c0df4333d51a8a",
+    "bytes": 86061
+  },
+  {
+    "id": "ripple",
+    "model": "gpt-live-1",
+    "origin": "live_generated",
+    "language_requested": "ru",
+    "owner_review": "pending",
+    "duration": 13.62,
+    "rms": 1999.0103450686868,
+    "source_wav_sha256": "0174fe07ad1587acd27f6a2c923cac6fa79b6aa3dddcba72c4f2c58f4fd2460d",
+    "mp3_sha256": "e3efc6758d33a5efc05db4814e5c56761fcbac8f8ed5b4c00cf76dfd7cc5ffd8",
+    "bytes": 82317
+  },
+  {
+    "id": "vesper",
+    "model": "gpt-live-1",
+    "origin": "live_generated",
+    "language_requested": "ru",
+    "owner_review": "pending",
+    "duration": 14.0,
+    "rms": 1238.536660187326,
+    "source_wav_sha256": "e3d7c35804e36b0c8c18065fa0ea8dc63eb0087ef989a72b829b101f05c1f405",
+    "mp3_sha256": "3bdeff96a7b6780c30136b2c2f217cff5f40487f01c77c23081f1d6acbadec8b",
+    "bytes": 84621
+  }
+]
