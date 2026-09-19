@@ -1,0 +1,37 @@
+name: Pablicus isolated R1 test toolchain
+on:
+  push:
+    branches: [diag/pablicus-r1-toolchain-20260919]
+    paths: [.github/workflows/pablicus-r1-toolchain.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Package only public binaries and pinned public source
+        run: |
+          set -euo pipefail
+          mkdir -p export pg-runtime
+          VERSION=$(ls /usr/lib/postgresql | sort -V | tail -1)
+          echo "$VERSION" > export/PG_VERSION.txt
+          cp -a /usr/lib/postgresql/"$VERSION" pg-runtime/lib
+          cp -a /usr/share/postgresql/"$VERSION" pg-runtime/share
+          mkdir pg-runtime/deps
+          for exe in /usr/lib/postgresql/"$VERSION"/bin/{postgres,initdb,pg_ctl,psql} /usr/lib/postgresql/"$VERSION"/lib/pgcrypto.so; do
+            ldd "$exe" | awk '/=> \//{print $3}' | while read lib; do cp -L "$lib" pg-runtime/deps/; done
+          done
+          /usr/lib/postgresql/"$VERSION"/bin/postgres --version > export/toolchain.txt
+          tar -czf export/postgres-runtime.tar.gz pg-runtime
+          git archive c9964f1bcf191163cf0ee59ca749aac4a92b6533 vision-talk/pablicus tools .github/workflows | gzip > export/public-source.tar.gz
+          sha256sum export/*.tar.gz > export/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pablicus-r1-local-test-toolchain
+          path: export/
+          retention-days: 3
+          if-no-files-found: error
