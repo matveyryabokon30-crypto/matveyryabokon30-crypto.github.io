@@ -24,7 +24,7 @@ function voicePicker(){
  picker?.close();view(title('Выбери голос'));
  picker=new VoicePicker({root:body,voices:voiceManifest.voices,preferences,isLive:()=>Boolean(live),notify:note});picker.open();if(!logged()){const signIn=document.createElement('button');signIn.className='rounded-action primary';signIn.textContent='Войти и сохранить выбор';signIn.onclick=()=>{pending='settings';picker.close();login();};body.append(signIn);}
 }
-dialog.addEventListener('close',()=>{picker?.close();memoryPanel?.close();memoryPanel=null;});
+dialog.addEventListener('close',()=>{if(dialog.open)return;picker?.close();memoryPanel?.close();memoryPanel=null;});
 async function openMemory(){if(live||starting)return note('Заверши разговор, чтобы изменить память.');if(!await ensure('memory'))return;picker?.close();memoryPanel?.close();view(title('Моя память'));memoryPanel=new MemoryPanel({root:body,api,onChange:()=>{textHistory=[];$('#s3Transcript')?.remove();}});await memoryPanel.open();}
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden)picker?.stopPreview();});
