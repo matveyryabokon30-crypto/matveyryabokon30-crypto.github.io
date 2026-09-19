@@ -1,0 +1,134 @@
+{
+  "version": "2026.09.19-p3.2",
+  "status": "owner_approved_catalog_runtime_release_pending",
+  "defaults": {
+    "female": "bossa",
+    "male": "vesper"
+  },
+  "voices": [
+    {
+      "id": "bossa",
+      "name": "Bossa",
+      "gender": "female",
+      "default_for_group": true,
+      "model": "gpt-live-1",
+      "enabled": true,
+      "russian_review": "owner_approved",
+      "evidence": {
+        "live_session_created": true,
+        "audio_received": true,
+        "session_closed": true,
+        "no_orphan_session": true,
+        "artifact_sha256": "6f8f18184d4449ea6e46f59953f42da623771ae48556afb1239fbc025f5d1fa5",
+        "artifact_path": "apps/sekkes/p3/qa/live-female-samples-20260919/result.json",
+        "model": "gpt-live-1",
+        "voice": "bossa",
+        "scope": "primary_websocket_sample"
+      },
+      "preview": {
+        "kind": "static_asset",
+        "url": "/sekkes-female-voice-review-20260919/bossa.mp3",
+        "sha256": "67be6392f04bb063c23be0477eb8e18874fa5e85fb7ba27df1336eab685983c6",
+        "phrase_version": "ru-sekkes-20260919-v1",
+        "language": "ru",
+        "duration_seconds": 13.94,
+        "model": "gpt-live-1",
+        "voice": "bossa",
+        "origin": "live_generated"
+      }
+    },
+    {
+      "id": "delta",
+      "name": "Delta",
+      "gender": "female",
+      "default_for_group": false,
+      "model": "gpt-live-1",
+      "enabled": true,
+      "russian_review": "owner_approved",
+      "evidence": {
+        "live_session_created": true,
+        "audio_received": true,
+        "session_closed": true,
+        "no_orphan_session": true,
+        "artifact_sha256": "6f8f18184d4449ea6e46f59953f42da623771ae48556afb1239fbc025f5d1fa5",
+        "artifact_path": "apps/sekkes/p3/qa/live-female-samples-20260919/result.json",
+        "model": "gpt-live-1",
+        "voice": "delta",
+        "scope": "primary_websocket_sample"
+      },
+      "preview": {
+        "kind": "static_asset",
+        "url": "/sekkes-female-voice-review-20260919/delta.mp3",
+        "sha256": "ac6c3005ff2ddeb9e8e4f0ddcbe6bef1eda7c90708cd92567ec5f6772d544f03",
+        "phrase_version": "ru-sekkes-20260919-v1",
+        "language": "ru",
+        "duration_seconds": 14.04,
+        "model": "gpt-live-1",
+        "voice": "delta",
+        "origin": "live_generated"
+      }
+    },
+    {
+      "id": "vesper",
+      "name": "Vesper",
+      "gender": "male",
+      "default_for_group": true,
+      "model": "gpt-live-1",
+      "enabled": true,
+      "russian_review": "owner_approved",
+      "evidence": {
+        "live_session_created": true,
+        "audio_received": true,
+        "session_closed": true,
+        "no_orphan_session": true,
+        "artifact_sha256": "a89c1a61d66bf78ec5af1c3be5ed8e9b4231d6fe7dd6c850ddd33dd2d39f68a3",
+        "artifact_path": "apps/sekkes/p3/qa/live-samples-v2-20260919/result.json",
+        "model": "gpt-live-1",
+        "voice": "vesper",
+        "scope": "primary_websocket_sample"
+      },
+      "preview": {
+        "kind": "static_asset",
+        "url": "/sekkes-voice-review-20260919/vesper.mp3",
+        "sha256": "3bdeff96a7b6780c30136b2c2f217cff5f40487f01c77c23081f1d6acbadec8b",
+        "phrase_version": "ru-sekkes-20260919-v1",
+        "language": "ru",
+        "duration_seconds": 14.0,
+        "model": "gpt-live-1",
+        "voice": "vesper",
+        "origin": "live_generated"
+      }
+    },
+    {
+      "id": "echo",
+      "name": "Echo",
+      "gender": "male",
+      "default_for_group": false,
+      "model": "gpt-live-1",
+      "enabled": true,
+      "russian_review": "owner_approved",
+      "evidence": {
+        "live_session_created": true,
+        "audio_received": true,
+        "session_closed": true,
+        "no_orphan_session": true,
+        "artifact_sha256": "4c7de508c52d1ae7e1188a3112dc5641ec4e45cdc91c390792ea3b5ab82ef743",
+        "artifact_path": "apps/sekkes/p3/qa/live-samples-20260919/result.json",
+        "model": "gpt-live-1",
+        "voice": "echo",
+        "scope": "primary_websocket_sample"
+      },
+      "preview": {
+        "kind": "static_asset",
+        "url": "/sekkes-voice-review-20260919/echo.mp3",
+        "sha256": "7dd839ab09cf4d98ce42d9abc87082159b9675c0c6ab09506106927369289b71",
+        "phrase_version": "ru-sekkes-20260919-v1",
+        "language": "ru",
+        "duration_seconds": 14.24,
+        "model": "gpt-live-1",
+        "voice": "echo",
+        "origin": "live_generated"
+      }
+    }
+  ]
+}
