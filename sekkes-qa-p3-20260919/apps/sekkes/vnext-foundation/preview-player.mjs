@@ -1,7 +1,7 @@
 import {assessVoice, ContractError} from './foundation.mjs';
 /** Static audio only. Call play() directly in the user's click handler; no await before it. */
 export class StaticVoicePreview {
-  constructor({audioFactory, origin, onState=()=>{}, loadTimeoutMs=15000, timers={set:setTimeout,clear:clearTimeout}}) {
+  constructor({audioFactory, origin, onState=()=>{}, loadTimeoutMs=15000, timers={set:(fn,ms)=>setTimeout(fn,ms),clear:id=>clearTimeout(id)}}) {
     if(typeof audioFactory!=='function') throw new ContractError('AUDIO_FACTORY_REQUIRED');
     const base=new URL(origin);
     if(!['https:','http:'].includes(base.protocol)) throw new ContractError('INVALID_ASSET_ORIGIN');
