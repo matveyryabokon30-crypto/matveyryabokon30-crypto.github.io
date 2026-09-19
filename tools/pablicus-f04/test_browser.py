@@ -1,5 +1,6 @@
 """F04 real browser UI and full application auth integration; synthetic accounts/HTTP only."""
-import argparse,base64,http.server,json,pathlib,threading,time,urllib.parse
+import argparse,base64,faulthandler,http.server,json,pathlib,threading,time,urllib.parse
+faulthandler.dump_traceback_later(45,repeat=True)
 from playwright.sync_api import sync_playwright
 p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--engine',choices=['chromium','webkit'],required=True);p.add_argument('--output');a=p.parse_args()
 root=pathlib.Path(a.root).resolve()
@@ -47,7 +48,7 @@ with sync_playwright() as pw:
   # Only server HTTP responses are synthetic; no real OAuth provider or device-picker claim.
   ctx=browser.new_context(service_workers='block');ctx.route_web_socket('**',lambda ws:ws.close());page=ctx.new_page();page.set_default_timeout(25000);errors=[];rpc=[];traffic=[];network_failures=[];console_errors=[]
   page.on('pageerror',lambda e:(errors.append(str(e)),print('PAGE ERROR '+str(e),flush=True)))
-  page.on('console',lambda m:(console_errors.append(m.text),print('CONSOLE ERROR '+m.text,flush=True)) if m.type=='error' else None)
+  page.on('console',lambda m:(console_errors.append(m.text),print('CONSOLE ERROR '+m.text,flush=True)) if m.type=='error' else print(m.text,flush=True) if m.text.startswith('F04_PHASE') else None)
   page.on('requestfailed',lambda r:network_failures.append({'path':urllib.parse.urlsplit(r.url).path,'failure':r.failure}))
   uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';sender={'id':'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','username':'fixture_sender','display_name':'Fixture Sender'}
   user={'id':uid,'aud':'authenticated','role':'authenticated','email':'fixture@example.test','app_metadata':{'provider':'email'},'user_metadata':{},'identities':[]}
@@ -70,12 +71,13 @@ with sync_playwright() as pw:
     else:data=[]
    elif '/functions/' in path:data={'ok':False}
    else:data=[]
-   r.fulfill(status=200,content_type='application/json',headers=cors,body=json.dumps(data))
+   r.fulfill(status=200,content_type='application/json',headers=cors,body=json.dumps(data));print('HTTP FULFILLED '+r.request.method+' '+path,flush=True)
   ctx.route('https://ctcoqgsztdtsazdiwcmd.supabase.co/**',route)
   page.goto(origin+'/#invite='+token);page.wait_for_function('window.PablicusDebug && window.PablicusController')
   page.wait_for_function("!!document.getElementById('personalInviteLoginHint')")
   check('full app guest boot keeps invite without authenticated RPC',not rpc and page.evaluate("!location.hash&&!!sessionStorage.getItem('pablicus:pending-invite')"))
   # Existing SDK sign-in flow, equivalent to password form; authenticate via actual SDK event.
+  page.evaluate("""()=>{for(const [name,methods] of Object.entries({PablicusAvatarStoriesUI:['prepareHome','flushHome'],PablicusStoriesCore:['flush'],PablicusShell:['authentication','project'],PablicusHomeData:['mark']})){const original=window[name];if(!original)continue;const wrapped=new Map();window[name]=new Proxy({...original},{get(_target,key){const value=Reflect.get(original,key,original);if(typeof value!=='function'||!methods.includes(key))return value;if(!wrapped.has(key))wrapped.set(key,function(...args){const label=name+'.'+key+(key==='mark'?':'+String(args[0]):'');console.log('F04_PHASE ENTER '+label);let result;try{result=Reflect.apply(value,original,args);}catch(e){console.log('F04_PHASE THROW '+label);throw e;}if(result&&typeof result.then==='function')result.then(()=>console.log('F04_PHASE EXIT '+label),()=>console.log('F04_PHASE REJECT '+label));else console.log('F04_PHASE EXIT '+label);return result;});return wrapped.get(key);}});}}""")
   print('STAGE fullapp SDK setSession',flush=True)
   sdk=page.evaluate('async(session)=>{const r=await Promise.race([PablicusController.getServices().client.auth.setSession(session),new Promise((_,reject)=>setTimeout(()=>reject(Error("fixture SDK setSession exceeded 10s")),10000))]);return{error:r.error?.message||null,userId:r.data.user?.id||null,hasSession:!!r.data.session}}',session)
   print('STAGE fullapp SDK returned '+json.dumps(sdk),flush=True)
