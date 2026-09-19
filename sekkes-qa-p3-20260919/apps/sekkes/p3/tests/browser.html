@@ -1,0 +1,22 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEKKES — проверка кнопок</title>
+<style>body{font:18px system-ui;margin:24px;color:#19363e;max-width:750px;background:#f7faf9}button{font:inherit;min-height:44px;padding:10px;cursor:pointer}button:disabled{cursor:default}small,strong{display:block}.voice-choice{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid #bccdcc;border-radius:20px;padding:16px;margin:12px 0}.selected{border:2px solid #19363e}@media(max-width:600px){.voice-choice{flex-wrap:wrap}.voice-choice>div{width:100%}}</style>
+<h1>Проверка кнопок</h1><p>Технический тест. Воспроизводится короткий тон, а не голос OpenAI. AI и микрофон не подключены.</p>
+<button id="open">Открыть выбор</button><button id="close">Закрыть выбор</button><button id="reload">Восстановить профиль</button><button id="failure">Следующее сохранение с ошибкой</button>
+<p id="saved" role="status"></p><div id="picker"></div>
+<script type="module">
+import {VoicePicker} from '../src/voice-picker.mjs';
+import {VoicePreferences} from '../src/preferences.mjs';
+const hash='a'.repeat(64),ids=['fixture_a','fixture_b'];
+const voices=ids.map((id,i)=>({id,name:'Тест '+(i+1),model:'fixture_model',enabled:true,russian_review:'owner_approved',evidence:{model:'fixture_model',voice:id,live_session_created:true,audio_received:true,session_closed:true,no_orphan_session:true,artifact_sha256:hash},preview:{kind:'static_asset',sha256:hash,url:new URL('./fixture.wav',location.href).pathname,phrase_version:'fixture_only',language:'ru',duration_seconds:0.5,model:'fixture_model',voice:id,origin:'live_generated'}}));
+// All evidence above is synthetic and restricted to this test harness. Never ship in voices.json.
+let fail=false;let value=sessionStorage.getItem('fixture_profile')||'fixture_a';
+const p=new VoicePreferences({enabledIds:ids,profile:{read:async()=>value,write:async id=>{if(fail){fail=false;throw Error('fixture_offline')}value=id;sessionStorage.setItem('fixture_profile',id);return id;}},onChange:id=>{document.querySelector('#saved').textContent='Сохранён: '+id;}});
+await p.load();
+const picker=new VoicePicker({root:document.querySelector('#picker'),voices,preferences:p});
+document.querySelector('#open').onclick=()=>picker.open();
+document.querySelector('#close').onclick=()=>{picker.close();document.querySelector('#picker').replaceChildren()};
+document.querySelector('#reload').onclick=async()=>{await p.load();picker.open()};
+document.querySelector('#failure').onclick=()=>{fail=true};
+picker.open();
+</script></html>
