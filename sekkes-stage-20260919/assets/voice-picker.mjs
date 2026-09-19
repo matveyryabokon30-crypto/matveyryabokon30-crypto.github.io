@@ -1,5 +1,5 @@
-import {assessVoice} from './registry-foundation.mjs?v=2026.09.19-p23-stage.3';
-import {StaticVoicePreview} from './preview-player.mjs?v=2026.09.19-p23-stage.3';
+import {assessVoice} from './registry-foundation.mjs?v=2026.09.19-p23-stage.4';
+import {StaticVoicePreview} from './preview-player.mjs?v=2026.09.19-p23-stage.4';
 
 const errors={AUDIO_GESTURE_REQUIRED:'Нажми «Послушать» ещё раз, чтобы включить звук.',AUDIO_ASSET_ERROR:'Не удалось загрузить пример. Попробуй ещё раз.',AUDIO_LOAD_TIMEOUT:'Пример загружается слишком долго. Попробуй ещё раз.'};
 export class VoicePicker {
@@ -34,7 +34,7 @@ export class VoicePicker {
         if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
         // Audio.play executes synchronously inside this click, preserving iOS activation.
         if(this.playingVoice===voice.id){this.stopPreview();return;}
-        try{this.player.play(voice).catch(e=>{this.message.dataset.audioError=(e?.name||'Error')+': '+(e?.message||'');this.message.textContent='Не удалось включить пример. Нажми ещё раз.';});}catch(e){this.message.dataset.audioError=(e?.name||'Error')+': '+(e?.message||'');this.message.textContent='Не удалось включить пример. Нажми ещё раз.';}
+        try{this.player.play(voice).catch(e=>{this.message.dataset.stopStack=this.player.lastStopStack||'';this.message.dataset.audioError=(e?.name||'Error')+': '+(e?.message||'');this.message.textContent='Не удалось включить пример. Нажми ещё раз.';});}catch(e){this.message.dataset.stopStack=this.player.lastStopStack||'';this.message.dataset.audioError=(e?.name||'Error')+': '+(e?.message||'');this.message.textContent='Не удалось включить пример. Нажми ещё раз.';}
       };
       const choose=document.createElement('button');choose.type='button';choose.dataset.select=voice.id;choose.textContent=selected?'✓ Выбран':'Выбрать';choose.setAttribute('aria-label','Выбрать '+name.textContent);choose.setAttribute('aria-pressed',String(selected));choose.disabled=!ready||this.preferences.busy;
       choose.onclick=async()=>{

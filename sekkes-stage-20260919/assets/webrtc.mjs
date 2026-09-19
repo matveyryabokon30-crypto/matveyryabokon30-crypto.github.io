@@ -1,4 +1,4 @@
-import {decodeEvent,closeCommand} from './protocol.mjs?v=2026.09.19-p23-stage.3';
+import {decodeEvent,closeCommand} from './protocol.mjs?v=2026.09.19-p23-stage.4';
 /** Native WebRTC adapter. No OpenAI credentials and no business/budget rules. */
 export class WebRTCTransport {
   constructor(onEvent,{Peer=globalThis.RTCPeerConnection,audio=document.createElement('audio')}={}) {
