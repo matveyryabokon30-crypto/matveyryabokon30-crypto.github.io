@@ -29,7 +29,7 @@ function voicePicker(){
  picker=new VoicePicker({root:body,voices:voiceManifest.voices,preferences,isLive:()=>Boolean(live),notify:note});picker.open();if(!logged()){const signIn=document.createElement('button');signIn.className='rounded-action primary';signIn.textContent='Войти и сохранить выбор';signIn.onclick=()=>{pending='settings';picker.close();login();};body.append(signIn);}
 }
 dialog.addEventListener('close',()=>picker?.close());
-document.addEventListener('visibilitychange',()=>{if(document.hidden)picker?.close();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)picker?.stopPreview();});
 async function startLive(){
  if(controller?.busy)return endLive();
  if(!await ensure('live'))return;

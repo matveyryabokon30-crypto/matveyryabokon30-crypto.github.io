@@ -33,7 +33,8 @@ export class VoicePicker {
       play.onclick=()=>{
         if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
         // Audio.play executes synchronously inside this click, preserving iOS activation.
-        this.player.play(voice).catch(()=>{});
+        if(this.playingVoice===voice.id){this.stopPreview();return;}
+        try{this.player.play(voice).catch(()=>{this.message.textContent='Не удалось включить пример. Нажми ещё раз.';});}catch{this.message.textContent='Не удалось включить пример. Нажми ещё раз.';}
       };
       const choose=document.createElement('button');choose.type='button';choose.dataset.select=voice.id;choose.textContent=selected?'✓ Выбран':'Выбрать';choose.setAttribute('aria-label','Выбрать '+name.textContent);choose.setAttribute('aria-pressed',String(selected));choose.disabled=!ready||this.preferences.busy;
       choose.onclick=async()=>{
@@ -50,11 +51,13 @@ export class VoicePicker {
   }
   playback(state) {
     if(!this.opened)return;
+    this.playingVoice=['loading','playing'].includes(state.state)?state.voice:null;
     for(const button of this.list.querySelectorAll('[data-preview]')) {
       const current=button.dataset.preview===state.voice;
-      button.textContent=current&&state.state==='loading'?'Загрузка…':current&&state.state==='playing'?'Играет…':'▶ Послушать';
+      button.textContent=current&&state.state==='loading'?'Загрузка…':current&&state.state==='playing'?'■ Остановить':'▶ Послушать';
     }
     this.message.textContent=state.state==='error'?(errors[state.code]||'Не удалось включить звук. Нажми «Послушать» ещё раз.'):'';
   }
-  close(){this.opened=false;this.player.stop();}
+  stopPreview(){this.player.stop();this.playback({state:'idle',voice:null});}
+  close(){this.stopPreview();this.opened=false;}
 }
