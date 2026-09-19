@@ -1,4 +1,4 @@
-import {assessVoice, ContractError} from './registry-foundation.mjs?v=2026.09.19-p23-stage.2';
+import {assessVoice, ContractError} from './registry-foundation.mjs?v=2026.09.19-p23-stage.3';
 /** Static audio only. Call play() directly in the user's click handler; no await before it. */
 export class StaticVoicePreview {
   constructor({audioFactory, origin, onState=()=>{}, loadTimeoutMs=15000, timers={set:(fn,ms)=>setTimeout(fn,ms),clear:id=>clearTimeout(id)}}) {
