@@ -49,14 +49,14 @@ jobs:
           python -m playwright install --with-deps ${{ matrix.engine }}
           python -m pip show playwright > results/toolchain.txt
           uname -a >> results/toolchain.txt
+      - name: Personal invite create, accept, revoke and account isolation
+        run: python tools/pablicus-f04/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
       - name: Run all strict tests with bounded execution and retained traces
         run: python tools/pablicus-release/run_bounded.py --engine ${{ matrix.engine }} --seconds 150
       - name: Browser subscription lifecycle with native locks and storage
         run: python tools/pablicus-r2/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
       - name: Retained contact discovery checks
         run: python tools/pablicus-f03/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
-      - name: Personal invite create, accept, revoke and account isolation
-        run: python tools/pablicus-f04/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
