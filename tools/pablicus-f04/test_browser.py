@@ -50,7 +50,7 @@ with sync_playwright() as pw:
   uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';sender={'id':'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','username':'fixture_sender','display_name':'Fixture Sender'}
   user={'id':uid,'aud':'authenticated','role':'authenticated','email':'fixture@example.test','app_metadata':{'provider':'email'},'user_metadata':{},'identities':[]}
   enc=lambda value:base64.urlsafe_b64encode(json.dumps(value).encode()).decode().rstrip('=')
-  jwt=enc({'alg':'HS256','typ':'JWT'})+'.'+enc({'sub':uid,'aud':'authenticated','role':'authenticated','exp':int(time.time())+3600})+'.synthetic'
+  jwt=enc({'alg':'HS256','typ':'JWT'})+'.'+enc({'sub':uid,'aud':'authenticated','role':'authenticated','exp':int(time.time())+3600})+'.'+base64.urlsafe_b64encode(bytes(32)).decode().rstrip('=')
   session={'access_token':jwt,'refresh_token':'synthetic-refresh','expires_in':3600,'expires_at':int(time.time())+3600,'token_type':'bearer','user':user}
   def route(r):
    path=urllib.parse.urlsplit(r.request.url).path
@@ -70,7 +70,8 @@ with sync_playwright() as pw:
   page.wait_for_function("!!document.getElementById('personalInviteLoginHint')")
   check('full app guest boot keeps invite without authenticated RPC',not rpc and page.evaluate("!location.hash&&!!sessionStorage.getItem('pablicus:pending-invite')"))
   # Existing SDK sign-in flow, equivalent to password form; authenticate via actual SDK event.
-  page.evaluate('(session)=>PablicusController.getServices().client.auth.setSession(session)',session)
+  sdk=page.evaluate('async(session)=>{const r=await PablicusController.getServices().client.auth.setSession(session);return{error:r.error?.message||null,userId:r.data.user?.id||null,hasSession:!!r.data.session}}',session)
+  assert sdk['error'] is None and sdk['userId']==uid and sdk['hasSession'], 'Synthetic SDK session import failed: '+str(sdk)
   page.get_by_role('button',name='Принять приглашение',exact=True).wait_for()
   check('full app approved session resumes invitation inspect only',[(name,args.get('p_action')) for name,args in rpc if name=='pablicus_invites']==[('pablicus_invites','inspect')])
   check('full app does not create conversation during invite landing',not any(name=='start_direct_conversation' for name,_ in rpc))
@@ -85,7 +86,12 @@ with sync_playwright() as pw:
   out=pathlib.Path(a.output or f'results/f04-{a.engine}.json');out.parent.mkdir(parents=True,exist_ok=True)
   try:page.screenshot(path=str(out.with_suffix('.failure.png')))
   except Exception:pass
-  out.write_text(json.dumps({'engine':a.engine,'passed':len(checks),'failed':1,'checks':checks,'error':str(exc)},ensure_ascii=False,indent=2))
+  diagnostics={}
+  try:diagnostics=page.evaluate("()=>({userId:window.PablicusDebug?.user||null,sessionUserId:window.PablicusController?.state()?.sessionUserId||null,loginError:document.getElementById('loginError')?.textContent||'',pendingInvite:!!sessionStorage.getItem('pablicus:pending-invite')})")
+  except Exception:pass
+  if 'rpc' in locals():diagnostics['rpcActions']=[{'name':name,'action':args.get('p_action')} for name,args in rpc]
+  out.write_text(json.dumps({'engine':a.engine,'passed':len(checks),'failed':1,'checks':checks,'error':str(exc),'diagnostics':diagnostics},ensure_ascii=False,indent=2))
+  print(json.dumps({'failure':str(exc),'diagnostics':diagnostics},ensure_ascii=False),flush=True)
   browser.close();server.shutdown();raise
 
 result={'engine':a.engine,'passed':len(checks),'checks':checks,'boundary':'Synthetic contacts/accounts and backend HTTP. Real modules plus real index/app/Supabase SDK authentication integration. No real OAuth provider, SMS, external messages, native share acceptance or physical iPhone claim.'}
