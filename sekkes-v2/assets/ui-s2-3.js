@@ -1,7 +1,7 @@
 /* SEKKES S0/S1. Real interface; no simulated AI, client records or therapeutic sessions. */
 (() => {
   'use strict';
-  const BUILD = '2026.09.19-s3.22';
+  const BUILD = '2026.09.19-s3.23';
   const $ = (s) => document.querySelector(s);
   const app = $('#app'), hero = $('#hero'), portals = $('#portals'), dock = $('#dock');
   const root = document.documentElement;
@@ -163,7 +163,7 @@
 
   const dialogViews = {
     mic: () => `<div class="kicker">ПРОВЕРКА УСТРОЙСТВА</div><h2 id="dialogTitle">Проверим голос?</h2><p>Можно проверить, слышит ли тебя микрофон. Индикатор будет реагировать на настоящий звук.</p><p>Это не разговор с AI: AI ещё не подключён. Звук обрабатывается только на этом устройстве, не отправляется и не записывается. Проверка остановится через 30 секунд или при выходе.</p><div class="dialog-actions"><button class="rounded-action primary" id="allowMic">Включить микрофон</button><button class="rounded-action ghost" data-dismiss>Не сейчас</button></div>`,
-    profile: () => `<div class="kicker">ТВОЁ ПРОСТРАНСТВО</div><h2 id="dialogTitle">Настройки</h2><div class="settings-row"><span>Палитра</span><div class="palette"><button class="luna" data-theme="luna" aria-label="Палитра Luna" aria-pressed="false"></button><button class="moon" data-theme="moon" aria-label="Палитра Moon" aria-pressed="false"></button><button class="crimson" data-theme="crimson" aria-label="Палитра Crimson" aria-pressed="false"></button></div></div><label class="settings-row"><span>Меньше движения</span><input id="motionSetting" type="checkbox"></label><div class="settings-row"><span>Голос помощника</span><button id="s3ProfileVoice" class="text-link" style="color:#24474b">Выбрать голос</button></div><div class="settings-row"><span>Разговоры</span><button id="s3ProfileJournal" class="text-link" style="color:#24474b">Журнал разговоров</button></div><div class="settings-row"><span>Личный AI</span><button id="s2ProfileLogin" class="text-link" style="color:#24474b">Войти в аккаунт</button></div><p>Закрытый тест S2. Войти можно со своей учётной записью SEKKES AI. Пароль и история разговора на устройстве не сохраняются.</p><p class="hint">Сборка ${BUILD}. S2 · первый живой тест.<br>Голос и текст отправляются только после входа, согласия и твоего действия.</p>`,
+    profile: () => `<div class="kicker">ТВОЁ ПРОСТРАНСТВО</div><h2 id="dialogTitle">Настройки</h2><div class="settings-row"><span>Палитра</span><div class="palette"><button class="luna" data-theme="luna" aria-label="Палитра Luna" aria-pressed="false"></button><button class="moon" data-theme="moon" aria-label="Палитра Moon" aria-pressed="false"></button><button class="crimson" data-theme="crimson" aria-label="Палитра Crimson" aria-pressed="false"></button></div></div><label class="settings-row"><span>Меньше движения</span><input id="motionSetting" type="checkbox"></label><div class="settings-row"><span>Голос помощника</span><button id="s3ProfileVoice" class="text-link" style="color:#24474b">Выбрать голос</button></div><div class="settings-row"><span>Разговоры</span><button id="s3ProfileJournal" class="text-link" style="color:#24474b">Журнал разговоров</button></div><div class="settings-row"><span>Личный AI</span><button id="s2ProfileLogin" class="text-link" style="color:#24474b">Войти в аккаунт</button></div><p>Закрытый тест S2. Войти можно со своей учётной записью SEKKES AI. Пароль и история разговора на устройстве не сохраняются.</p><div class="settings-row"><span>Версия приложения</span><button id="s3RefreshApp" class="text-link" style="color:#24474b">Обновить приложение</button></div><p class="hint">Сборка ${BUILD}. S2 · первый живой тест.<br>Голос и текст отправляются только после входа, согласия и твоего действия.</p>`,
     game001: () => `<div class="kicker">GAME-001</div><h2 id="dialogTitle">Призрачный атлас</h2><p>Рабочее название первой игры. Маршрут: холл, Зеркало, Перекрёсток, Перспектива и завершение.</p><p>Здесь появятся выборы, последствия и возможность вернуться к сохранённой игре. Сейчас это карточка будущего игрового опыта, не готовая игра.</p><div class="dialog-actions"><button class="rounded-action primary" data-dismiss>Вернуться к каталогу</button></div>`,
     worldInfo: () => `<div class="kicker">LIVING WORLD</div><h2 id="dialogTitle">Своя жизнь.<br>Свои последствия.</h2><p>У мира будут отдельные события, состояние и память персонажей. Они не получают автоматически историю личного AI или записи психолога.</p><p>Автономный мир пока не запущен. Здесь показано его место в новом интерфейсе, без выдуманной истории событий.</p><div class="dialog-actions"><button class="rounded-action primary" data-dismiss>Вернуться в пространство</button></div>`,
     vr: () => `<div class="kicker">SEKKES / VR</div><h2 id="dialogTitle">Внутри опыта.</h2><p>Будущее пространство погружений: одному, вдвоём, группой или вместе со специалистом.</p><p>Не только смотреть — менять точку зрения, взаимодействовать и исследовать сцену. Сейчас VR-сессии ещё не доступны: сначала проверяются сценарии и устройство.</p><div class="dialog-actions"><button class="rounded-action primary" data-dismiss>Понятно</button></div>`,
@@ -178,6 +178,7 @@
     dialogContent.querySelectorAll('[data-dismiss]').forEach(b => b.addEventListener('click', () => dialog.close()));
     dialogContent.querySelectorAll('[data-theme]').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.theme)));
     if (name === 'profile') {
+      $('#s3RefreshApp').onclick=()=>refreshApplication();
       $('#s3ProfileJournal').onclick=()=>window.SekkesS2?.journalSettings();
       $('#s3ProfileVoice').onclick=()=>window.SekkesS2?.voiceSettings();
       $('#s2ProfileLogin').addEventListener('click',()=>{if(window.SekkesS2)window.SekkesS2.login();else notify('Подключение загружается.');});
@@ -240,6 +241,20 @@
 
   // Update only this app, only from its own version manifest, and never while a draft or interaction is active.
   function canReload() { return !window.SekkesS2?.dirty && !document.hidden && route === 'home' && !dialog.open && !draft.value.trim() && !mic && !micPending && !pointer; }
+  async function refreshApplication() {
+    if (window.SekkesS2?.busy || mic || micPending) { notify('Сначала заверши разговор или дождись ответа.'); return; }
+    if ((draft.value.trim() || window.SekkesS2?.dirty) && !confirm('Обновить приложение? Несохранённый текст и текущий контекст на экране будут сброшены. Может потребоваться повторный вход.')) return;
+    await checkUpdate();
+    if (window.SekkesS2?.busy || mic || micPending) return;
+    const url=new URL(location.href);url.searchParams.set('v',pendingVersion||BUILD);url.searchParams.set('refresh',String(Date.now()));
+    location.replace(url.href);
+  }
+  function showUpdateNotice() {
+    let banner=document.querySelector('#sekkesUpdateNotice');
+    if(!banner){banner=document.createElement('button');banner.id='sekkesUpdateNotice';banner.type='button';banner.style.cssText='position:fixed;bottom:90px;left:16px;right:16px;z-index:1000;padding:14px;border-radius:18px;background:#eaf4f1;color:#15333b';banner.onclick=refreshApplication;document.body.append(banner);}
+    banner.textContent='Доступно обновление SEKKES — установить';
+    const button=document.querySelector('#s3RefreshApp');if(button)button.textContent='Установить обновление';
+  }
   function maybeApplyUpdate() {
     if (!pendingVersion || !canReload()) return;
     clearTimeout(updateTimer);
@@ -265,7 +280,7 @@
       if (!response.ok) return;
       const info = await response.json();
       if (typeof info.version === 'string' && /^[0-9A-Za-z._-]{1,64}$/.test(info.version) && info.app === 'sekkes-v2' && info.version !== BUILD) {
-        pendingVersion = info.version; maybeApplyUpdate();
+        pendingVersion = info.version; showUpdateNotice(); maybeApplyUpdate();
       }
     } catch { /* Last working interface remains usable offline. */ }
     finally { clearTimeout(timeout); updateBusy = false; }

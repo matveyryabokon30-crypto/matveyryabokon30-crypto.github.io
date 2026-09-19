@@ -1,7 +1,7 @@
-import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.19-s3.22';
-import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.19-s3.22';
-import {VoicePicker} from './voice-picker.mjs?v=2026.09.19-s3.22';
-import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.19-s3.22';
+import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.19-s3.23';
+import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.19-s3.23';
+import {VoicePicker} from './voice-picker.mjs?v=2026.09.19-s3.23';
+import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.19-s3.23';
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
 const msg={VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер SEKKES недоступен.',AUTH_REQUIRED:'Войди в SEKKES.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Лимит теста остановил новый запрос.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
 let journalId=null,textBusy=false;
@@ -35,7 +35,7 @@ async function journalSettings(){
  if(textBusy)return note('Дождись ответа, затем открой журнал.');
  if(!await ensure('journal'))return;
  picker?.close();const epoch=api.authEpoch;
- view(title('Журнал разговоров')+'<p>Текстовые сообщения и ответы AI автоматически сохраняются в твоём аккаунте. Здесь можно просмотреть или скрыть разговор из списка. Скрытие не удаляет сообщения: они остаются в твоём аккаунте. Голосовые сессии пока не записываются.</p><button id="journalNew" class="rounded-action">Новый текстовый разговор</button><div id="journalList" aria-live="polite"></div><div id="journalDetail"></div>');
+ view(title('Журнал разговоров')+'<p class="hint">Автоматическое сохранение · версия 2026.09.19-s3.23</p><p>Текстовые сообщения и ответы AI автоматически сохраняются в твоём аккаунте. Здесь можно просмотреть или скрыть разговор из списка. Скрытие не удаляет сообщения: они остаются в твоём аккаунте. Голосовые сессии пока не записываются.</p><button id="journalNew" class="rounded-action">Новый текстовый разговор</button><div id="journalList" aria-live="polite"></div><div id="journalDetail"></div>');
  const list=$('#journalList'),detail=$('#journalDetail');
  $('#journalNew').onclick=()=>{if(textBusy)return;journalId=null;textHistory=[];$('#s3Transcript')?.remove();dialog.close();note('Начат новый текстовый разговор.');};
  let detailVersion=0;
