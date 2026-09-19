@@ -1,9 +1,9 @@
-/* One update coordinator. Never reload a recording, an upload or an unsaved form. */
+/* One update coordinator. Never reload a call, a recording, an upload or an unsaved form. */
 (function(g){
  'use strict';if(g.PablicusAutoUpdate||!('serviceWorker'in navigator))return;
  let registration=null,checking=false,lastCheck=0,changing=false,reloading=false,lastInput=Date.now(),newController=false;
  const monitored=new WeakSet(),scope=new URL('./',location.href).href;
- function ready(){const a=document.activeElement;return document.readyState==='complete'&&!document.hidden&&Date.now()-lastInput>2500&&!(a&&(a.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(a.tagName)))&&!g.PablicusUpdateGuards?.busy();}
+ function ready(){const a=document.activeElement;return document.readyState==='complete'&&!document.hidden&&Date.now()-lastInput>2500&&!(a&&(a.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(a.tagName)))&&!g.PablicusCallsActive?.()&&!g.PablicusUpdateGuards?.busy();}
  async function apply(){
   if(changing||reloading||!ready()||(!registration?.waiting&&!newController))return;changing=true;
   try{await g.PablicusUpdateGuards?.prepare();if(!ready())return;
