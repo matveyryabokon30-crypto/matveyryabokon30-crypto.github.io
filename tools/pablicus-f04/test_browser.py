@@ -45,8 +45,10 @@ with sync_playwright() as pw:
   ctx.close()
   # The real index.html, all application scripts and bundled Supabase SDK run here.
   # Only server HTTP responses are synthetic; no real OAuth provider or device-picker claim.
-  ctx=browser.new_context(service_workers='block');ctx.route_web_socket('**',lambda ws:ws.close());page=ctx.new_page();page.set_default_timeout(25000);errors=[];rpc=[]
+  ctx=browser.new_context(service_workers='block');ctx.route_web_socket('**',lambda ws:ws.close());page=ctx.new_page();page.set_default_timeout(25000);errors=[];rpc=[];traffic=[];network_failures=[];console_errors=[]
   page.on('pageerror',lambda e:errors.append(str(e)))
+  page.on('console',lambda m:console_errors.append(m.text) if m.type=='error' else None)
+  page.on('requestfailed',lambda r:network_failures.append({'path':urllib.parse.urlsplit(r.url).path,'failure':r.failure}))
   uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';sender={'id':'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','username':'fixture_sender','display_name':'Fixture Sender'}
   user={'id':uid,'aud':'authenticated','role':'authenticated','email':'fixture@example.test','app_metadata':{'provider':'email'},'user_metadata':{},'identities':[]}
   enc=lambda value:base64.urlsafe_b64encode(json.dumps(value).encode()).decode().rstrip('=')
@@ -54,6 +56,10 @@ with sync_playwright() as pw:
   session={'access_token':jwt,'refresh_token':'synthetic-refresh','expires_in':3600,'expires_at':int(time.time())+3600,'token_type':'bearer','user':user}
   def route(r):
    path=urllib.parse.urlsplit(r.request.url).path
+   traffic.append({'method':r.request.method,'path':path})
+   cors={'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'GET,POST,PUT,PATCH,DELETE,OPTIONS','Access-Control-Allow-Headers':r.request.headers.get('access-control-request-headers','authorization,apikey,content-type,x-client-info,x-supabase-api-version'),'Access-Control-Max-Age':'0'}
+   if r.request.method=='OPTIONS':
+    r.fulfill(status=204,headers=cors,body='');return
    if path.endswith('/token'):data=session
    elif path.endswith('/user'):data=user
    elif '/profiles' in path:data={**user,'username':'fixture_owner','display_name':'Fixture Owner','is_approved':True,'avatar_url':None}
@@ -64,20 +70,23 @@ with sync_playwright() as pw:
     else:data=[]
    elif '/functions/' in path:data={'ok':False}
    else:data=[]
-   r.fulfill(status=200,content_type='application/json',body=json.dumps(data))
+   r.fulfill(status=200,content_type='application/json',headers=cors,body=json.dumps(data))
   ctx.route('https://ctcoqgsztdtsazdiwcmd.supabase.co/**',route)
   page.goto(origin+'/#invite='+token);page.wait_for_function('window.PablicusDebug && window.PablicusController')
   page.wait_for_function("!!document.getElementById('personalInviteLoginHint')")
   check('full app guest boot keeps invite without authenticated RPC',not rpc and page.evaluate("!location.hash&&!!sessionStorage.getItem('pablicus:pending-invite')"))
   # Existing SDK sign-in flow, equivalent to password form; authenticate via actual SDK event.
-  sdk=page.evaluate('async(session)=>{const r=await PablicusController.getServices().client.auth.setSession(session);return{error:r.error?.message||null,userId:r.data.user?.id||null,hasSession:!!r.data.session}}',session)
+  print('STAGE fullapp SDK setSession',flush=True)
+  sdk=page.evaluate('async(session)=>{const r=await Promise.race([PablicusController.getServices().client.auth.setSession(session),new Promise((_,reject)=>setTimeout(()=>reject(Error("fixture SDK setSession exceeded 10s")),10000))]);return{error:r.error?.message||null,userId:r.data.user?.id||null,hasSession:!!r.data.session}}',session)
+  print('STAGE fullapp SDK returned '+json.dumps(sdk),flush=True)
   assert sdk['error'] is None and sdk['userId']==uid and sdk['hasSession'], 'Synthetic SDK session import failed: '+str(sdk)
   page.get_by_role('button',name='Принять приглашение',exact=True).wait_for()
   check('full app approved session resumes invitation inspect only',[(name,args.get('p_action')) for name,args in rpc if name=='pablicus_invites']==[('pablicus_invites','inspect')])
   check('full app does not create conversation during invite landing',not any(name=='start_direct_conversation' for name,_ in rpc))
   page.get_by_role('button',name='Принять приглашение',exact=True).click();page.get_by_role('button',name='Открыть чат',exact=True).wait_for()
   check('full app acceptance uses existing authenticated RPC without autochat',any(name=='pablicus_invites' and args.get('p_action')=='accept' for name,args in rpc) and not any(name=='start_direct_conversation' for name,_ in rpc))
-  page.evaluate("PablicusController.getServices().client.auth.signOut({scope:'local'})")
+  print('STAGE fullapp SDK signOut',flush=True)
+  page.evaluate("Promise.race([PablicusController.getServices().client.auth.signOut({scope:'local'}),new Promise((_,reject)=>setTimeout(()=>reject(Error('fixture SDK signOut exceeded 10s')),10000))])")
   page.wait_for_function("!document.querySelector('.personalInvites').open")
   check('full app signout closes invite and deletes pending capability',page.evaluate("!sessionStorage.getItem('pablicus:pending-invite')"))
   check('full app invitation flow has no JavaScript errors',not errors)
@@ -89,6 +98,7 @@ with sync_playwright() as pw:
   diagnostics={}
   try:diagnostics=page.evaluate("()=>({userId:window.PablicusDebug?.user||null,sessionUserId:window.PablicusController?.state()?.sessionUserId||null,loginError:document.getElementById('loginError')?.textContent||'',pendingInvite:!!sessionStorage.getItem('pablicus:pending-invite')})")
   except Exception:pass
+  if 'traffic' in locals():diagnostics.update({'traffic':traffic,'networkFailures':network_failures,'consoleErrors':console_errors})
   if 'rpc' in locals():diagnostics['rpcActions']=[{'name':name,'action':args.get('p_action')} for name,args in rpc]
   out.write_text(json.dumps({'engine':a.engine,'passed':len(checks),'failed':1,'checks':checks,'error':str(exc),'diagnostics':diagnostics},ensure_ascii=False,indent=2))
   print(json.dumps({'failure':str(exc),'diagnostics':diagnostics},ensure_ascii=False),flush=True)

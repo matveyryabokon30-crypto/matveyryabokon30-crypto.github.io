@@ -50,7 +50,11 @@ jobs:
           python -m pip show playwright > results/toolchain.txt
           uname -a >> results/toolchain.txt
       - name: Personal invite create, accept, revoke and account isolation
-        run: python tools/pablicus-f04/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+        run: |
+          python - <<'PYTEST'
+          import subprocess,sys
+          subprocess.run([sys.executable,'-u','tools/pablicus-f04/test_browser.py','--root','vision-talk/pablicus','--engine','${{ matrix.engine }}'],check=True,timeout=150)
+          PYTEST
       - name: Run all strict tests with bounded execution and retained traces
         run: python tools/pablicus-release/run_bounded.py --engine ${{ matrix.engine }} --seconds 150
       - name: Browser subscription lifecycle with native locks and storage
