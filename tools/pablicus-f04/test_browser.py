@@ -46,7 +46,7 @@ with sync_playwright() as pw:
   ctx.close()
   # The real index.html, all application scripts and bundled Supabase SDK run here.
   # Only server HTTP responses are synthetic; no real OAuth provider or device-picker claim.
-  ctx=browser.new_context(service_workers='block');ctx.route_web_socket('**',lambda ws:ws.close());page=ctx.new_page();page.set_default_timeout(25000);errors=[];rpc=[];traffic=[];network_failures=[];console_errors=[]
+  ctx=browser.new_context(service_workers='block');ctx.route_web_socket('**',lambda ws:None);page=ctx.new_page();page.set_default_timeout(25000);errors=[];rpc=[];traffic=[];network_failures=[];console_errors=[]
   page.on('pageerror',lambda e:(errors.append(str(e)),print('PAGE ERROR '+str(e),flush=True)))
   page.on('console',lambda m:(console_errors.append(m.text),print('CONSOLE ERROR '+m.text,flush=True)) if m.type=='error' else print(m.text,flush=True) if m.text.startswith('F04_PHASE') else None)
   page.on('requestfailed',lambda r:network_failures.append({'path':urllib.parse.urlsplit(r.url).path,'failure':r.failure}))
@@ -77,7 +77,6 @@ with sync_playwright() as pw:
   page.wait_for_function("!!document.getElementById('personalInviteLoginHint')")
   check('full app guest boot keeps invite without authenticated RPC',not rpc and page.evaluate("!location.hash&&!!sessionStorage.getItem('pablicus:pending-invite')"))
   # Existing SDK sign-in flow, equivalent to password form; authenticate via actual SDK event.
-  page.evaluate("""()=>{for(const [name,methods] of Object.entries({PablicusAvatarStoriesUI:['prepareHome','flushHome'],PablicusStoriesCore:['flush'],PablicusShell:['authentication','project'],PablicusHomeData:['mark']})){const original=window[name];if(!original)continue;const wrapped=new Map();window[name]=new Proxy({...original},{get(_target,key){const value=Reflect.get(original,key,original);if(typeof value!=='function'||!methods.includes(key))return value;if(!wrapped.has(key))wrapped.set(key,function(...args){const label=name+'.'+key+(key==='mark'?':'+String(args[0]):'');console.log('F04_PHASE ENTER '+label);let result;try{result=Reflect.apply(value,original,args);}catch(e){console.log('F04_PHASE THROW '+label);throw e;}if(result&&typeof result.then==='function')result.then(()=>console.log('F04_PHASE EXIT '+label),()=>console.log('F04_PHASE REJECT '+label));else console.log('F04_PHASE EXIT '+label);return result;});return wrapped.get(key);}});}}""")
   print('STAGE fullapp SDK setSession',flush=True)
   sdk=page.evaluate('async(session)=>{const r=await Promise.race([PablicusController.getServices().client.auth.setSession(session),new Promise((_,reject)=>setTimeout(()=>reject(Error("fixture SDK setSession exceeded 10s")),10000))]);return{error:r.error?.message||null,userId:r.data.user?.id||null,hasSession:!!r.data.session}}',session)
   print('STAGE fullapp SDK returned '+json.dumps(sdk),flush=True)
