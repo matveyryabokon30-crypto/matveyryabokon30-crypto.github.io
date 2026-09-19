@@ -21,12 +21,13 @@ with sync_playwright() as pw:
  try:
   page.goto(origin+'/f06-probe.html?call=dddddddd-dddd-4ddd-8ddd-dddddddddddd&recipient=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
   check('call click scrubbed before authentication',page.evaluate("location.search===''"))
-  page.evaluate("""window.asked=0;window.tracks=[];window.contexts=[];window.errors=[];window.connected={a:false,b:false};window.streams={};window.animation=[];
-  Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async function(opts){asked++;const audio=new AudioContext();contexts.push(audio);await audio.resume();const oscillator=audio.createOscillator(),destination=audio.createMediaStreamDestination();oscillator.connect(destination);oscillator.start();const stream=new MediaStream(destination.stream.getTracks());if(opts.video){const canvas=document.createElement('canvas');canvas.width=160;canvas.height=120;const c=canvas.getContext('2d');let count=0;const paint=()=>{c.fillStyle=count++%2?'#0B3D91':'#7FE7D6';c.fillRect(0,0,160,120);};paint();animation.push(setInterval(paint,50));for(const t of canvas.captureStream(10).getTracks())stream.addTrack(t);}tracks.push(...stream.getTracks());return stream;}});
-  const relay=(target,s)=>{setTimeout(()=>void window[target].accept(s,{video:true}).catch(e=>errors.push(String(e))),0);};
+  page.evaluate("""window.asked=0;window.tracks=[];window.contexts=[];window.errors=[];window.connected={a:false,b:false};window.streams={};window.animation=[];window.prepared=[];window.fixtureGeneration=1;
+  window.makeFixture=async function(){const audio=new AudioContext();contexts.push(audio);await audio.resume();const oscillator=audio.createOscillator(),destination=audio.createMediaStreamDestination();oscillator.connect(destination);oscillator.start();const stream=new MediaStream(destination.stream.getTracks());{const canvas=document.createElement('canvas');canvas.width=160;canvas.height=120;const c=canvas.getContext('2d');let count=0;const paint=()=>{c.fillStyle=count++%2?'#0B3D91':'#7FE7D6';c.fillRect(0,0,160,120);};paint();animation.push(setInterval(paint,50));for(const t of canvas.captureStream(10).getTracks())stream.addTrack(t);}tracks.push(...stream.getTracks());return stream;};
+  Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async function(){asked++;if(!prepared.length)throw Error('fixture-stream-exhausted');return prepared.shift();}});
+  const relay=(target,s)=>{setTimeout(()=>void window[target].accept({...s,generation:fixtureGeneration},{video:true}).catch(e=>errors.push(String(e))),0);};
   window.a=PablicusCalls.create({onSignal:s=>relay('b',s),onState:s=>{connected.a=s==='connected';},onRemoteStream:s=>streams.a=s});
   window.b=PablicusCalls.create({onSignal:s=>relay('a',s),onState:s=>{connected.b=s==='connected';},onRemoteStream:s=>{streams.b=s;document.getElementById('remote').srcObject=s;}});
-  document.getElementById('begin').onclick=()=>void a.start({video:true}).catch(e=>errors.push(String(e)));""")
+  document.getElementById('begin').onclick=()=>{const first=makeFixture(),second=makeFixture();void Promise.all([first,second]).then(values=>{prepared=values;return a.start({video:true});}).catch(e=>errors.push(String(e)));};void 0;""")
   page.locator('#begin').click();page.wait_for_function('connected.a&&connected.b',timeout=30000)
   print('RTC diagnostics '+json.dumps(page.evaluate('({asked,errors,connected,trackKinds:tracks.map(t=>t.kind)})')),flush=True)
   check('actual paired RTCPeerConnection connects with synthetic audio/video',page.evaluate('asked===2&&errors.length===0'))
@@ -36,7 +37,7 @@ with sync_playwright() as pw:
   check('RTP audio/video bytes reach receiver',True)
   page.evaluate('a.setMuted(true)');check('mute disables local audio track',page.evaluate('a.localStream.getAudioTracks().every(t=>!t.enabled)'))
   page.evaluate('a.setVideo(false)');check('camera toggle disables local video track',page.evaluate('a.localStream.getVideoTracks().every(t=>!t.enabled)'))
-  page.evaluate('a.setVideo(true);a.setMuted(false)');check('caller ICE restart requested',page.evaluate('a.restart()'))
+  page.evaluate('a.setVideo(true);a.setMuted(false)');check('caller ICE restart requested',page.evaluate('fixtureGeneration=2;a.restart()'))
   page.wait_for_function('connected.a&&connected.b&&errors.length===0',timeout=20000)
   check('receiver cannot initiate competing ICE restart',page.evaluate('b.restart()') is False)
   page.evaluate('a.hangup();b.hangup();animation.forEach(clearInterval);contexts.forEach(c=>c.close())')
@@ -52,8 +53,10 @@ with sync_playwright() as pw:
   if not a.output:
    pathlib.Path('results').mkdir(exist_ok=True);a.output='results/f06-'+a.engine+'.json'
   if a.output:pathlib.Path(a.output).write_text(json.dumps({'engine':a.engine,'checks':checks,'count':len(checks),'result':'PASS','limits':'Loopback synthetic media; no production TURN or physical iPhone/background evidence.'},ensure_ascii=False,indent=2))
- except Exception:
-  try:print('RTC failure diagnostics '+json.dumps(page.evaluate('({asked:window.asked,errors:window.errors,connected:window.connected})')),flush=True)
+ except Exception as error:
+  diagnostic={}
+  try:diagnostic=page.evaluate('({asked:window.asked,errors:window.errors,connected:window.connected})');print('RTC failure diagnostics '+json.dumps(diagnostic),flush=True)
   except Exception:pass
+  output=pathlib.Path(a.output or ('results/f06-'+a.engine+'.json'));output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps({'result':'FAIL','engine':a.engine,'checks':checks,'diagnostic':diagnostic,'error':str(error)[:1000]},ensure_ascii=False,indent=2))
   raise
  finally:ctx.close();browser.close();server.shutdown()

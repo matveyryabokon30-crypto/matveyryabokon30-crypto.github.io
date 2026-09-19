@@ -29,7 +29,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p baseline results
-          git archive a771db2d3d9d66c4d658aaac65c71394672a2fc4 vision-talk/pablicus | tar -x -C baseline
+          git archive --output=baseline.tar a771db2d3d9d66c4d658aaac65c71394672a2fc4 vision-talk/pablicus
+          tar -xf baseline.tar -C baseline
           node --check vision-talk/pablicus/push-notifications.js
           python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
           python tools/pablicus-release/test_release.py 2>&1 | tee results/unit.txt
