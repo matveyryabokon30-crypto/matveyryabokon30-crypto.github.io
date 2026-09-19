@@ -1,10 +1,10 @@
 // Isolated one-minute pilot. Server observes the same WebRTC session and persists usage.
-import{S3Api,S3Error}from'./s3-api.mjs';
-import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs';
-import {VoicePicker} from './voice-picker.mjs';
-import {LiveSessionController} from './controller.mjs';
-import {WebRTCTransport} from './webrtc.mjs';
-import {StageBroker} from './stage-broker.mjs';
+import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.19-p23-stage.2';
+import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.19-p23-stage.2';
+import {VoicePicker} from './voice-picker.mjs?v=2026.09.19-p23-stage.2';
+import {LiveSessionController} from './controller.mjs?v=2026.09.19-p23-stage.2';
+import {WebRTCTransport} from './webrtc.mjs?v=2026.09.19-p23-stage.2';
+import {StageBroker} from './stage-broker.mjs?v=2026.09.19-p23-stage.2';
 let controller;
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
 const msg={SETUP_REQUIRED:'Сервер SEKKES недоступен.',AUTH_REQUIRED:'Войди в SEKKES.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Лимит теста остановил новый запрос.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.',LIVE_BUSY:'Предыдущий разговор ещё завершается.',BUDGET_STOP:'Короткие проверки на сегодня завершены.',STAGING_DISABLED:'Время этой тестовой проверки истекло.',COST_RECONCILIATION_REQUIRED:'Нужно сверить расход перед следующим разговором.',VOICE_PROFILE_CHANGED:'Выбор голоса изменился. Открой настройки ещё раз.',SESSION_UNAVAILABLE:'Не удалось подключить разговор. Попробуй позже.'};
@@ -50,7 +50,7 @@ function liveState(s){
  document.body.classList.toggle('s3-live',live);$('#s3EndLive').hidden=!live;
  $('#micButton').setAttribute('aria-label',live?'Завершить голосовой разговор':'Начать голосовой разговор');
  const labels={requesting_permission:'Разреши доступ к микрофону',connecting:'Подключаю голос…',ready:'Голосовой разговор · до 1 минуты',reconnecting:'Восстанавливаю связь…',closing:'Завершаю разговор…',closed:'Разговор завершён · расход сохранён',uncertain:'Звук остановлен · завершение проверяется'};
- status(labels[s.state]||(logged()?'Готов к разговору':'Войди в SEKKES'));
+ status(s.state==='closed'?(s.closeUncertain?'Звук остановлен · завершение проверяется':controller.context?.closeResult?.usageConfirmed?'Разговор завершён · расход сохранён':'Готов к разговору'):(labels[s.state]||(logged()?'Готов к разговору':'Войди в SEKKES')));
  if(s.audioBlocked)note('Нажми «Включить звук», чтобы услышать помощника.');
  $('#s3ResumeAudio').hidden=!controller.audioBlocked;
 }
