@@ -21,7 +21,7 @@
   const status=el('p','peopleStatus');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
   const results=el('div','peopleResults');results.setAttribute('aria-label','Найденные люди');
   const hint=el('p','peopleHint','Ссылкой на себя можно поделиться из профиля. Она открывает именно ваш аккаунт, даже если имена совпадают.');
-  form.append(label,input);panel.append(header,form,status,results,hint);document.body.append(panel);
+  form.append(label,input);panel.append(header,form,status,results,hint);if(options.onDiscover){const discover=el('button','setting','Найти знакомых по контактам');discover.id='openContactDiscovery';discover.type='button';discover.onclick=()=>{close();options.onDiscover();};panel.append(discover);}document.body.append(panel);
   let generation=0,timer=0,opening=false,previousFocus=null,destroyed=false;
   function busy(value){results.setAttribute('aria-busy',String(value));for(const b of results.querySelectorAll('button'))b.disabled=value;}
   function error(e){status.textContent=e?.message||'Поиск не загрузился. Попробуйте ещё раз.';options.onError?.(e);}
