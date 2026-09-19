@@ -1,10 +1,10 @@
 // Isolated one-minute pilot. Server observes the same WebRTC session and persists usage.
-import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.19-p23-stage.5';
-import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.19-p23-stage.5';
-import {VoicePicker} from './voice-picker.mjs?v=2026.09.19-p23-stage.5';
-import {LiveSessionController} from './controller.mjs?v=2026.09.19-p23-stage.5';
-import {WebRTCTransport} from './webrtc.mjs?v=2026.09.19-p23-stage.5';
-import {StageBroker} from './stage-broker.mjs?v=2026.09.19-p23-stage.5';
+import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.19-p23-stage.6';
+import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.19-p23-stage.6';
+import {VoicePicker} from './voice-picker.mjs?v=2026.09.19-p23-stage.6';
+import {LiveSessionController} from './controller.mjs?v=2026.09.19-p23-stage.6';
+import {WebRTCTransport} from './webrtc.mjs?v=2026.09.19-p23-stage.6';
+import {StageBroker} from './stage-broker.mjs?v=2026.09.19-p23-stage.6';
 let controller;
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
 const msg={SETUP_REQUIRED:'Сервер SEKKES недоступен.',AUTH_REQUIRED:'Войди в SEKKES.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Лимит теста остановил новый запрос.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.',LIVE_BUSY:'Предыдущий разговор ещё завершается.',BUDGET_STOP:'Короткие проверки на сегодня завершены.',STAGING_DISABLED:'Время этой тестовой проверки истекло.',COST_RECONCILIATION_REQUIRED:'Нужно сверить расход перед следующим разговором.',VOICE_PROFILE_CHANGED:'Выбор голоса изменился. Открой настройки ещё раз.',SESSION_UNAVAILABLE:'Не удалось подключить разговор. Попробуй позже.'};
@@ -55,7 +55,7 @@ function liveState(s){
  $('#s3ResumeAudio').hidden=!controller.audioBlocked;
 }
 
-function mount(){const tools=document.createElement('div');tools.className='s3-tools';tools.innerHTML='<button id="s3LoginButton" class="s3-login">Войти в SEKKES</button><button id="s3VoiceButton" class="s3-login">Выбрать голос</button><button id="s3ResumeAudio" class="s3-login" hidden>Включить звук</button><button id="s3EndLive" class="s3-end" hidden>Завершить голосовой разговор</button>';$('#aiFull').append(tools);$('#s3LoginButton').onclick=()=>logged()?logout():login();$('#s3VoiceButton').onclick=voicePicker;$('#s3EndLive').onclick=()=>endLive();$('#s3ResumeAudio').onclick=async()=>{if(await controller.resumeAudio())$('#s3ResumeAudio').hidden=true;}}
+function mount(){const tools=document.createElement('div');tools.className='s3-tools';tools.innerHTML='<button id="s3LoginButton" class="s3-login">Войти в SEKKES</button><button id="s3ResumeAudio" class="s3-login" hidden>Включить звук</button><button id="s3EndLive" class="s3-end" hidden>Завершить голосовой разговор</button>';$('#aiFull').append(tools);$('#s3LoginButton').onclick=()=>logged()?logout():login();$('#s3EndLive').onclick=()=>endLive();$('#s3ResumeAudio').onclick=async()=>{if(await controller.resumeAudio())$('#s3ResumeAudio').hidden=true;}}
 mount();
 window.SekkesS2={toggleMic:startLive,sendText,interrupt:()=>endLive(),end:logout,login,voiceSettings:voicePicker,get busy(){return Boolean(live)},get dirty(){return Boolean(live||draft.value.trim()||textHistory.length||loginBusy)}};
 addEventListener('sekkes:route',e=>{if(!['ai','text'].includes(e.detail.route)){picker?.close();if(live)endLive()}});

@@ -1,5 +1,5 @@
-import {assessVoice} from './registry-foundation.mjs?v=2026.09.19-p23-stage.5';
-import {StaticVoicePreview} from './preview-player.mjs?v=2026.09.19-p23-stage.5';
+import {assessVoice} from './registry-foundation.mjs?v=2026.09.19-p23-stage.6';
+import {StaticVoicePreview} from './preview-player.mjs?v=2026.09.19-p23-stage.6';
 
 const errors={AUDIO_GESTURE_REQUIRED:'Нажми «Послушать» ещё раз, чтобы включить звук.',AUDIO_ASSET_ERROR:'Не удалось загрузить пример. Попробуй ещё раз.',AUDIO_LOAD_TIMEOUT:'Пример загружается слишком долго. Попробуй ещё раз.'};
 export class VoicePicker {
@@ -11,19 +11,27 @@ export class VoicePicker {
   open() {
     if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
     this.close();this.opened=true;
-    const heading=document.createElement('h2');heading.textContent='Голос помощника';heading.id='dialogTitle';
+    const heading=document.createElement('h2');heading.textContent='Выбрать голос';heading.id='dialogTitle';
     const intro=document.createElement('p');intro.textContent='Женский голос по умолчанию — Bossa, мужской — Vesper. Здесь можно выбрать другой голос для следующих разговоров.';
-    this.list=document.createElement('div');this.list.className='voice-list';
+    this.activeGender=this.voices.find(v=>v.id===this.preferences.selected)?.gender||'female';
+    this.tabs=document.createElement('div');this.tabs.className='voice-tabs';this.tabs.setAttribute('role','tablist');this.tabs.setAttribute('aria-label','Тип голоса');
+    for(const [gender,label] of [['female','Женский'],['male','Мужской']]){
+      const tab=document.createElement('button');tab.type='button';tab.textContent=label;tab.dataset.gender=gender;tab.id='voice-tab-'+gender;tab.setAttribute('role','tab');tab.setAttribute('aria-controls','voice-options');
+      tab.onclick=()=>{this.stopPreview();this.activeGender=gender;this.render();};
+      tab.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'female':e.key==='End'?'male':this.activeGender==='female'?'male':'female';this.tabs.querySelector('[data-gender="'+next+'"]').click();this.tabs.querySelector('[data-gender="'+next+'"]').focus();}};
+      this.tabs.append(tab);
+    }
+    this.list=document.createElement('div');this.list.className='voice-list';this.list.id='voice-options';this.list.setAttribute('role','tabpanel');
     this.message=document.createElement('p');this.message.setAttribute('role','status');this.message.setAttribute('aria-live','polite');
-    this.root.replaceChildren(heading,intro,this.list,this.message);
+    this.root.replaceChildren(heading,intro,this.tabs,this.list,this.message);
     this.render();
   }
   render() {
     if(!this.opened)return;
     this.list.replaceChildren();
-    let group=null;
-    for(const voice of this.voices) {
-      if(voice.gender && voice.gender!==group){group=voice.gender;const heading=document.createElement('h3');heading.textContent=group==='female'?'Женские голоса':'Мужские голоса';this.list.append(heading);}
+    for(const tab of this.tabs.children){const active=tab.dataset.gender===this.activeGender;tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;}
+    this.list.setAttribute('aria-labelledby','voice-tab-'+this.activeGender);
+    for(const voice of this.voices.filter(v=>v.gender===this.activeGender)) {
       const ready=voice.enabled===true&&assessVoice(voice).length===0;
       const selected=voice.id===this.preferences.selected;
       const row=document.createElement('div');row.className='voice-choice'+(selected?' selected':'');
