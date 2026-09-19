@@ -1,4 +1,4 @@
-import {normalizePreference} from './registry-foundation.mjs?v=2026.09.19-s3.15';
+import {normalizePreference} from './registry-foundation.mjs?v=2026.09.19-s3.16';
 
 // A voice preference is user-editable data, never an authorization claim.
 export class VoicePreferences {
