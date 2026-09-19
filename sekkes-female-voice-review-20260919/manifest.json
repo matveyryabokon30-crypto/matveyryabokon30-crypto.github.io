@@ -1,0 +1,38 @@
+[
+  {
+    "id": "gleam",
+    "model": "gpt-live-1",
+    "origin": "live_generated",
+    "language_requested": "ru",
+    "owner_review": "pending",
+    "duration": 14.16,
+    "rms": 1797.945058177248,
+    "source_wav_sha256": "7680020a0b244b565aa3e435725b85cf8d43ec27b09d0751d980a157aea246a2",
+    "mp3_sha256": "ee2b5c22a0cd37c5725e145bd1d4e63f9b3f0dd3d880cedd57c034fc906d287b",
+    "bytes": 85485
+  },
+  {
+    "id": "bossa",
+    "model": "gpt-live-1",
+    "origin": "live_generated",
+    "language_requested": "ru",
+    "owner_review": "pending",
+    "duration": 13.94,
+    "rms": 1751.641320423298,
+    "source_wav_sha256": "404dba9a688f46da1175e4bb489311ac9403c5e6a239de5b90b9c5393451ea68",
+    "mp3_sha256": "67be6392f04bb063c23be0477eb8e18874fa5e85fb7ba27df1336eab685983c6",
+    "bytes": 84189
+  },
+  {
+    "id": "delta",
+    "model": "gpt-live-1",
+    "origin": "live_generated",
+    "language_requested": "ru",
+    "owner_review": "pending",
+    "duration": 14.04,
+    "rms": 902.1429612603748,
+    "source_wav_sha256": "056cc97e30073bb5dc5cd3fcc1e80a6966408a4b0f8d8e56c76d3d1f1e678c04",
+    "mp3_sha256": "ac6c3005ff2ddeb9e8e4f0ddcbe6bef1eda7c90708cd92567ec5f6772d544f03",
+    "bytes": 84765
+  }
+]

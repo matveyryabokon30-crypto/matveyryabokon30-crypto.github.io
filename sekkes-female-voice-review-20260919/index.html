@@ -1,0 +1,21 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0a3446"><title>SEKKES — женские голоса</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#0a3446;color:#19353d;font:18px/1.5 system-ui,-apple-system,sans-serif;font-weight:300}main{max-width:700px;margin:36px auto;padding:30px 24px;background:#f7faf9;border-radius:32px}small{letter-spacing:.22em;color:#75878b}h1{font-size:38px;font-weight:300;line-height:1.1;letter-spacing:-.04em}p{color:#60777e}.voice{border:1px solid #c4d4d7;border-radius:22px;padding:20px;margin:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}.name{font-size:23px}button{border:0;border-radius:30px;background:#193d47;color:white;font:inherit;font-weight:400;min-height:48px;padding:12px 20px;min-width:160px;cursor:pointer}button:focus-visible{outline:3px solid #81d9e4;outline-offset:4px}.note{font-size:15px}#status{min-height:3em;font-size:16px}a{color:inherit}@media(max-width:500px){main{margin:16px 10px;padding:28px 20px}h1{font-size:34px}.voice{padding:16px}.name{font-size:21px}button{min-width:146px;padding:12px 16px}}</style></head>
+<body><main><small>SEKKES</small><h1>Выбираем женский голос</h1><p>Три новых примера на русском языке. Сравни акцент, тембр и естественность речи. Напиши в чате, какой вариант тебе подходит.</p>
+<div class="voice"><span class="name">Gleam</span><button type="button" data-voice="gleam" aria-label="Послушать Gleam">▶ Послушать</button></div>
+<div class="voice"><span class="name">Bossa</span><button type="button" data-voice="bossa" aria-label="Послушать Bossa">▶ Послушать</button></div>
+<div class="voice"><span class="name">Delta</span><button type="button" data-voice="delta" aria-label="Послушать Delta">▶ Послушать</button></div>
+<p id="status" role="status" aria-live="polite"></p><p class="note">Из мужских оставляем Echo и Vesper. Сейчас предпочтительный — Vesper.</p><p class="note">Голоса синтетические. Это готовые записи: прослушивание не включает микрофон.</p></main>
+<script type="module">
+const buttons=[...document.querySelectorAll('[data-voice]')],status=document.querySelector('#status');let active=null,ticket=0,timer;
+function stop(){ticket++;clearTimeout(timer);if(active){active.audio.pause();active.audio.removeAttribute('src');active.audio.load();active=null;}for(const b of buttons)b.textContent='▶ Послушать';}
+for(const button of buttons)button.onclick=()=>{
+ const id=button.dataset.voice;if(active?.id===id){stop();status.textContent='Прослушивание остановлено.';return;}
+ stop();const current=ticket,audio=new Audio();active={id,audio};audio.preload='none';audio.playsInline=true;audio.src=new URL(id+'.mp3',location.href).href;
+ const failure=()=>{if(current!==ticket)return;stop();status.textContent='Не удалось включить пример. Нажми «Послушать» ещё раз.';};
+ audio.onplaying=()=>{if(current===ticket){clearTimeout(timer);button.textContent='■ Остановить';status.textContent='Сейчас звучит '+id.charAt(0).toUpperCase()+id.slice(1);}};
+ audio.onended=()=>{if(current===ticket){stop();status.textContent='Пример завершён. Можно послушать другой голос.';}};
+ audio.onerror=failure;button.textContent='Загрузка…';status.textContent='';timer=setTimeout(failure,15000);
+ try{audio.play().catch(failure);}catch{failure();}
+};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});addEventListener('pagehide',stop);
+</script></body></html>
