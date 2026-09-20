@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>SEKKES stop regression</title><body><h1>Browser timer / Stop regression</h1><pre id="result">Running…</pre><script type="module">
+import {VoiceIdentityHandshake} from './assets/voice-identity.mjs?v=2026.09.20-ui.8.6';
+const results=[];
+const old={clearTimer:window.clearTimeout};try{old.clearTimer(0);results.push('Legacy timer receiver accepted by this browser')}catch(e){results.push('Legacy cleanup reproduced: '+e.name+' '+e.message)}
+try{const h=new VoiceIdentityHandshake({send(){},instruction:'QA'});h.receive({type:'session.started'});h.dispose();results.push('PASS: actual browser timer start and cleanup')}catch(e){results.push('FAIL: '+e.message)}
+document.querySelector('#result').textContent=results.join('\n');
+</script></body></html>
