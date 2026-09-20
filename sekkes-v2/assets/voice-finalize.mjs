@@ -1,5 +1,5 @@
 /** Keep receiving final recording/usage events before releasing WebRTC. */
-export function prepareFinalization({dc,stream,audio},timeoutMs=18000){
+export function prepareFinalization({dc,stream,audio},timeoutMs=3000){
  let resolve,closed=false,finishing=null,timer;
  const done=new Promise(r=>resolve=r);
  return {
