@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "release": "UI-H2",
-  "build_id": "git:c355468066179650a4a00f6e08326e1dfac1f44b",
-  "source_sha": "c355468066179650a4a00f6e08326e1dfac1f44b",
-  "worker_version": "pablicus-shell-c355468066179650a4a00f6e08326e1dfac1f44b",
+  "release": "UI-H3",
+  "build_id": "git:7bb6002f587a919e46172836304ca080165dc1b2",
+  "source_sha": "7bb6002f587a919e46172836304ca080165dc1b2",
+  "worker_version": "pablicus-shell-7bb6002f587a919e46172836304ca080165dc1b2",
   "assets": {
-    "./": "d50712f77358724a80cecb1ddf3a9690261e67f9eefc37171295e1f016c92182",
+    "./": "bbf0d02929ac83c0792eb930c693b50ac1443c924a1a52bf5a5383e27da2f8ac",
     "ai-client.js": "7ae0268b2fb428cdde39de01d8cb49c0e92b7175d7a61ac46617cb15cfd4e3f9",
     "app-controller.js": "e8d37eb4431733211c61bb50b3ccc2529ef230d9b0d89b7459710d8520082148",
     "app-shell.js": "82a40533678b1377e486c2bee30afbe053585cd7aa36a71b5d7a943c8627763a",
@@ -31,7 +31,7 @@
     "auth-local.js": "bb9ce69cdc097856b1b0ce6f9466b4abb34de63942ffcabfa953aa0dd811df97",
     "auto-update.js": "f9a58409dd8a3bf1837de29085737ac95c8aad2e91c8ced9c06118d2e32b0a11",
     "avatar-ring-system.css": "6a43b486f18229af3c049598c9e018d84bf85197786ee1fb58a3cd79caff7f19",
-    "avatar-rings.css": "969264c8aa4579b86a001e1a89c8208aa06484f2fcb35a2892b717e94ac18bc4",
+    "avatar-rings.css": "1d6fea659fce5f00b924d08a249e4913128a77af934163c3a8dd5ac7422d3911",
     "avatar-stories.js": "170ed158eb67aa083bc0756c83ce1ce0f47fb196d4a5bd779d5f64ea0c8b14f3",
     "bot-chat-r2.js": "262f9ca4b97554d3892735390f82d5309de895600f4e0e91bf08f691afdff2dd",
     "bot-factory.css": "f31cb1e3a426d24640d130602bc4d5911b378963efa7e1e8423d157cbf176811",
@@ -78,7 +78,7 @@
     "icons-r2.js": "1d034c41aecb366eda9c847555159f0bfbcd62115909489dea41542bac5ee482",
     "inbox-monitor.css": "489e0532490d7b7f0bd09b3ac372945e6de5af70d258fe0cbe613f701926d581",
     "inbox-monitor.js": "947c478af0cac109bcda30d98b6634f554e58ddcfb5d5eb436820e89d0e5f7b6",
-    "index.html": "d50712f77358724a80cecb1ddf3a9690261e67f9eefc37171295e1f016c92182",
+    "index.html": "bbf0d02929ac83c0792eb930c693b50ac1443c924a1a52bf5a5383e27da2f8ac",
     "joined-notifications.css": "d123b8b53a7331bf1752419cd357cf13b3cd20b5ec42059843ea35e4f2464f47",
     "joined-notifications.js": "cd762bf2106316ccdd14d2afd4334c5825577b304c41890a2e1b199c6e239cf6",
     "manifest.webmanifest": "2f88a98181838f256503f0245d7a7a4afb45615219eea2bf75758f131540415b",
@@ -112,7 +112,7 @@
     "public-passkey.js": "5bd310e0433e7b34bfecf726e332f15499ba4a8d478d3ddd88885d9bc42af238",
     "public-ui-foundation.css": "5bea6c13b2375948b0dff2c1885f672413989d9e78a29b4179cabecb602d1020",
     "push-notifications.js": "2bb01fd1ed2a6550e96f63f4458d580f332363689a6606da839326dd8569f37b",
-    "release-info.js": "d521284c6abd557671fb54a9540445bc4a430fc7545589d0d144fb4e494f109c",
+    "release-info.js": "18a06c1169f11a5c80ea20b1ca0e9c014db69e436a28ba0808061ed95bf4a107",
     "rich-composer.css": "a3b8dcc64a2525b92f2911ed7f56c438a216e8952c05c3b29d3dcd796f6c5870",
     "rich-composer.js": "c4c687b034eeda22b7e686f3226309959a95acd4dd0b6170ffd36f9dc14f9b76",
     "rich-message.css": "0876004edd7309ae4b59665c99b3b68d7d9875976d03cf47a757aeea0f699683",
@@ -138,6 +138,6 @@
     "workspace-quick.js": "8d99edeaf282d549eef9ac60554de13a6e4def1c6343945a010810920bd7a0ce",
     "writing-surface.css": "893788a7b0b0418eb900c084cd462517d85cb47de09e2b88d794074fcf33c280"
   },
-  "sw_sha256": "9318cab478b8daba3c773928b2ab77d8abee45bbf6030109f9121bad488a86fb",
+  "sw_sha256": "bb89cf42154904786a345b7746235939a1b7c4a805c31f28450d5ee1a8ad3cdc",
   "push_sha256": "0dc797353b354f8dcc56d8a2b3bc48f30e8049754799e4c5b63f247701e3efa3"
 }
