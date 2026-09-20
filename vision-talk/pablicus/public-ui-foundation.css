@@ -102,3 +102,10 @@
 #app .row .richMessage .richMediaGallery .richVideo,#app .row .richMessage .richMediaGallery .richImage{width:100%;height:100%;object-fit:cover;border-radius:0}
 #app .row .richMessage>.richMedia-image,#app .row .richMessage>.richMedia-video{max-height:360px;border-radius:16px!important;overflow:hidden}
 #app .row .messageImage{height:auto;max-height:360px;object-fit:contain;border-radius:16px}
+
+/* Single media follows the decoded source dimensions, never a forced landscape crop. */
+#app .row .richMessage>.richMedia-image.richImageReady{display:block;aspect-ratio:auto;max-height:420px}
+#app .row .richMessage>.richMedia-image.richImageReady>.richImage{position:static;display:block;width:100%;height:auto;max-height:420px;object-fit:contain}
+#app .row .richMessage>.richMedia-video{aspect-ratio:var(--rich-image-ratio,1.333333);max-height:420px}
+#app .row .richMessage>.richMedia-video>.richVideo{object-fit:contain}
+#app .row .messageImage{width:100%;height:auto;max-height:420px;object-fit:contain}
