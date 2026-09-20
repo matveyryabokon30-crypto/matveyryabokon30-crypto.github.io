@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ru" data-build="2026.09.20-ui.4" data-theme="dark">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071019"><meta name="referrer" content="no-referrer"><meta name="description" content="SEKKES — preview новой оболочки"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="assets/ui/tokens.css"><link rel="stylesheet" href="assets/ui/app.css"><title>SEKKES</title></head>
+<body>
+<div id="shell" data-route="home" data-voice="idle">
+<header class="app-header"><span id="headerTitle" class="brand">sekkes</span></header>
+<main id="routeHost" tabindex="-1"></main>
+<div class="session-dock" id="sessionDock"><p id="aiStateLabel" role="status">Подключение сервисов…</p><button id="micTestLink" class="session-control" hidden>Завершить разговор</button>
+<div id="recordingPanel" class="recording-panel" hidden></div><form id="composer" class="composer" hidden><label for="draft" class="sr-only">Сообщение</label><textarea id="draft" rows="1" maxlength="2000" placeholder="Напиши, что сейчас важно…"></textarea><button id="micButton" type="button" class="icon-button" aria-label="Записать голосовое сообщение" title="Записать голосовое сообщение"></button><button id="sendButton" type="submit" class="icon-button send" aria-label="Отправить сообщение"></button></form></div>
+<div id="toast" class="toast" role="status" hidden></div><div id="chatAnnouncement" class="sr-only" aria-live="polite"></div>
+</div>
+<nav id="navigationRail" class="navigation-rail" aria-label="Разделы SEKKES"><div id="menuItems"></div></nav>
+<dialog id="dialog" aria-labelledby="dialogTitle"><button id="dialogClose" class="icon-button dialog-close" aria-label="Закрыть окно"></button><div id="dialogContent"></div></dialog>
+<script type="module" src="assets/ui/boot.mjs"></script>
+</body></html>
