@@ -203,6 +203,7 @@
         item.image.onload = () => {
           if (disposed || !isLiveRow()) return;
           item.status = 'ready';
+          if(item.image.naturalWidth>0&&item.image.naturalHeight>0)item.button.style.setProperty('--rich-image-ratio',String(item.image.naturalWidth/item.image.naturalHeight));
           item.button.classList.add('richImageReady');
           item.statusNode.textContent = '';
           releaseObserverWhenFinished();
@@ -555,7 +556,7 @@
         if (block.width > 0 && block.height > 0) {
           video.width = Math.round(block.width);
           video.height = Math.round(block.height);
-          container.style.setProperty('--rich-image-ratio',String(Math.min(2,Math.max(.65,block.width/block.height))));
+          container.style.setProperty('--rich-image-ratio',String(block.width/block.height));
         }
         const statusNode = element('span', 'richMediaStatus', 'Загрузка видео…');
         statusNode.setAttribute('role', 'status');
@@ -569,7 +570,7 @@
           statusNode.textContent = 'Видео не загрузилось. Нажмите, чтобы повторить.';
           releaseObserverWhenFinished();
         });
-        video.addEventListener('loadedmetadata', () => {notifyResize();syncVideo(item);});
+        video.addEventListener('loadedmetadata', () => {if(video.videoWidth>0&&video.videoHeight>0)container.style.setProperty('--rich-image-ratio',String(video.videoWidth/video.videoHeight));notifyResize();syncVideo(item);});
         video.addEventListener('canplay', () => syncVideo(item));
         container.addEventListener('keydown',event=>{if(options.inlineVideo&&(event.key==='Enter'||event.key===' ')){event.preventDefault();container.click();}});
         container.addEventListener('click', event => {
@@ -592,7 +593,7 @@
         image.loading = 'eager'; // IntersectionObserver owns scheduling; visibility changes on load.
         image.decoding = 'async';
         if (block.width > 0 && block.height > 0) {
-          button.style.setProperty('--rich-image-ratio', String(Math.min(2, Math.max(0.65, block.width / block.height))));
+          button.style.setProperty('--rich-image-ratio', String(block.width / block.height));
           image.width = Math.round(block.width);
           image.height = Math.round(block.height);
         }
