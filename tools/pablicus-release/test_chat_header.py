@@ -30,7 +30,7 @@ with sync_playwright() as pw:
  page.evaluate("routeState.conversationId='fixture-b';document.querySelector('#chatTitle').textContent='Новое личное имя'")
  page.locator('#chatTitle').click();check('new conversation uses current identity',page.evaluate("visits.at(-1)==='fixture-b'"))
  check('no call controls in chat',page.locator('#app #conversationCallDock,#app #audioCallAction,#app #videoCallAction').count()==0)
- check('identity has no application blur',page.locator('.chatAvatarDock').evaluate('(n)=>[n,document.querySelector('#conversationAvatar')].every(e=>getComputedStyle(e).filter==="none"&&getComputedStyle(e).backdropFilter==="none")'))
+ check('identity has no application blur',page.locator('.chatAvatarDock').evaluate('(n)=>[n,document.querySelector("#conversationAvatar")].every(e=>getComputedStyle(e).filter==="none"&&getComputedStyle(e).backdropFilter==="none")'))
  check('name pill has localized glass',page.locator('#chatTitle').evaluate('(n)=>{const s=getComputedStyle(n);return s.backdropFilter.includes("blur(8px)")&&s.backgroundColor!=="rgba(0, 0, 0, 0)"&&s.boxShadow!=="none"}'))
  check('rounded vector chevron',page.locator('#chatTitle').evaluate('(n)=>{const s=getComputedStyle(n,"::after");return s.width==="18px"&&(s.maskImage||s.webkitMaskImage).includes("svg")}'))
  check('one live title' ,page.locator('#chatTitle').count()==1)
