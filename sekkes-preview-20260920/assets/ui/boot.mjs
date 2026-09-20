@@ -4,5 +4,5 @@ if(new URLSearchParams(location.search).get('ui')==='classic'){
 }else{
  const {initialize}=await import('./app.mjs');initialize();
  if(new URLSearchParams(location.search).get('qa')==='fixture')await import('./fixture.mjs');
- else await import('../voice-s3-0.mjs?v=2026.09.20-ui.1');
+ else await import('../voice-s3-0.mjs?v=2026.09.20-ui.2');
 }
