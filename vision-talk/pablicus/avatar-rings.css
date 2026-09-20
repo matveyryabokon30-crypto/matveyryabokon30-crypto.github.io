@@ -32,6 +32,6 @@
 /* One identity, above the history and outside all blurred surfaces. */
 :root body #app>.chatAvatarDock>#chatTitle{display:block!important;position:relative!important;pointer-events:auto!important;box-sizing:border-box!important;max-width:100%!important;width:auto!important;min-height:36px!important;height:auto!important;padding:5px 15px!important;margin:0!important;border:1px solid var(--ui-glass-line)!important;border-radius:24px!important;background:var(--surface,#fff)!important;color:var(--text,#151515)!important;font-size:17px!important;font-weight:400!important;line-height:24px!important;text-align:center!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 :root body #app>.chatAvatarDock>#chatTitle::after{content:' ›';color:var(--muted,#777)}
-:root body #app:not(.canvas-active):not(.composer-fullscreen)>.stage{top:calc(var(--safe-area-top,env(safe-area-inset-top,0px)) + 112px)!important}
-:root body #app.canvas-active>.stage{margin-top:112px!important}
+:root body #app:has(>.chatAvatarDock):not(.canvas-active):not(.composer-fullscreen)>.stage{top:calc(var(--safe-area-top,env(safe-area-inset-top,0px)) + 112px)!important}
+:root body #app.canvas-active:has(>.chatAvatarDock)>.stage{margin-top:112px!important}
 :root body #app>.chatAvatarDock>.conversationCallDock{position:absolute;left:calc(100% + 8px);top:0}
