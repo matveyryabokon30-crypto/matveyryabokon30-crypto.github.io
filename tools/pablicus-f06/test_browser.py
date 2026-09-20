@@ -17,7 +17,7 @@ def check(name,value):
  assert value,name
  checks.append(name);print('PASS '+name,flush=True)
 with sync_playwright() as pw:
- browser=getattr(pw,a.engine).launch(args=['--use-fake-device-for-media-stream'] if a.engine=='chromium' else []);ctx=browser.new_context(service_workers='block');ctx.grant_permissions(['camera','microphone'],origin=origin);page=ctx.new_page();page.set_default_timeout(20000)
+ browser=getattr(pw,a.engine).launch(**({'channel':'chromium','args':['--use-fake-device-for-media-stream']} if a.engine=='chromium' else {}));ctx=browser.new_context(service_workers='block');ctx.grant_permissions(['camera','microphone'],origin=origin);page=ctx.new_page();page.set_default_timeout(20000)
  try:
   page.goto(origin+'/f06-probe.html?call=dddddddd-dddd-4ddd-8ddd-dddddddddddd&recipient=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
   check('call click scrubbed before authentication',page.evaluate("location.search===''"))
