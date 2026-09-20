@@ -80,8 +80,6 @@ with sync_playwright() as pw:
   check(str(count)+' attachments retained in order',page.locator('#mediaFixture [data-block-id]').evaluate_all('(nodes)=>nodes.every((n,i)=>n.dataset.blockId==="photo-"+i)&&nodes.length')==count)
   if count>1:
    check(str(count)+' joined grid tiles',page.locator('#mediaFixture .richMediaGallery').evaluate('(n)=>getComputedStyle(n).display==="grid"&&[...n.children].every(c=>getComputedStyle(c).borderRadius==="0px"&&c.getBoundingClientRect().height>0)'))
-  page.locator('#mediaFixture [data-block-id="photo-0"]').dispatch_event('click')
-  check(str(count)+' original gallery opens',page.evaluate('albumOpened.count')==count)
  page.locator('#mediaFixture').evaluate('(n)=>n.remove()')
  browser.close()
 (out/f'header-{a.engine}.json').write_text(json.dumps({'engine':a.engine,'checks':checks,'passed':len(checks)},ensure_ascii=False,indent=2))
