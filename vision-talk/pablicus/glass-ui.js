@@ -30,6 +30,7 @@
   for(const id of ['chatBack','chatLibraryOpen','reportBtn'])move(document.getElementById(id),rail,first);
   for(const b of rail.querySelectorAll(':scope>button'))if(!b.title)b.title=b.getAttribute('aria-label')||'';
   if(app.hidden){setMenu(false);return;}
+  if(app.classList.contains('composer-fullscreen'))setMenu(false);
   const r=root.getBoundingClientRect(),a=app.getBoundingClientRect();if(!r.width||!r.height)return;
   const safe=parseFloat(getComputedStyle(app).paddingTop)||0;
   const edge=Math.max(12,parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-right'))||0);
