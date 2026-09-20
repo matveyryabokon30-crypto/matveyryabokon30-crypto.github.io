@@ -71,6 +71,18 @@ with sync_playwright() as pw:
  page.evaluate("contactState.sessionUserId='dddddddd-dddd-4ddd-8ddd-dddddddddddd'")
  page.locator('[data-contact-call="audio"]').click()
  check('old account profile cannot start call',page.evaluate('contactCalls.length===2'))
+ page.add_script_tag(content=(root/'rich-message.js').read_text())
+ page.evaluate("document.querySelector('#pablicusContactCard').close();document.querySelector('#app').hidden=false")
+ for count in [1,2,3,4,5,7,10,12]:
+  page.evaluate("""(count)=>{document.querySelector('#mediaFixture')?.remove();const row=document.createElement('article');row.id='mediaFixture';row.className='row';const bubble=document.createElement('div');bubble.className='bubble';const blocks=Array.from({length:count},(_,i)=>({id:'photo-'+i,type:i%2?'video':'image',path:'fixture/'+i,name:'fixture',width:600,height:800}));bubble.append(PablicusRichMessage.render({v:1,blocks},{inlineVideo:true,measurement:true,openMedia:(b,g)=>window.albumOpened={id:b.id,count:g?.items.length||1,index:g?.index||0}}));row.append(bubble);document.querySelector('#app>.stage').append(row)}""",count)
+  box=page.locator('#mediaFixture>.bubble').bounding_box();appBox=page.locator('#app').bounding_box()
+  check(str(count)+' media compact width',box['width']<appBox['width']*.8)
+  check(str(count)+' attachments retained in order',page.locator('#mediaFixture [data-block-id]').evaluate_all('(nodes)=>nodes.every((n,i)=>n.dataset.blockId==="photo-"+i)&&nodes.length')==count)
+  if count>1:
+   check(str(count)+' joined grid tiles',page.locator('#mediaFixture .richMediaGallery').evaluate('(n)=>getComputedStyle(n).display==="grid"&&[...n.children].every(c=>getComputedStyle(c).borderRadius==="0px"&&c.getBoundingClientRect().height>0)'))
+  page.locator('#mediaFixture [data-block-id="photo-0"]').dispatch_event('click')
+  check(str(count)+' original gallery opens',page.evaluate('albumOpened.count')==count)
+ page.locator('#mediaFixture').evaluate('(n)=>n.remove()')
  browser.close()
 (out/f'header-{a.engine}.json').write_text(json.dumps({'engine':a.engine,'checks':checks,'passed':len(checks)},ensure_ascii=False,indent=2))
 print(json.dumps({'passed':len(checks),'checks':checks},ensure_ascii=False))
