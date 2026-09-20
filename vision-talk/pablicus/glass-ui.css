@@ -157,3 +157,14 @@
 
 /* A backdrop on the editor would isolate the outside rail from chat pixels. */
 :root body #app #composer #composeBox#composeBox.r2Composer{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+
+/* Chat actions are revealed from the upper-right control; existing handlers stay on the rail. */
+:root body #app>#chatActionsToggle{position:absolute;top:calc(var(--safe-area-top,env(safe-area-inset-top,0px)) + 20px);right:max(12px,env(safe-area-inset-right,0px));z-index:85;display:grid;place-items:center;width:44px;height:44px;min-width:44px;padding:0;border:1px solid var(--ui-glass-line);border-radius:50%;color:var(--text);background:var(--ui-glass-fill);box-shadow:inset 0 1px 0 #ffffffa6,0 2px 7px #0002;backdrop-filter:blur(8px) saturate(1.35);-webkit-backdrop-filter:blur(8px) saturate(1.35)}
+:root body #app>#chatActionsToggle>svg{width:24px;height:24px;fill:currentColor;transform:rotate(0);transition:transform 220ms ease}
+:root body #app>#chatActionsToggle[aria-expanded=true]>svg{transform:rotate(90deg)}
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock{top:var(--glass-menu-top,0px)!important;bottom:auto!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateY(-10px) scale(.96)!important;transform-origin:top center;transition:opacity 220ms ease,transform 220ms ease,visibility 0s linear 220ms!important}
+:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock[data-menu-open=true]{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translateY(0) scale(1)!important;transition-delay:0s!important}
+:root body #app[hidden]>#chatActionsToggle,:root body #app.composer-fullscreen>#chatActionsToggle{display:none!important}
+:root body #app>#chatActionsToggle:focus-visible{outline:2px solid var(--ob-link);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){:root body #app>#chatActionsToggle>svg,:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock{transition:none!important}}
+@media(prefers-reduced-transparency:reduce){:root body #app>#chatActionsToggle{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}}

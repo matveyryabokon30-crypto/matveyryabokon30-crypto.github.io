@@ -10,12 +10,18 @@
  function value(node,name,next){if(node.style.getPropertyValue(name)!==next)node.style.setProperty(name,next);}
  const homeDock=document.createElement('nav');homeDock.className='cleanHomeActions';homeDock.setAttribute('aria-label','Действия раздела');home?.append(homeDock);
  const chatAvatarDock=document.createElement('div');chatAvatarDock.className='chatAvatarDock';chatAvatarDock.setAttribute('aria-label','Собеседник');app.append(chatAvatarDock);
+ const menuToggle=document.createElement('button');menuToggle.id='chatActionsToggle';menuToggle.type='button';menuToggle.setAttribute('aria-label','Открыть меню разговора');menuToggle.setAttribute('aria-expanded','false');menuToggle.setAttribute('aria-controls','chatActionsMenu');menuToggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>';app.append(menuToggle);
+ let menuOpen=false;
+ function setMenu(open,focus=false){menuOpen=open;menuToggle.setAttribute('aria-expanded',String(open));menuToggle.setAttribute('aria-label',open?'Закрыть меню разговора':'Открыть меню разговора');const rail=root.querySelector(':scope>.r2FunctionRail');if(rail){rail.dataset.menuOpen=String(open);rail.inert=!open;rail.setAttribute('aria-hidden',String(!open));}if(focus)menuToggle.focus();}
+ menuToggle.addEventListener('click',()=>setMenu(!menuOpen),{signal:life.signal});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menuOpen){setMenu(false,true);}},{signal:life.signal});
+ document.addEventListener('pointerdown',e=>{if(menuOpen&&!menuToggle.contains(e.target)&&!root.querySelector(':scope>.r2FunctionRail')?.contains(e.target))setMenu(false);},{signal:life.signal});
  function layout(){
   frame=0;if(stopped)return;
   document.querySelectorAll('.chatEdgeFade,.contactEdgeFade').forEach(n=>n.remove());
   for(const id of ['profileBack','profileSettings','newChat'])move(document.getElementById(id),homeDock);
   const rail=root.querySelector(':scope>.r2FunctionRail');if(!rail)return;
-  rail.classList.add('r2SideDock');rail.setAttribute('aria-label','Навигация и действия разговора');
+  rail.classList.add('r2SideDock');rail.id='chatActionsMenu';setMenu(menuOpen);rail.setAttribute('aria-label','Навигация и действия разговора');
   const ai=root.querySelector('.r2Toolbar>.r2AI');if(ai){ai.dataset.r2Function='ai';ai.classList.add('r2DockedAI');ai.setAttribute('aria-haspopup','dialog');move(ai,rail);}
   // The logical title is refreshed every 15s. Never use that node as the photo surface.
   if(!document.getElementById('conversationAvatar')){const avatar=document.createElement('button');avatar.id='conversationAvatar';avatar.type='button';avatar.className='pablicusStoryAvatar';avatar.setAttribute('aria-label','Профиль и сторис собеседника');avatar.addEventListener('click',()=>{const id=global.PablicusController?.state().conversationId;if(id)global.PablicusContacts?.open(id);},{signal:life.signal});chatAvatarDock.append(avatar);}
@@ -23,12 +29,14 @@
   const first=rail.querySelector('[data-r2-function="agent"]');
   for(const id of ['chatBack','chatLibraryOpen','reportBtn'])move(document.getElementById(id),rail,first);
   for(const b of rail.querySelectorAll(':scope>button'))if(!b.title)b.title=b.getAttribute('aria-label')||'';
-  if(app.hidden)return;
+  if(app.hidden){setMenu(false);return;}
+  if(app.classList.contains('composer-fullscreen'))setMenu(false);
   const r=root.getBoundingClientRect(),a=app.getBoundingClientRect();if(!r.width||!r.height)return;
   const safe=parseFloat(getComputedStyle(app).paddingTop)||0;
   const edge=Math.max(12,parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-right'))||0);
-  const avatarBottom=chatAvatarDock.getBoundingClientRect().bottom;
-  const room=Math.floor(r.top-Math.max(a.top+safe,avatarBottom)-24),inside=app.classList.contains('composer-fullscreen')||room<44;
+  const menuTop=menuToggle.getBoundingClientRect().bottom+8;
+  const room=Math.floor(Math.min(r.top-12,a.bottom-12)-menuTop),inside=false;
+  value(root,'--glass-menu-top',(menuTop-r.top-(parseFloat(getComputedStyle(root).borderTopWidth)||0))+'px');
   rail.dataset.inside=String(inside);
   value(root,'--glass-rail-right',(r.right-a.right+edge-(parseFloat(getComputedStyle(root).borderRightWidth)||0))+'px');
   value(root,'--glass-rail-room',Math.max(44,inside?r.height-80:room)+'px');
@@ -40,7 +48,7 @@
  const pages=new MutationObserver(schedule);if(home)pages.observe(home,{childList:true,subtree:true});
  const resize=typeof ResizeObserver==='function'?new ResizeObserver(schedule):null;resize?.observe(root);resize?.observe(app);
  global.addEventListener('resize',schedule,{signal:life.signal});global.visualViewport?.addEventListener('resize',schedule,{signal:life.signal});global.visualViewport?.addEventListener('scroll',schedule,{signal:life.signal});global.addEventListener('pageshow',schedule,{signal:life.signal});
- global.PablicusGlassUI=Object.freeze({refresh:schedule,destroy(){stopped=true;cancelAnimationFrame(frame);mutation.disconnect();mode.disconnect();pages.disconnect();resize?.disconnect();life.abort();for(const [node,at]of origins)if(at.parent?.isConnected)at.parent.insertBefore(node,at.next?.parentNode===at.parent?at.next:null);homeDock.remove();chatAvatarDock.remove();}});
+ global.PablicusGlassUI=Object.freeze({refresh:schedule,destroy(){stopped=true;cancelAnimationFrame(frame);mutation.disconnect();mode.disconnect();pages.disconnect();resize?.disconnect();life.abort();for(const [node,at]of origins)if(at.parent?.isConnected)at.parent.insertBefore(node,at.next?.parentNode===at.parent?at.next:null);const rail=root.querySelector(':scope>.r2FunctionRail');if(rail){rail.inert=false;rail.removeAttribute('aria-hidden');delete rail.dataset.menuOpen;}homeDock.remove();chatAvatarDock.remove();menuToggle.remove();}});
  schedule();
 })(window);
 
