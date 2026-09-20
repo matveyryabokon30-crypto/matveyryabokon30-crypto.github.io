@@ -9,7 +9,7 @@ styles=re.findall(r'<link[^>]*href="([^"]+\.css)[^"]*"', (root/'index.html').rea
 checks=[]
 with sync_playwright() as pw:
  browser=getattr(pw,a.engine).launch();page=browser.new_page(viewport={'width':390,'height':844});page.set_default_timeout(10000)
- page.route('**/*',lambda r:r.abort())
+ page.route('**/*',lambda r:r.continue_() if r.request.url.startswith(('blob:','data:')) else r.abort())
  page.set_content(html)
  for name in styles:page.add_style_tag(content=(root/name).read_text())
  page.evaluate("""()=>{window.PablicusAvatarStoriesUI={};window.visits=[];window.routeState={conversationId:'fixture-a'};window.PablicusController={state:()=>routeState};window.PablicusContacts={open:id=>visits.push(id)};document.querySelector('#home').hidden=true;document.querySelector('#app').hidden=false;const rail=document.createElement('div');rail.className='r2FunctionRail';document.querySelector('#composeBox').classList.add('r2Composer');document.querySelector('#composeBox').append(rail);const title=document.querySelector('#chatTitle');title.textContent='Катюша ❤️❤️❤️';title.onclick=()=>PablicusContacts.open(routeState.conversationId);}""")
@@ -82,8 +82,11 @@ with sync_playwright() as pw:
    check(str(count)+' joined grid tiles',page.locator('#mediaFixture .richMediaGallery').evaluate('(n)=>getComputedStyle(n).display==="grid"&&[...n.children].every(c=>getComputedStyle(c).borderRadius==="0px"&&c.getBoundingClientRect().height>0)'))
  page.locator('#mediaFixture').evaluate('(n)=>n.remove()')
  for w,h in [(600,900),(900,1600),(1600,900),(800,800),(200,1800)]:
-  page.evaluate("""([w,h])=>{document.querySelector('#sourceFixture')?.remove();const row=document.createElement('article');row.id='sourceFixture';row.className='row';const bubble=document.createElement('div');bubble.className='bubble';window.sourceUrl=URL.createObjectURL(new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="red"/><rect x="10" y="10" width="${w-20}" height="${h-20}" fill="blue"/></svg>`],{type:'image/svg+xml'}));bubble.append(PablicusRichMessage.render({v:1,blocks:[{id:'source-photo',type:'image',path:'fixture/source'}]},{mountRoot:document.querySelector('#app'),resolveUrl:()=>sourceUrl}));row.append(bubble);document.querySelector('#app>.stage').append(row)}""",[w,h])
-  page.locator('#sourceFixture .richImageReady').wait_for()
+  page.evaluate("""([w,h])=>{document.querySelector('#sourceFixture')?.remove();const row=document.createElement('article');row.id='sourceFixture';row.className='row';row.style.cssText='position:fixed;top:280px;left:0;width:350px;z-index:100;';const bubble=document.createElement('div');bubble.className='bubble';window.sourceUrl=URL.createObjectURL(new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="red"/><rect x="10" y="10" width="${w-20}" height="${h-20}" fill="blue"/></svg>`],{type:'image/svg+xml'}));bubble.append(PablicusRichMessage.render({v:1,blocks:[{id:'source-photo',type:'image',path:'fixture/source'}]},{mountRoot:document.querySelector('#app'),resolveUrl:()=>sourceUrl}));row.append(bubble);document.querySelector('#app>.stage').append(row)}""",[w,h])
+  try:page.locator('#sourceFixture .richImageReady').wait_for()
+  except Exception:
+   print(page.locator('#sourceFixture').evaluate('(n)=>({html:n.outerHTML,box:n.getBoundingClientRect().toJSON(),image:n.querySelector("img")?.naturalWidth})'),flush=True)
+   raise
   check(str(w)+'x'+str(h)+' decoded ratio recovered without metadata',page.locator('#sourceFixture .richMedia').evaluate('(n)=>Number(n.style.getPropertyValue("--rich-image-ratio"))')==w/h)
   check(str(w)+'x'+str(h)+' entire photo fits without cover crop',page.locator('#sourceFixture img').evaluate('(n)=>{const s=getComputedStyle(n),r=n.getBoundingClientRect(),p=n.parentElement.getBoundingClientRect();return n.naturalWidth>0&&s.objectFit==="contain"&&s.position==="static"&&r.height<=421&&r.height<=p.height+1}'))
   page.evaluate("document.querySelector('#sourceFixture').remove();URL.revokeObjectURL(sourceUrl)")
