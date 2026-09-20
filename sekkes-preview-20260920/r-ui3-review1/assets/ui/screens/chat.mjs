@@ -1,0 +1,2 @@
+import {el,empty} from '../components.mjs';
+export function create(ctx){const n=el('section','screen chat-screen');n.setAttribute('aria-label','Чат');const messages=el('div','messages');messages.id='messages';messages.setAttribute('aria-label','Сообщения');const blank=empty('Начни с одной мысли','Напиши то, что сейчас важно. Ответ появится здесь.');blank.id='chatEmpty';messages.append(blank);n.append(messages);ctx.messages=messages;ctx.flushMessages();return {node:n,dispose(){}}}
