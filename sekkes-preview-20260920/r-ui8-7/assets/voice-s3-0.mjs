@@ -86,7 +86,7 @@ async function startLive(){
  if(starting||closing||recovering||live)return;
  if(globalThis.window?.SekkesUI?.captureBusy)return note('Сначала заверши запись в чате.');
  if(recoveryNeeded)return recoverPrevious();
- sessionCues?.cancel();sessionCues?.unlock();
+ sessionCues?.unlock();
  // Acquire the startup lock before the first await, including Auth/profile work.
  starting=true;const x={cancelled:false,id:null,stream:null,pc:null,audio:null};startup=x;
  const check=()=>{if(x.cancelled||startup!==x)throw Object.assign(new Error('CANCELLED'),{code:'CANCELLED'});};
