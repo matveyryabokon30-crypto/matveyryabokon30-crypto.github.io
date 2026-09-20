@@ -27,7 +27,8 @@
   if(!document.getElementById('conversationAvatar')){const avatar=document.createElement('button');avatar.id='conversationAvatar';avatar.type='button';avatar.className='pablicusStoryAvatar';avatar.setAttribute('aria-label','Профиль и сторис собеседника');avatar.addEventListener('click',()=>{const id=global.PablicusController?.state().conversationId;if(id)global.PablicusContacts?.open(id);},{signal:life.signal});chatAvatarDock.append(avatar);}
   move(document.getElementById('chatTitle'),chatAvatarDock);
   const first=rail.querySelector('[data-r2-function="agent"]');
-  for(const id of ['chatBack','chatLibraryOpen','reportBtn'])move(document.getElementById(id),rail,first);
+  move(document.getElementById('chatBack'),app);
+  for(const id of ['chatLibraryOpen','reportBtn'])move(document.getElementById(id),rail,first);
   for(const b of rail.querySelectorAll(':scope>button'))if(!b.title)b.title=b.getAttribute('aria-label')||'';
   if(app.hidden){setMenu(false);return;}
   if(app.classList.contains('composer-fullscreen'))setMenu(false);

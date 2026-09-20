@@ -1,7 +1,7 @@
 name: Pablicus chat header verified release
 on:
   push:
-    branches: [fix/pablicus-chat-menu-r1-20260920]
+    branches: [fix/pablicus-chat-menu-r2-20260920]
     paths: ['vision-talk/pablicus/**', 'tools/pablicus-r1/**', 'tools/pablicus-r2/**', 'tools/pablicus-r3/**', 'tools/pablicus-f03/**', 'tools/pablicus-f04/**', 'tools/pablicus-f05/**', 'tools/pablicus-f06/**', 'tools/pablicus-release/**', 'tools/pablicus-p01r2/**', 'tools/pablicus-f01/**', 'tools/pablicus-f02/**', 'tools/pablicus-p06/**', '.github/workflows/pablicus-release-header.yml']
 permissions:
   contents: read
@@ -129,7 +129,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tools/pablicus-release/build_release.py tools/pablicus-release/test_browser_release.py vision-talk/pablicus/push-notifications.js vision-talk/pablicus/index.html vision-talk/pablicus/sw.js vision-talk/pablicus/release-info.js vision-talk/pablicus/release.json vision-talk/pablicus/release-p01r2.json
           git commit -m 'build(pablicus): save verified F06 foundation immutable artifact'
-          git push origin HEAD:fix/pablicus-chat-menu-r1-20260920
+          git push origin HEAD:fix/pablicus-chat-menu-r2-20260920
           mkdir artifact
           git rev-parse HEAD > artifact/GENERATED_COMMIT.txt
           cp vision-talk/pablicus/release.json artifact/release.json

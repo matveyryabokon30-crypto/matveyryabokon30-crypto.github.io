@@ -168,3 +168,12 @@
 :root body #app>#chatActionsToggle:focus-visible{outline:2px solid var(--ob-link);outline-offset:3px}
 @media(prefers-reduced-motion:reduce){:root body #app>#chatActionsToggle>svg,:root body #app #composer #composeBox#composeBox.r2Composer>.r2SideDock{transition:none!important}}
 @media(prefers-reduced-transparency:reduce){:root body #app>#chatActionsToggle{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}}
+
+/* Persistent back navigation, independent of the collapsed actions rail. */
+:root body #app>#chatBack{position:absolute!important;top:calc(var(--safe-area-top,env(safe-area-inset-top,0px)) + 20px)!important;left:max(12px,env(safe-area-inset-left,0px))!important;right:auto!important;bottom:auto!important;z-index:85!important;display:grid!important;place-items:center!important;width:44px!important;height:44px!important;min-width:44px!important;padding:0!important;border:1px solid var(--ui-glass-line)!important;border-radius:50%!important;color:var(--text)!important}
+:root body #app>#chatBack svg{width:22px!important;height:22px!important}
+:root body #app[hidden]>#chatBack,:root body #app.composer-fullscreen>#chatBack{display:none!important}
+/* Blur only the input's background layer, leaving the floating rail outside it. */
+:root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Fullscreen){background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Fullscreen)::before{content:''!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;border-radius:inherit!important;background:var(--ui-glass-input)!important;box-shadow:inset 0 1px 0 #ffffffa6,0 2px 8px #00000012!important;backdrop-filter:blur(16px) saturate(1.25)!important;-webkit-backdrop-filter:blur(16px) saturate(1.25)!important;pointer-events:none!important;z-index:0!important}
+@media(prefers-reduced-transparency:reduce){:root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer)::before{background:var(--surface)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}

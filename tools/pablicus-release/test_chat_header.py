@@ -19,6 +19,15 @@ with sync_playwright() as pw:
   assert ok,name
   checks.append(name)
  page.wait_for_timeout(260)
+ check('back outside menu and available when collapsed',page.locator('#app>#chatBack').is_visible() and page.locator('#chatActionsMenu #chatBack').count()==0)
+ back=page.locator('#chatBack').bounding_box();toggle=page.locator('#chatActionsToggle').bounding_box()
+ check('back aligned upper left opposite menu',abs(back['y']-toggle['y'])<1 and back['x']<toggle['x'] and back['width']==44)
+ page.evaluate("document.querySelector('#chatBack').addEventListener('click',()=>window.backUsed=true)")
+ page.locator('#chatBack').click();check('back click retains live button',page.evaluate('backUsed===true'))
+ for selector in ['#composeBox','.workspaceEditor','.botComposer']:
+  if selector!='#composeBox':page.evaluate('(cls)=>{const n=document.createElement("div");n.className=cls+" r2Composer";document.body.append(n)}',selector[1:])
+  check(selector+' has glass background only',page.locator(selector).evaluate('(n)=>{const s=getComputedStyle(n,"::before");return s.content!=="none"&&s.backdropFilter.includes("blur(16px)")&&s.pointerEvents==="none"&&getComputedStyle(n).filter==="none"}'))
+  if selector!='#composeBox':page.locator(selector).evaluate('(n)=>n.remove()')
  check('menu initially collapsed and inert',page.locator('#chatActionsMenu').evaluate('(n)=>n.inert&&getComputedStyle(n).visibility==="hidden"'))
  page.locator('#chatActionsToggle').click();page.wait_for_timeout(260)
  check('menu opens with vertical dots',page.locator('#chatActionsToggle').get_attribute('aria-expanded')=='true' and page.locator('#chatActionsMenu').evaluate('(n)=>!n.inert&&getComputedStyle(n).opacity==="1"') and page.locator('#chatActionsToggle svg').evaluate('(n)=>getComputedStyle(n).transform==="matrix(0, 1, -1, 0, 0, 0)"'))
