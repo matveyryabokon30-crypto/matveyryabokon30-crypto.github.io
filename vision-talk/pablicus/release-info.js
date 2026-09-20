@@ -1,6 +1,6 @@
 /* Generated build identity. Contains no user identifiers or credentials. */
 (function(g){'use strict';
- const id="git:b3a475d3e096f7a122ad6cbeeb2b17726b5d69d8",sourceSha="b3a475d3e096f7a122ad6cbeeb2b17726b5d69d8";
+ const id="git:4a06fedc67dc23a8c245ddd35d9fa602a8849668",sourceSha="4a06fedc67dc23a8c245ddd35d9fa602a8849668";
  async function inspect(){
   let worker=null;
   const controller=navigator.serviceWorker?.controller;
@@ -11,7 +11,7 @@
    ch.port1.onmessage=e=>finish(e.data);
    try{controller.postMessage({type:'PABLICUS_RELEASE'},[ch.port2]);}catch{finish(null);}
   });
-  return {buildId:id,sourceSha,stage:'UI-H5',htmlBuildId:document.querySelector('meta[name="pablicus-release"]')?.content||null,workerBuildId:worker?.buildId||null,workerVersion:worker?.version||null,coherent:worker?.buildId===id,notificationPermission:g.Notification?.permission||'unsupported',standalone:!!(g.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone)};
+  return {buildId:id,sourceSha,stage:'UI-M1',htmlBuildId:document.querySelector('meta[name="pablicus-release"]')?.content||null,workerBuildId:worker?.buildId||null,workerVersion:worker?.version||null,coherent:worker?.buildId===id,notificationPermission:g.Notification?.permission||'unsupported',standalone:!!(g.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone)};
  }
- g.PablicusBuild=Object.freeze({id,sourceSha,stage:'UI-H5',inspect});
+ g.PablicusBuild=Object.freeze({id,sourceSha,stage:'UI-M1',inspect});
 })(window);
