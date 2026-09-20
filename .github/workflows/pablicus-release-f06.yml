@@ -14,8 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        engine: [chromium, webkit]
-    runs-on: macos-15
+        include:
+          - engine: chromium
+            os: ubuntu-24.04
+          - engine: webkit
+            os: macos-15
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +59,9 @@ jobs:
           python -m playwright install --with-deps ${{ matrix.engine }}
           python -m pip show playwright > results/toolchain.txt
           uname -a >> results/toolchain.txt
+      - name: Diagnose native mock capture support
+        if: matrix.engine == 'chromium'
+        run: python -u tools/pablicus-f06/probe_capture.py
       - name: Calls lifecycle and actual local WebRTC media
         run: |
           python - <<'PYTEST'
