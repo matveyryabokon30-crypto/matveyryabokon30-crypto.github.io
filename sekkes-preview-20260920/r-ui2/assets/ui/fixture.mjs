@@ -1,0 +1,4 @@
+// Explicit QA-only fixture. Never imports S3Api, Auth, WebRTC or production runtime.
+let active=false;
+window.SekkesS2={toggleMic(){active=!active;window.SekkesUI.voice(active?'listening':'idle');window.SekkesUI.status(active?'QA fixture · голосовой интерфейс':'QA fixture · без сервиса');},sendText(){window.SekkesUI.beforeText();const d=document.querySelector('#draft');if(!d.value.trim())return;window.SekkesUI.render('user',d.value);window.SekkesUI.render('ai','## Проверка отображения\nЭто **тестовое сообщение**, не ответ сервиса.\n- Структура текста\n- Читаемые строки\n[Справка](https://www.w3.org/TR/WCAG22/)\n> Контент используется только для проверки интерфейса.');d.value=''},get busy(){return active},get dirty(){return active||document.querySelector('#draft').value.length>0},voiceSettings(){},accountAction(){}};
+window.SekkesUI.status('QA fixture · без сервиса');
