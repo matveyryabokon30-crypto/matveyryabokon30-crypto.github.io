@@ -1,5 +1,5 @@
-import {assessVoice} from './registry-foundation.mjs?v=2026.09.20-s3.26';
-import {StaticVoicePreview} from './preview-player.mjs?v=2026.09.20-s3.26';
+import {assessVoice} from './registry-foundation.mjs?v=2026.09.20-s3.27';
+import {StaticVoicePreview} from './preview-player.mjs?v=2026.09.20-s3.27';
 
 const errors={AUDIO_GESTURE_REQUIRED:'Нажми «Послушать» ещё раз, чтобы включить звук.',AUDIO_ASSET_ERROR:'Не удалось загрузить пример. Попробуй ещё раз.',AUDIO_LOAD_TIMEOUT:'Пример загружается слишком долго. Попробуй ещё раз.'};
 export class VoicePicker {
