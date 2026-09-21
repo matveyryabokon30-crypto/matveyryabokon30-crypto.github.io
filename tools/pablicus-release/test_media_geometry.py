@@ -123,15 +123,26 @@ with sync_playwright() as pw:
     try:
      live.goto(f'http://127.0.0.1:{server.server_port}/',wait_until='load');live.wait_for_function('window.PablicusHost && window.PablicusChat && window.PablicusDebug');live.wait_for_timeout(500)
      live_fixture=fixture.replace('()=>{','async()=>{const $=id=>document.getElementById(id),app=$("app");',1).replace('Fixture.mount(fixtureMessages);',"await PablicusChat.open('fixture-owner','fixture-chat',fixtureMessages);")
+     # TransportStore requires UUID-shaped account/conversation IDs, even in a local fixture.
+     for name,value in [('fixture-owner','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),('fixture-peer','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),('fixture-chat','cccccccc-cccc-4ccc-8ccc-cccccccccccc')]:
+      live_fixture=live_fixture.replace(name,value)
      live.evaluate(live_fixture);live.evaluate('releaseMedia()');live.wait_for_timeout(650)
      live.evaluate("window.$=id=>document.getElementById(id);window.Fixture={get list(){return PablicusChat.list},audit:()=>gate.audit()}")
      geometry(live,'full app + real composer + IndexedDB decoded conversation');bottom(live,'full app last row clears actual composer')
+     before_height=live.locator('#composer').evaluate('(n)=>n.getBoundingClientRect().height')
      live.evaluate("gate.fillDraft('Проверка многострочного черновика. '.repeat(12))");live.wait_for_timeout(400)
+     check('full app actual input expanded the composer',live.locator('#composer').evaluate('(n)=>n.getBoundingClientRect().height')>before_height+20)
      geometry(live,'full app multiline draft does not overlap history');bottom(live,'full app actual expanded draft leaves last message readable')
      live.screenshot(path=str(out/(label+'-full-app.png')))
+     saved=live.evaluate('async()=>{await PablicusChat.flush();return (await PablicusChat.store.read()).text}')
+     check('full app draft persisted to actual scoped IndexedDB',saved=='Проверка многострочного черновика. '*12)
      live.evaluate('PablicusChat.leave()');live.wait_for_timeout(100)
      check('full app leave disconnects list',live.evaluate('PablicusChat.list===null'))
      check('full application has no JS or observer errors',not live_errors,live_errors)
+    except Exception:
+     live.screenshot(path=str(out/(label+'-full-app-failure.png')))
+     print('FULL APP ERRORS',live_errors,flush=True)
+     raise
     finally:ctx.close();server.shutdown();server.server_close()
 
  except Exception as exc:
