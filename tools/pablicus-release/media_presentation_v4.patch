@@ -1,0 +1,191 @@
+diff --git a/vision-talk/pablicus/app.js b/vision-talk/pablicus/app.js
+index a85622b..621920f 100644
+--- a/vision-talk/pablicus/app.js
++++ b/vision-talk/pablicus/app.js
+@@ -571 +571 @@
+-   if(r.type==='image'){const im=el('img','messageImage');im.alt='Фото';im.loading='lazy';if(/^data:image\/(jpeg|png|webp);base64,/.test(md.thumb_data_url||''))im.src=md.thumb_data_url;else{const instant=PablicusMediaCache.peek(BUCKET,r.attachment_path,{width:960});if(instant)im.src=instant}button.append(im);if(!im.src){const fallback=el('span','mediaLabel','Фото');button.append(fallback);requestAnimationFrame(()=>{if(!im.isConnected||!im.closest('#canvas'))return;signedUrl(r.attachment_path,{type:'image',width:960}).then(u=>{if(im.isConnected){im.src=u;fallback.remove()}}).catch(()=>{fallback.textContent='Фото · нажмите, чтобы повторить'})})}}
++   if(r.type==='image'){const im=el('img','messageImage');im.alt='Фото';im.draggable=false;button.draggable=false;im.onload=()=>PablicusRichMessage.setMediaDimensions(button,im.naturalWidth,im.naturalHeight);im.loading='lazy';if(/^data:image\/(jpeg|png|webp);base64,/.test(md.thumb_data_url||''))im.src=md.thumb_data_url;else{const instant=PablicusMediaCache.peek(BUCKET,r.attachment_path,{width:960});if(instant)im.src=instant}button.append(im);if(!im.src){const fallback=el('span','mediaLabel','Фото');button.append(fallback);requestAnimationFrame(()=>{if(!im.isConnected||!im.closest('#canvas'))return;signedUrl(r.attachment_path,{type:'image',width:960}).then(u=>{if(im.isConnected){im.src=u;fallback.remove()}}).catch(()=>{fallback.textContent='Фото · нажмите, чтобы повторить'})})}}
+@@ -575 +575 @@
+-  b.append(t,messageMeta({created:r.created_at,state:m.mine?(+r.server_seq<=peersRead?'read':'sent'):null,edited:!!r.edited_at}));messageTools.decorate(row,b,m.remote);row.append(b);return row;
++  b.append(t,messageMeta({created:r.created_at,state:m.mine?(+r.server_seq<=peersRead?'read':'sent'):null,edited:!!r.edited_at}));messageTools.decorate(row,b,m.remote);PablicusRichMessage.prepareChatBubble(b);row.append(b);return row;
+@@ -587 +587,12 @@
+-  bubble.append(renderRichContent({v:1,blocks},true),messageMeta({state:['queued','sending','error'].includes(m.queueState)?m.queueState:'queued'}));row.append(bubble);return row;
++  bubble.append(renderRichContent({v:1,blocks},true),messageMeta({state:['queued','sending','error'].includes(m.queueState)?m.queueState:'queued'}));
++  PablicusRichMessage.prepareChatBubble(bubble);
++  const store=PablicusChat.store,owner=PablicusChat.scope.user,chat=PablicusChat.scope.chat;
++  const active=()=>row.isConnected&&PablicusChat.store===store&&PablicusChat.scope.user===owner&&PablicusChat.scope.chat===chat;
++  messageTools.decoratePending(row,bubble,m,{
++   isCurrent:active,
++   open:block=>{if(!active())return;const visual=blocks.filter(b=>['image','video'].includes(b.type));return mediaViewer.open(visual.map(b=>mediaItem(b,true)),Math.max(0,visual.findIndex(b=>b.id===block?.id)));},
++   download:block=>{if(!active()||!block?.assetId)return;const asset=PablicusChat.assets.get(block.assetId);if(!asset?.file)throw Error('Вложение не найдено на устройстве');const a=document.createElement('a');a.href=PablicusChat.localAssetUrl(block.assetId);a.download=asset.name||'Вложение';document.body.append(a);a.click();a.remove();},
++   outbox:()=>{if(active())return showOutbox();},
++   retry:async()=>{if(!active())return;await store.retry(m.outboxId);if(active()){await PablicusChat.refreshQueue();if(PablicusChat.store===store)pump();}},
++   cancel:async()=>{if(!active()||!confirm('Отменить эту отправку? Если в ней несколько сообщений, будут отменены все ещё не отправленные сообщения этой отправки.'))return;await store.cancel(m.outboxId);if(PablicusChat.store===store)await PablicusChat.refreshQueue();}
++  });row.append(bubble);return row;
+diff --git a/vision-talk/pablicus/chat-actions.js b/vision-talk/pablicus/chat-actions.js
+index d48f7a3..1e62ec4 100644
+--- a/vision-talk/pablicus/chat-actions.js
++++ b/vision-talk/pablicus/chat-actions.js
+@@ -118 +118,4 @@
+-   let timer=0,start=null,suppressUntil=0;const blockFor=event=>raw.type==='rich'?event.target.closest('[data-block-id]')?.dataset.blockId||null:null;
++   bindGesture(bubble,event=>open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:raw.type==='rich'?event.target.closest('[data-block-id]')?.dataset.blockId||null:null}),()=>{if(!selected.size)return false;select(raw);return true;});
++  }
++  function bindGesture(bubble,invoke,selectMessage){
++   let timer=0,start=null,suppressUntil=0;
+@@ -120,4 +123,33 @@
+-   bubble.addEventListener('contextmenu',event=>{event.preventDefault();event.stopPropagation();cancel();if(bubble.getAttribute('aria-expanded')==='true')return;suppressUntil=Date.now()+900;open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})});
+-   bubble.addEventListener('pointerdown',event=>{if(event.button!==0||event.isPrimary===false||event.target.closest('input,textarea,select'))return;cancel();start={x:event.clientX,y:event.clientY};timer=scope.setTimeout(()=>{timer=0;if(!bubble.isConnected)return;suppressUntil=Date.now()+900;open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})},500)});
+-   bubble.addEventListener('pointermove',event=>{if(start&&Math.hypot(event.clientX-start.x,event.clientY-start.y)>10)cancel()});for(const name of['pointerup','pointercancel','pointerleave'])bubble.addEventListener(name,cancel);
+-   bubble.addEventListener('click',event=>{if(Date.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation();return}if(selected.size){event.preventDefault();event.stopImmediatePropagation();try{select(raw)}catch(error){options.onError?.(error)}return}/* A short tap belongs to the content: links, media and audio keep their own actions. */},true);
++   bubble.draggable=false;
++   bubble.querySelectorAll('img,video,.richMedia,.mediaOpen').forEach(n=>n.draggable=false);
++   bubble.addEventListener('dragstart',e=>{e.preventDefault();e.stopPropagation();},true);
++   bubble.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();cancel();if(bubble.getAttribute('aria-expanded')==='true')return;suppressUntil=Date.now()+900;invoke(e);});
++   bubble.addEventListener('pointerdown',e=>{if(e.button!==0||e.isPrimary===false||e.target.closest('input,textarea,select,.richAudioPlay,.richAudioReply,.messageReceipt,.messageReaction'))return;cancel();start={id:e.pointerId,x:e.clientX,y:e.clientY};timer=scope.setTimeout(()=>{timer=0;if(!start||!bubble.isConnected)return;suppressUntil=Date.now()+900;invoke(e);},450);});
++   bubble.addEventListener('pointermove',e=>{if(start&&(e.pointerId!==start.id||Math.hypot(e.clientX-start.x,e.clientY-start.y)>10))cancel();});
++   for(const name of ['pointerup','pointercancel','pointerleave'])bubble.addEventListener(name,cancel);
++   bubble.addEventListener('click',e=>{if(Date.now()<suppressUntil){e.preventDefault();e.stopImmediatePropagation();return;}try{if(selectMessage?.()){e.preventDefault();e.stopImmediatePropagation();}}catch(error){options.onError?.(error);}},true);
++  }
++  function decoratePending(row,bubble,m,callbacks){
++   bubble.tabIndex=0;bubble.setAttribute('aria-haspopup','menu');bubble.setAttribute('aria-label','Исходящее сообщение. Удерживайте, чтобы открыть действия');
++   const openPending=event=>{
++    if(!callbacks.isCurrent())return;
++    const blockId=event?.target?.closest('[data-block-id]')?.dataset.blockId;
++    const blocks=m.richBlocks||[],media=blocks.filter(b=>b.type!=='text');
++    const block=media.find(b=>b.id===blockId)||(media.length===1?media[0]:null);
++    const guard=fn=>()=>{if(callbacks.isCurrent())return fn();};
++    const actions=[];
++    if(block&&['image','video'].includes(block.type))actions.push({id:'open',icon:'expand',label:'Открыть',onSelect:guard(()=>callbacks.open(block))});
++    if(block)actions.push({id:'download',label:'Скачать',onSelect:guard(()=>callbacks.download(block))});
++    const text=blocks.filter(b=>b.type==='text').map(b=>b.text||'').join('\n').trim();
++    if(text)actions.push({id:'copy',label:'Скопировать',onSelect:guard(()=>scope.navigator.clipboard.writeText(text))});
++    actions.push({id:'outbox',icon:'send',label:'Исходящие',onSelect:guard(callbacks.outbox)});
++    if(m.queueState!=='sending'){
++     actions.push({id:'retry',icon:'send',label:'Повторить отправку',onSelect:guard(callbacks.retry)});
++     actions.push({id:'cancel',icon:'delete',label:'Отменить отправку',danger:true,onSelect:guard(callbacks.cancel)});
++    }
++    const previewTarget=blockId?[...bubble.querySelectorAll('[data-block-id]')].find(n=>n.dataset.blockId===blockId):bubble;
++    menu.open({anchor:bubble,previewTarget,actions,spotlight:true,onError:error=>options.onError?.(error)});
++   };
++   bindGesture(bubble,openPending);
++   bubble.addEventListener('keydown',e=>{if(e.target===bubble&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openPending(e);}});
++
+@@ -126 +158 @@
+-  return Object.freeze({open,decorate,revision,sync,dismiss,clear,destroy,effective,get selected(){return [...selected]}});
++  return Object.freeze({open,decorate,decoratePending,revision,sync,dismiss,clear,destroy,effective,get selected(){return [...selected]}});
+diff --git a/vision-talk/pablicus/message-menu.js b/vision-talk/pablicus/message-menu.js
+index 8948f83..3858bf0 100644
+--- a/vision-talk/pablicus/message-menu.js
++++ b/vision-talk/pablicus/message-menu.js
+@@ -100 +100 @@
+-    let anchorAria = null, pointOffset = null, oldOverflow = null, blurStyle = null;
++    let anchorAria = null, pointOffset = null, oldOverflow = null, blurStyle = null, previewSize = null, ignoreOpeningClick = false;
+@@ -110,0 +111,2 @@
++      const bounds=original.getBoundingClientRect();
++      previewSize={width:bounds.width,height:bounds.height,media:original.matches('.richMedia-image,.richMedia-video,.mediaOpen,.chatSingleMedia')};
+@@ -117 +119 @@
+-        target.removeAttribute('srcset'); target.tabIndex=-1;
++        target.removeAttribute('srcset'); target.tabIndex=-1;target.draggable=false;
+@@ -130,0 +133 @@
++      if(previewSize.media){copy.style.setProperty('width',bounds.width+'px','important');copy.style.setProperty('inline-size',bounds.width+'px','important');copy.style.setProperty('height',bounds.height+'px','important');copy.style.setProperty('block-size',bounds.height+'px','important');copy.style.setProperty('max-height','none','important');copy.style.setProperty('transform-origin','top left','important');}
+@@ -143,0 +147,5 @@
++      if(previewSize?.media&&previewSize.width>0&&previewSize.height>0){
++        const scale=Math.min(1,(box.width-24)/previewSize.width,previewHeight/previewSize.height);
++        preview.style.width=(previewSize.width*scale)+'px';preview.style.height=(previewSize.height*scale)+'px';preview.style.overflow='hidden';
++        preview.firstElementChild.style.setProperty('transform','scale('+scale+')','important');
++      }
+@@ -183 +191 @@
+-      opened = false;
++      opened = false;ignoreOpeningClick=false;
+@@ -194 +202 @@
+-      preview.replaceChildren();backdrop.hidden=preview.hidden=true;
++      preview.replaceChildren();previewSize=null;backdrop.hidden=preview.hidden=true;
+@@ -262 +270 @@
+-      opened = true; root.hidden = false;
++      opened = true;ignoreOpeningClick=true;root.hidden = false;
+@@ -273,0 +282,5 @@
++    // A held finger can release over a newly positioned menu item. That release
++    // is not a second gesture and must never activate an action or dismiss it.
++    function onClick(event) {
++      if(opened && ignoreOpeningClick && event.detail>0){event.preventDefault();event.stopImmediatePropagation();ignoreOpeningClick=false;}
++    }
+@@ -274,0 +288 @@
++      if(opened)ignoreOpeningClick=false;
+@@ -306,0 +321 @@
++      document.removeEventListener('click',onClick,true);
+@@ -314,0 +330 @@
++    document.addEventListener('click',onClick,true);
+diff --git a/vision-talk/pablicus/public-ui-foundation.css b/vision-talk/pablicus/public-ui-foundation.css
+index 6b8bb31..637e0e3 100644
+--- a/vision-talk/pablicus/public-ui-foundation.css
++++ b/vision-talk/pablicus/public-ui-foundation.css
+@@ -115,0 +116,24 @@
++
++/* UI-V4: the rounded frame and its pixels have exactly the same natural ratio.
++   Bound both axes together; a max-height on the pixels alone creates blank bars. */
++#app .row>.bubble.chatSingleMedia{width:min(62%,280px,var(--chat-media-limit,280px))!important;max-width:280px}
++#app .row .richMessage>.richMedia-image,
++#app .row .richMessage>.richMedia-image.richImageReady,
++#app .row .richMessage>.richMedia-video,
++#app .row .mediaOpen[data-media-type="image"]{
++ display:block;position:relative;box-sizing:border-box;width:min(100%,var(--chat-media-limit,280px));height:auto;min-width:0;min-height:0;max-height:none;
++ aspect-ratio:var(--rich-image-ratio,1.333333);padding:0!important;margin:0;gap:0;border:0!important;border-radius:16px!important;
++ overflow:hidden!important;clip-path:inset(0 round 16px);background:transparent!important;isolation:isolate;
++}
++#app .row.mine .richMessage>:is(.richMedia-image,.richMedia-video){align-self:flex-end}
++#app .row .richMessage>.richMedia-image>.richImage,
++#app .row .richMessage>.richMedia-video>.richVideo,
++#app .row .mediaOpen[data-media-type="image"]>.messageImage{
++ position:absolute;inset:0;display:block;width:100%;height:100%;min-width:0;min-height:0;max-width:none;max-height:none;
++ object-fit:contain;border-radius:inherit!important;margin:0;padding:0;pointer-events:none;
++}
++#app .row :is(.richMedia-image,.richMedia-video,.mediaOpen,img,video){-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;touch-action:pan-y}
++#app .row :is(.richMedia-image,.richMedia-video,.mediaOpen):active{transform:none!important}
++.pmmPreview,.pmmPreview *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
++
++#app .row.mine .mediaOpen[data-media-type="image"]{margin-left:auto}
+diff --git a/vision-talk/pablicus/rich-message.js b/vision-talk/pablicus/rich-message.js
+index 5699739..ac3fa34 100644
+--- a/vision-talk/pablicus/rich-message.js
++++ b/vision-talk/pablicus/rich-message.js
+@@ -20,0 +21,21 @@
++  // Tight media frames: use decoded dimensions, never a fixed portrait canvas.
++  function setMediaDimensions(frame, width, height) {
++    if (!(width > 0 && height > 0 && Number.isFinite(width / height))) return;
++    const ratio = width / height;
++    frame.dataset.sourceRatio = String(ratio);
++    frame.style.setProperty('--rich-image-ratio', String(ratio));
++    frame.style.setProperty('--chat-media-limit', (320 * ratio) + 'px');
++    const bubble = frame.closest('.chatSingleMedia');
++    if (bubble) bubble.style.setProperty('--chat-media-limit', (320 * ratio) + 'px');
++  }
++  function prepareChatBubble(bubble) {
++    const rich = [...bubble.children].find(n => n.classList.contains('richMessage'));
++    const frame = rich?.children.length === 1 && rich.firstElementChild.matches('.richMedia-image,.richMedia-video')
++      ? rich.firstElementChild : [...bubble.children].find(n => n.matches('.mediaOpen[data-media-type="image"]'));
++    const extra = [...bubble.children].some(n => n !== rich && n !== frame && !n.matches('.meta,.messageReactions') && (n.textContent.trim() || n.querySelector('img,video')));
++    if (frame && !extra) {
++      bubble.classList.add('chatSingleMedia');
++      const limit = frame.style.getPropertyValue('--chat-media-limit');
++      if (limit) bubble.style.setProperty('--chat-media-limit', limit);
++    }
++  }
+@@ -206 +227 @@
+-          if(item.image.naturalWidth>0&&item.image.naturalHeight>0)item.button.style.setProperty('--rich-image-ratio',String(item.image.naturalWidth/item.image.naturalHeight));
++          setMediaDimensions(item.button,item.image.naturalWidth,item.image.naturalHeight);
+@@ -553,0 +575 @@
++        video.draggable = false;container.draggable = false;
+@@ -559 +581 @@
+-          container.style.setProperty('--rich-image-ratio',String(block.width/block.height));
++          setMediaDimensions(container,block.width,block.height);
+@@ -573 +595 @@
+-        video.addEventListener('loadedmetadata', () => {if(video.videoWidth>0&&video.videoHeight>0)container.style.setProperty('--rich-image-ratio',String(video.videoWidth/video.videoHeight));notifyResize();syncVideo(item);});
++        video.addEventListener('loadedmetadata', () => {setMediaDimensions(container,video.videoWidth,video.videoHeight);notifyResize();syncVideo(item);});
+@@ -592,0 +615 @@
++        image.draggable = false;button.draggable = false;
+@@ -596 +619 @@
+-          button.style.setProperty('--rich-image-ratio', String(block.width / block.height));
++          setMediaDimensions(button,block.width,block.height);
+@@ -662 +685 @@
+-  const api = Object.freeze({ render, validate, textContent, groupBlocks, stopAll, readableName, attachmentLabel });
++  const api = Object.freeze({setMediaDimensions,prepareChatBubble, render, validate, textContent, groupBlocks, stopAll, readableName, attachmentLabel });

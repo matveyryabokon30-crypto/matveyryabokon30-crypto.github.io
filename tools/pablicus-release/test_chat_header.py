@@ -88,7 +88,7 @@ with sync_playwright() as pw:
    print(page.locator('#sourceFixture').evaluate('(n)=>({html:n.outerHTML,box:n.getBoundingClientRect().toJSON(),image:n.querySelector("img")?.naturalWidth})'),flush=True)
    raise
   check(str(w)+'x'+str(h)+' decoded ratio recovered without metadata',page.locator('#sourceFixture .richMedia').evaluate('(n)=>Number(n.style.getPropertyValue("--rich-image-ratio"))')==w/h)
-  check(str(w)+'x'+str(h)+' entire photo fits without cover crop',page.locator('#sourceFixture img').evaluate('(n)=>{const s=getComputedStyle(n),r=n.getBoundingClientRect(),p=n.parentElement.getBoundingClientRect();return n.naturalWidth>0&&s.objectFit==="contain"&&s.position==="static"&&r.height<=421&&r.height<=p.height+1}'))
+  check(str(w)+'x'+str(h)+' entire photo fits without cover crop',page.locator('#sourceFixture img').evaluate('(n)=>{const s=getComputedStyle(n),r=n.getBoundingClientRect(),p=n.parentElement.getBoundingClientRect();return n.naturalWidth>0&&s.objectFit==="contain"&&Math.abs(r.width/r.height-n.naturalWidth/n.naturalHeight)<.005&&Math.abs(r.width-p.width)<1&&Math.abs(r.height-p.height)<1&&r.height<=321}'))
   page.evaluate("document.querySelector('#sourceFixture').remove();URL.revokeObjectURL(sourceUrl)")
  browser.close()
 (out/f'header-{a.engine}.json').write_text(json.dumps({'engine':a.engine,'checks':checks,'passed':len(checks)},ensure_ascii=False,indent=2))
