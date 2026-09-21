@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru" data-build="2026.09.21-ui.9.17" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1e3c2c">
+<style>html,body{margin:0;background-color:#1e3c2c;color-scheme:dark}html{--topology-chrome:#1e3c2c}</style>
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="SEKKES — личное пространство для разговора">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="assets/ui/tokens.css">
+<link rel="stylesheet" href="assets/ui/app.css">
+<title>SEKKES</title>
+</head>
+<body>
+<div id="shell" data-route="home" data-voice="idle">
+<header class="app-header"><span id="headerTitle" class="brand">sekkes</span></header>
+<main id="routeHost" tabindex="-1"></main>
+<div class="session-dock" id="sessionDock"><p id="aiStateLabel" role="status">Подключение сервисов…</p><button id="voiceEnableAudio" class="rounded-action" type="button" hidden>Включить звук</button>
+<p id="dictationStatus" class="dictation-status" role="status" hidden></p><div id="recordingPanel" class="recording-panel" hidden></div><div class="conversation-controls" id="conversationControls"><form id="composer" class="composer" hidden><label for="draft" class="sr-only">Сообщение</label><textarea id="draft" rows="1" maxlength="2000" placeholder="Сообщение…"></textarea><button id="micButton" type="button" class="icon-button" aria-label="Голосовой набор" title="Голосовой набор"></button><button id="sendButton" hidden type="submit" class="icon-button send" aria-label="Отправить сообщение"></button></form><button id="micTestLink" type="button" class="live-control" aria-label="Начать голосовой разговор" title="Начать голосовой разговор"></button></div><div hidden id="recordButtonParking"><button id="recordButton" type="button" class="icon-button record-button" aria-label="Записать голосовое сообщение" title="Записать голосовое сообщение"></button></div></div>
+<div id="toast" class="toast" role="status" hidden></div><div id="chatAnnouncement" class="sr-only" aria-live="polite"></div>
+</div>
+<div id="navigationLayer" class="navigation-layer" aria-label="Навигация SEKKES"><div id="menuBackdrop" class="menu-backdrop" hidden></div><button id="menuTrigger" class="menu-trigger" type="button" aria-label="Открыть меню" aria-controls="navigationPanel" aria-expanded="false"></button><nav id="navigationPanel" class="navigation-panel" aria-label="Разделы SEKKES" hidden inert><div id="menuItems"></div></nav></div>
+<dialog id="dialog" aria-labelledby="dialogTitle"><button id="dialogClose" class="icon-button dialog-close" aria-label="Закрыть окно"></button><div id="dialogContent"></div></dialog>
+<script type="module" src="assets/ui/boot.mjs"></script>
+</body></html>
