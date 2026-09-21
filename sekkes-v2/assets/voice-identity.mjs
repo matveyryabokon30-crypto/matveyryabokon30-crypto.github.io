@@ -1,6 +1,8 @@
 export class VoiceIdentityHandshake {
   constructor({send,instruction,onReady=()=>{},onError=()=>{},setTimer=setTimeout,clearTimer=clearTimeout}) {
-    Object.assign(this,{send,instruction,onReady,onError,setTimer,clearTimer});
+    Object.assign(this,{send,instruction,onReady,onError});
+    // Browser timer functions require the global receiver, never this handshake.
+    this.setTimer=(...args)=>setTimer(...args);this.clearTimer=(...args)=>clearTimer(...args);
     this.id='voice_identity_'+crypto.randomUUID();this.sent=false;this.done=false;this.disposed=false;
   }
   receive(event) {
@@ -13,7 +15,7 @@ export class VoiceIdentityHandshake {
       catch{this.clearTimer(this.timer);this.done=true;this.onError();}
     }
     if(event.type==='session.instructions.appended'&&event.client_event_id===this.id){this.clearTimer(this.timer);this.done=true;this.onReady();}
-    if(event.type==='error'&&(event.error?.event_id===this.id||event.client_event_id===this.id)){this.clearTimer(this.timer);this.done=true;this.onError();}
+    if(event.type==='error'&&(event.error?.event_id===this.id||event.error?.client_event_id===this.id||event.client_event_id===this.id)){this.clearTimer(this.timer);this.done=true;this.onError();}
   }
   dispose(){this.disposed=true;this.clearTimer(this.timer);}
 }

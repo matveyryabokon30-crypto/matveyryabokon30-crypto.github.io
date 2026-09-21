@@ -1,52 +1,8 @@
-/* CacheStorage is origin-wide. Never delete caches belonging to Pablicus or another app. */
-'use strict';
-const BUILD = '2026.09.20-s3.28';
-const PREFIX = 'sekkes-v2-';
-const CACHE = PREFIX + BUILD;
-const BASE = new URL('./', self.location.href);
-const SHELL = ['./', 'index.html', 'assets/ui-s1-1.css', 'assets/ui-s2-3.js','assets/voice-s3-0.mjs','assets/voice-s3-0.css','assets/s3-api.mjs', 'manifest.webmanifest'].map(p => new URL(p, BASE).href);
-const ownPath = url => url.origin === BASE.origin && url.pathname.startsWith(BASE.pathname);
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    for (const path of SHELL) {
-      const response = await fetch(path, { cache: 'no-store' });
-      if (!response.ok) throw new Error('Incomplete SEKKES shell');
-      await cache.put(path, response);
-    }
-    await self.skipWaiting();
-  })());
-});
-self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const names = await caches.keys();
-    await Promise.all(names.filter(n => n.startsWith(PREFIX) && n !== CACHE).map(n => caches.delete(n)));
-    await self.clients.claim();
-    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: false });
-    clients.filter(c => ownPath(new URL(c.url))).forEach(c => c.postMessage({ app: 'sekkes-v2', type: 'VERSION_READY', version: BUILD }));
-  })());
-});
-self.addEventListener('fetch', event => {
-  const request = event.request, url = new URL(request.url);
-  if (request.method !== 'GET' || !ownPath(url)) return;
-  if (['version.json','s2-config.json'].some(p=>url.pathname===new URL(p,BASE).pathname)) {
-    event.respondWith(fetch(request, { cache: 'no-store' }).catch(() => new Response('', { status: 503 })));
-    return;
-  }
-  // Explicit allowlist: no conversations, arbitrary API results, or other apps are cached.
-  const clean = new URL(url); clean.search = ''; clean.hash = '';
-  const key = request.mode === 'navigate' && [BASE.pathname, new URL('index.html', BASE).pathname].includes(url.pathname) ? BASE.href : clean.href;
-  if (!SHELL.includes(key)) return;
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE);
-    try {
-      const response = await fetch(request, { cache: 'no-store' });
-      if (response.ok) { event.waitUntil(cache.put(key, response.clone()).catch(() => {})); return response; }
-      return (await cache.match(key)) || response;
-    } catch {
-      return (await cache.match(key)) || new Response('SEKKES: нет соединения. Откройте приложение после восстановления сети.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-    }
-  })());
-});
-
-
+// Installed SEKKES keeps its existing scope. Cache immutable shell as one release; no API/private responses.
+const BUILD='2026.09.21-ui.9.0';
+const BASE=new URL('./',self.location.href);
+const CACHE='sekkes-v2-release-'+encodeURIComponent(BASE.pathname)+'-'+BUILD;
+const FILES=['assets/vendor/supabase.mjs','assets/account-session.mjs','assets/account-panel.mjs','assets/passkeys.mjs','assets/s3-api.mjs?v=2026.09.21-ui.9.0','assets/voice-trace.mjs','assets/session-cues.mjs','assets/sounds/air-start.mp3','assets/sounds/exhale-end.mp3','./','index.html','assets/ui/boot.mjs','assets/ui/app.mjs','assets/ui/live-control.mjs','assets/voice-end-command.mjs','assets/voice-identity.mjs?v=2026.09.21-ui.9.0','assets/ui/app.css','assets/ui/tokens.css','assets/ui/components.mjs','assets/ui/registry.mjs','assets/ui/preferences.mjs','assets/ui/rich-message.mjs','assets/ui/product-adapters.mjs','assets/ui/chat-session.mjs','assets/ui/viewport.mjs','assets/ui/chat-recorder.mjs','assets/ui/recording-control.mjs','assets/ui/navigation.mjs','assets/ui/dictation.mjs','assets/ui/dictation-control.mjs','assets/runtime-config.mjs',...['home','settings','profile','games','world'].map(x=>'assets/ui/screens/'+x+'.mjs'),'assets/voice-s3-0.mjs?v=2026.09.21-ui.9.0',...['voice-finalize','voice-identity','preferences','voice-picker','s3-api','preview-player','registry-foundation'].map(x=>'assets/'+x+'.mjs?v=2026.09.20-s3.28')].map(x=>new URL(x,BASE).href);
+self.addEventListener('install',e=>e.waitUntil((async()=>{const cache=await caches.open(CACHE);const responses=await Promise.all(FILES.map(async url=>{const r=await fetch(url,{cache:'reload'});if(!r.ok)throw Error('Incomplete shell');return [url,r]}));await Promise.all(responses.map(([url,r])=>cache.put(url,r)));})()));
+// No skipWaiting, clients.claim or origin-wide deletion. A live page keeps its release.
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||!FILES.includes(e.request.url))return;e.respondWith(caches.open(CACHE).then(c=>c.match(e.request)).then(r=>r||fetch(e.request)));});

@@ -34,6 +34,7 @@ export class VoicePreferences {
 
 export function supabaseVoiceProfile(api) {
   async function request(method,voice) {
+    await api.sessionController?.ensureFresh();
     const epoch=api.authEpoch;
     const auth=api.auth();
     const r=await api.transport(api.config.projectUrl+'/auth/v1/user',{
