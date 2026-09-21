@@ -33,17 +33,26 @@ with tempfile.TemporaryDirectory() as tmp,sync_playwright() as pw:
   page.goto(url);page.wait_for_function('window.PablicusUpdateGuards&&window.PablicusChat&&navigator.serviceWorker.controller',timeout=30000);page.wait_for_timeout(4500)
   check('published baseline installed with actual service worker',page.evaluate('PablicusBuild.id')==ids['old'])
   check('registration bypasses HTTP cache',page.evaluate('async()=> (await navigator.serviceWorker.getRegistration()).updateViaCache')=='none')
-  # Local account-scoped store and file bytes, not fabricated backend messages.
-  page.evaluate('''async()=>{window.fixtureOwner='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';window.fixtureChat='cccccccc-cccc-4ccc-8ccc-cccccccccccc';await PablicusChat.open(fixtureOwner,fixtureChat,[]);await PablicusChat.fillDraft('Черновик переживает обновление');await PablicusChat.flush();localStorage.setItem('update-fixture-session','preserve');const db=await new Promise((resolve,reject)=>{const q=indexedDB.open('update-fixture-bytes',1);q.onupgradeneeded=()=>q.result.createObjectStore('files');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)});await new Promise((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(new Blob(['original-file-bytes']),'photo');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();document.activeElement.blur();}''')
+  # Use the product's real scoped store for attachment bytes, including its
+  # existing WebKit byte fallback; a bare fixture DB would bypass that path.
+  seeded=page.evaluate('''async()=>{let stage='open';try{
+   const user='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',chat='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+   await PablicusChat.open(user,chat,[]);stage='text';await PablicusChat.fillDraft('Черновик переживает обновление');
+   stage='attachment';await PablicusChat.addFiles([new File(['original-file-bytes'],'fixture.txt',{type:'text/plain'})]);
+   stage='flush';await PablicusChat.flush();stage='read';const saved=await PablicusChat.store.read();
+   localStorage.setItem('update-fixture-session','preserve');document.activeElement.blur();
+   return {text:saved.text,files:saved.files.length,bytes:await saved.files[0].file.text()};
+  }catch(e){throw Error(stage+': '+(e?.name||'unknown')+' '+(e?.message||String(e)));}}''')
+  check('actual product draft and file seeded before upgrade',seeded['files']==1 and seeded['bytes']=='original-file-bytes' and seeded['text'].strip()=='Черновик переживает обновление',seeded)
   # Return to a cached old app after publishing the new assets. No update click.
   state['root']=r;before=len(navigations);page.reload();page.wait_for_function('(id)=>window.PablicusBuild?.id===id',arg=ids['new'],timeout=35000);page.wait_for_timeout(1600)
   check('cached old launch automatically reaches new release without clicks',page.evaluate('PablicusBuild.id')==ids['new'])
   check('new UI has no manual update banner or button',page.locator('#updateNotice,#applyUpdate').count()==0)
   check('updated HTML and active worker identities agree',page.evaluate('async()=> (await PablicusBuild.inspect()).coherent'))
   check('local session state survives update',page.evaluate('localStorage.getItem("update-fixture-session")')=='preserve')
-  saved=page.evaluate('''async()=>{const s=new PablicusRichStore('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc');try{return (await s.read()).text}finally{s.close()}}''')
-  check('real scoped draft survives automatic page replacement',saved=='Черновик переживает обновление',saved)
-  check('original file bytes survive automatic update',page.evaluate('''async()=>{const db=await new Promise(resolve=>{const q=indexedDB.open('update-fixture-bytes',1);q.onsuccess=()=>resolve(q.result)});const blob=await new Promise(resolve=>{const q=db.transaction('files').objectStore('files').get('photo');q.onsuccess=()=>resolve(q.result)});db.close();return await blob.text()}''')=='original-file-bytes')
+  saved=page.evaluate('''async()=>{const s=new PablicusRichStore('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc');try{const d=await s.read();return {text:d.text,files:d.files.length,bytes:await d.files[0].file.text()}}finally{s.close()}}''')
+  check('real scoped draft survives automatic page replacement',saved['text']==seeded['text'],saved['text'])
+  check('original product attachment bytes survive automatic update',saved['files']==1 and saved['bytes']==seeded['bytes'])
   same=len(navigations);page.wait_for_timeout(4400);check('same-version startup does not enter a reload loop',len(navigations)==same)
   # Existing client returns less than 30s after its previous check. A busy call
   # blocks activation; the guard releases it without a user update action.
