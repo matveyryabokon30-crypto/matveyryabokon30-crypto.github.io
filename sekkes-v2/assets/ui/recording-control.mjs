@@ -22,7 +22,7 @@ export function recordingControl(ctx,panel,mic,signal,recorderOptions={}){
    const response=await ctx.runtime()?.sendVoice({id:requestId,audio:audioBase64(recorder.clip.bytes)});
    if(disposed||epoch!==generation)return;
    if(response){requestId=null;recorder.cancel();}
-  }catch(e){if(!disposed&&epoch===generation)ctx.sendError(e.code||'RECORDING_FAILED');}
+  }catch(e){if(!disposed&&epoch===generation){if(!['TURN_INTERRUPTED','SERVICE_UNAVAILABLE','DUPLICATE_TURN'].includes(e.code))requestId=null;ctx.sendError(e.code||'RECORDING_FAILED');}}
   finally{if(epoch===generation){sending=false;if(!disposed)render({state:recorder.state});}}
  }
  mic.addEventListener('click',()=>{

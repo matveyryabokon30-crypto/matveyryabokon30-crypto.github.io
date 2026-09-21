@@ -8,10 +8,10 @@ import {runtimeConfig,voiceCatalog} from './runtime-config.mjs';
 import {restoreConversation} from './ui/chat-session.mjs';
 import {LiveTranscript} from './live-transcript.mjs';
 import {prepareFinalization} from './voice-finalize.mjs?v=2026.09.20-s3.28';
-import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.21-ui.9.6';
+import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.21-ui.9.7';
 import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.20-s3.28';
 import {VoicePicker} from './voice-picker.mjs?v=2026.09.20-s3.28';
-import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.6';
+import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.7';
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
 const msg={VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер SEKKES недоступен.',AUTH_REQUIRED:'Войди в SEKKES.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Лимит теста остановил новый запрос.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',DUPLICATE_TURN:'Этот запрос уже принят сервером. Не отправляй его повторно. Ответ можно проверить после повторного входа.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
 let account=null,accountPanel=null,accountRestore=null;
@@ -42,7 +42,7 @@ async function finishAccountLogin(){
  try{await preferences.load();}catch{note('Настройку голоса загрузим при начале разговора.');}
  if(epoch!==api.authEpoch)return;
  if(transcript?.uid!==api.user.id){transcript?.dispose();transcript=new LiveTranscript({api,uid:api.user.id});}
- try{const saved=JSON.parse(localStorage.getItem('sekkes:chat-draft:'+api.user.id)||'null');if(saved?.text&&!draft.value){draft.value=saved.text;if(saved.id)retryTurn={text:saved.text.trim(),id:saved.id};}}catch{}
+ // Keep old drafts stored for recovery, but do not insert stale text into a fresh launch.
  try{await transcript.flush();await syncHistory();}catch{/* Saved outbox retries on network recovery. */}
  globalThis.window?.SekkesUI?.textBusy(false);
  if(epoch===api.authEpoch)resumeAfterLogin();
@@ -60,7 +60,7 @@ async function sendMessage(turn){
   render('user',r.text,{id:'j:'+r.id+':user'});render('ai',r.reply,{id:'j:'+r.id+':assistant'});
   globalThis.window?.SekkesUI?.sendError('');syncHistory().catch(()=>{});return r;
  }catch(e){
-  if(epoch===api.authEpoch)globalThis.window?.SekkesUI?.sendError(e.code||'SERVICE_UNAVAILABLE');
+  if(epoch===api.authEpoch){globalThis.window?.SekkesUI?.sendError(e.code||'SERVICE_UNAVAILABLE');await syncHistory().catch(()=>{});}
   throw e;
  }finally{textBusy=false;globalThis.window?.SekkesUI?.textBusy(false);status('');}
 }
@@ -74,7 +74,7 @@ async function sendText(){
  try{
   const r=await sendMessage({...retryTurn,kind:'text'});if(!r)return;
   retryTurn=null;if(draft.value.trim()===text)draft.value='';saveDraft();
- }catch{/* The draft and request ID remain available for an explicit retry. */}
+ }catch(e){if(!['TURN_INTERRUPTED','SERVICE_UNAVAILABLE','DUPLICATE_TURN'].includes(e.code))retryTurn=null;/* Preserve visible text; a definitive failed response may be retried with a fresh ID. */}
 }
 async function sendVoice({id,audio}){
  if(textBusy)throw new S3Error('TURN_BUSY');

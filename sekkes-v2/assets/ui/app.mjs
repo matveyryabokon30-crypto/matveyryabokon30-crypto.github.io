@@ -61,8 +61,8 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
    if(!ctx.messages){for(const row of items)pendingMessages.push([row.speaker==='user'?'user':'ai',row.text,{id:row.id,at:row.at}]);return;}const list=ctx.messages,oldHeight=list.scrollHeight,oldTop=list.scrollTop;const oldIds=new Set([...list.children].map(n=>n.dataset.messageId));
    for(const row of items){appendMessage(row.speaker==='user'?'user':'ai',row.text,{id:row.id});const node=[...list.children].find(n=>n.dataset.messageId===row.id);if(node)node.dataset.at=row.at;}
    [...list.children].sort((a,b)=>(a.dataset.at||'9999').localeCompare(b.dataset.at||'9999')||(a.dataset.messageId||'').localeCompare(b.dataset.messageId||'')).forEach(n=>list.append(n));
-   if(older)list.scrollTop=oldTop+list.scrollHeight-oldHeight;else if(!oldIds.size)list.scrollTop=list.scrollHeight;
-  },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render:appendMessage,beforeText(){ctx.showConversation()},
+   if(older)list.scrollTop=oldTop+list.scrollHeight-oldHeight;else if(oldHeight-oldTop-list.clientHeight<100||!oldIds.size)requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight});
+  },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render(role,text,meta){ctx.showConversation();appendMessage(role,text,meta)},beforeText(){ctx.showConversation()},
   get captureBusy(){return Boolean(recording?.busy||dictation?.busy)},sendRecording(){recording?.send()},
   textBusy(busy){textPending=busy;ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){ctx.account=user;ctx.profileUpdate?.()},
   reset(){ctx.pauseMedia();dictation?.cancel();recording?.reset();for(const url of attachmentURLs)URL.revokeObjectURL(url);attachmentURLs.clear();pendingMessages.length=0;ctx.messages?.replaceChildren(el('p','empty-state','Диалог пуст.'));cache.get('home')?.reset();ctx.account=null;ctx.profileUpdate?.()},
