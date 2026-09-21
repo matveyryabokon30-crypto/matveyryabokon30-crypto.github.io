@@ -113,6 +113,7 @@ html[data-theme=light]{--chrome-tint:#002222}
 #shell[data-route=home][data-voice=speaking] .wallpaper{filter:none}
 /* UI9.12: full-screen Topology; controls remain on their existing layers. */
 .wallpaper[data-effect=topology]{background:#002222;pointer-events:none;contain:strict}
+.topology-original{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none}
 #shell[data-route=home] .wallpaper[data-effect=topology]:before{display:none}
 #shell[data-route=home] .wallpaper[data-effect=topology]:after{background:linear-gradient(#002222 0,transparent 120px,transparent 75%,#00222288)}
 .composer[data-recording=true]{box-shadow:inset 0 0 0 1px rgba(255,166,153,.65),0 8px 32px #0003}

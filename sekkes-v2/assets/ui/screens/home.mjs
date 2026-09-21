@@ -1,5 +1,5 @@
 import {el} from '../components.mjs';
-import {mountTopology} from '../../topology-visual.mjs';
+import {mountTopology} from '../../topology-original.mjs';
 export function create(ctx){
  const node=el('section','screen home-screen');node.setAttribute('aria-label','Главная');node.dataset.conversation='closed';
  const scene=el('div','wallpaper');scene.dataset.effect='topology';let visual;
