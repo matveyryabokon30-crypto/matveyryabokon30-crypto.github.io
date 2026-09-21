@@ -17,7 +17,7 @@
     verifying: 'Проверяем ключ доступа…',
     registered: 'Ключ доступа добавлен. Теперь с ним можно входить в Sekkes.',
     signedIn: 'Вход выполнен.',
-    cancelled: 'Действие отменено или время ожидания истекло. Можно попробовать снова.',
+    cancelled: 'Действие отменено или время ожидания истекло. Можно попробовать снова. Если ключ SEKKES ещё не создан, сначала привяжи его к аккаунту.',
     account: 'Сначала войдите в подтверждённый аккаунт Sekkes с разрешённым доступом.',
     changed: 'Аккаунт изменился. Откройте профиль нужного аккаунта и попробуйте снова.',
     network: 'Не удалось связаться с сервером. Проверьте интернет и попробуйте снова.',
@@ -227,7 +227,8 @@
         return true;
       } catch (error) {
         await clearCandidate(session);
-        finish(task, {phase: 'error', validated: false, message: failure(error)});
+        const code = typeof error?.code === 'string' && /^[a-zA-Z0-9_]{1,64}$/.test(error.code) ? ' Код: ' + error.code : '';
+        finish(task, {phase: 'error', validated: false, message: failure(error) + code});
         return false;
       }
     }
