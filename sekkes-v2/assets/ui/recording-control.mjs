@@ -7,7 +7,7 @@ export function recordingControl(ctx,panel,mic,signal,recorderOptions={}){
  const composer=mic.closest('form'),canvas=document.createElement('canvas');canvas.className='mic-wave';canvas.hidden=true;canvas.setAttribute('aria-label','Запись голоса');composer.insertBefore(canvas,mic);const wave=micWave(canvas);
  const recorder=new ChatRecorder({...recorderOptions,onState:render});
  function render({state,code}){
-  if(disposed)return;canvas.hidden=state!=='recording';composer.dataset.wave=String(state==='recording');if(state==='recording')wave.start(recorder.record.stream);else if(state!=='permission')wave.stop();
+  if(disposed)return;canvas.hidden=state!=='recording';composer.dataset.wave=String(state==='recording');try{if(state==='recording')wave.start(recorder.record.stream);else if(state==='processing')wave.pause();else if(state!=='permission')wave.stop();}catch{/* Meter cannot interrupt capture or delivery. */}
   if(state==='error'&&requestId)ctx.runtime()?.voiceFailed?.(requestId);
   panel.hidden=true;panel.replaceChildren();
   mic.dataset.recording=state;mic.setAttribute('aria-pressed',String(state==='recording'));
@@ -34,7 +34,7 @@ export function recordingControl(ctx,panel,mic,signal,recorderOptions={}){
   if(ctx.runtime()?.busy)return;ctx.sendError('');ctx.pauseMedia();ctx.runtime()?.recordingStarted?.();wave.unlock();recorder.start();
  },{signal});
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&recorder.capturing){sendWhenReady=false;recorder.finish();}},{signal});
- return {get busy(){return recorder.capturing||sending},get hasAudio(){return Boolean(recorder.clip)||recorder.state==='recording'},get canSend(){return !sending&&(Boolean(recorder.clip)||recorder.state==='recording')},send,
+ return {get busy(){return recorder.capturing||sending},get capturing(){return recorder.capturing},get hasAudio(){return !sending&&(Boolean(recorder.clip)||recorder.state==='recording')},get canSend(){return !sending&&(Boolean(recorder.clip)||recorder.state==='recording')},send,
   beforeRoute(){sendWhenReady=false;if(recorder.capturing)recorder.finish();},
   reset(){++generation;sending=false;requestId=null;sendWhenReady=false;recorder.cancel();},
   dispose(){++generation;disposed=true;wave.stop();canvas.remove();recorder.dispose();}};

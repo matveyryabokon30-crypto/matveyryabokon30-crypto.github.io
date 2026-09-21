@@ -123,3 +123,6 @@ html[data-theme=light]{--chrome-tint:#326f99}
 .composer[data-wave=true] textarea{display:none}
 .composer[data-wave=true] .mic-wave{display:block}
 .mic-wave[hidden]{display:none!important}
+
+/* Avoid Safari double-tap smart zoom, retaining intentional pinch zoom. */
+html,body,#shell,.home-screen,.home-conversation,.home-conversation .messages,.composer,.composer button,.composer textarea{touch-action:manipulation}

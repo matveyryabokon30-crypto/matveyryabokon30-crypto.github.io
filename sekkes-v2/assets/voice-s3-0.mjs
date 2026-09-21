@@ -8,10 +8,10 @@ import {runtimeConfig,voiceCatalog} from './runtime-config.mjs';
 import {restoreConversation} from './ui/chat-session.mjs';
 import {LiveTranscript} from './live-transcript.mjs';
 import {prepareFinalization} from './voice-finalize.mjs?v=2026.09.20-s3.28';
-import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.21-ui.9.8';
+import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.21-ui.9.9';
 import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.20-s3.28';
 import {VoicePicker} from './voice-picker.mjs?v=2026.09.20-s3.28';
-import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.8';
+import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.9';
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
 const msg={VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер SEKKES недоступен.',AUTH_REQUIRED:'Войди в SEKKES.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Лимит теста остановил новый запрос.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',DUPLICATE_TURN:'Этот запрос уже принят сервером. Не отправляй его повторно. Ответ можно проверить после повторного входа.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
 let account=null,accountPanel=null,accountRestore=null;
@@ -60,7 +60,7 @@ async function sendMessage(turn){
   render('user',r.text,{id:'j:'+r.id+':user',state:'sent'});render('ai',r.reply,{id:'j:'+r.id+':assistant'});
   globalThis.window?.SekkesUI?.sendError('');syncHistory().catch(()=>{});return r;
  }catch(e){
-  if(turn.kind==='voice'&&epoch===api.authEpoch)render('user',acknowledgedText||'…',{id:'j:'+turn.id+':user',state:'failed'});
+  if(turn.kind==='voice'&&epoch===api.authEpoch)render('user',acknowledgedText||'Не отправлено',{id:'j:'+turn.id+':user',state:'failed'});
   if(epoch===api.authEpoch){globalThis.window?.SekkesUI?.sendError(e.code||'SERVICE_UNAVAILABLE');await syncHistory().catch(()=>{});}
   throw e;
  }finally{textBusy=false;globalThis.window?.SekkesUI?.textBusy(false);status('');}
@@ -279,7 +279,7 @@ async function toggleVoice(){
 function logout(){transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;accountPanel?.cancel();pending=null;retryTurn=null;globalThis.window?.SekkesUI?.reset();journalId=null;dialog.close();picker?.close();preferences?.reset();endLive(undefined,'logout');api?.logout();accepted=false;textHistory=[];draft.value='';$('#s3Transcript')?.remove();status('Войди в SEKKES')}
 function mount(){if(globalThis.window?.SekkesUI)return;const tools=document.createElement('div');tools.className='s3-tools';tools.innerHTML='<button id="s3LoginButton" class="s3-login">Войти в SEKKES</button>';$('#aiFull').append(tools);$('#s3LoginButton').onclick=()=>logged()?logout():login();}
 mount();
-window.SekkesS2={voiceFailed:id=>render('user','…',{id:'j:'+id+':user',state:'failed'}),recordingStarted:()=>globalThis.window?.SekkesUI?.beforeText(),voicePending:id=>render('user','…',{id:'j:'+id+':user',state:'pending'}),saveDraft,loadEarlier:()=>hasMoreHistory?syncHistory(true):Promise.resolve(),get voiceActive(){return Boolean(restartPending||(starting&&!startup?.cancelled)||live||recovering||recoveryNeeded)},stopVoice:()=>recoveryNeeded&&!live&&!starting?recoverPrevious():endLive(),toggleMic:toggleVoice,sendText,sendVoice,interrupt:()=>endLive(undefined,'interrupt'),end:logout,login,faceIdSettings,voiceSettings:voicePicker,accountAction:()=>logged()?logout():login(),get busy(){return Boolean(live||starting||closing||recovering||textBusy)},get dirty(){return Boolean(live||starting||closing||draft.value.trim()||textHistory.length||loginBusy||textBusy)}};
+window.SekkesS2={voiceFailed:id=>render('user','Не отправлено',{id:'j:'+id+':user',state:'failed'}),recordingStarted:()=>globalThis.window?.SekkesUI?.beforeText(),voicePending:id=>render('user','…',{id:'j:'+id+':user',state:'pending'}),saveDraft,loadEarlier:()=>hasMoreHistory?syncHistory(true):Promise.resolve(),get voiceActive(){return Boolean(restartPending||(starting&&!startup?.cancelled)||live||recovering||recoveryNeeded)},stopVoice:()=>recoveryNeeded&&!live&&!starting?recoverPrevious():endLive(),toggleMic:toggleVoice,sendText,sendVoice,interrupt:()=>endLive(undefined,'interrupt'),end:logout,login,faceIdSettings,voiceSettings:voicePicker,accountAction:()=>logged()?logout():login(),get busy(){return Boolean(live||starting||closing||recovering||textBusy)},get dirty(){return Boolean(live||starting||closing||draft.value.trim()||textHistory.length||loginBusy||textBusy)}};
 addEventListener('sekkes:route',e=>{if(!globalThis.window?.SekkesUI&&!['ai','text'].includes(e.detail.route)&&live)endLive()});
 document.addEventListener('visibilitychange',()=>{if(!globalThis.window?.SekkesUI&&document.hidden&&live)endLive('Голосовой разговор остановлен при уходе из приложения.')});
 addEventListener('pagehide',()=>{endLive(undefined,'pagehide');accountPanel?.cancel();});

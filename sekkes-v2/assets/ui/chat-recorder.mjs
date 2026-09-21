@@ -14,7 +14,7 @@ export function audioBase64(bytes){let binary='';for(let offset=0;offset<bytes.l
 export class ChatRecorder{
  constructor({mediaDevices=navigator.mediaDevices,Recorder=globalThis.MediaRecorder,decode=decodeRecording,onState=()=>{},clock=()=>Date.now(),timers=globalThis}={}){Object.assign(this,{mediaDevices,Recorder,decode,onState,clock,timers});this.state='idle';this.generation=0;this.record=null;this.clip=null;}
  get capturing(){return ['permission','recording','processing'].includes(this.state)}
- emit(state,detail={}){this.state=state;this.onState({state,...detail})}
+ emit(state,detail={}){this.state=state;try{this.onState({state,...detail})}catch{/* Presentation cannot strand microphone lifecycle. */}}
  async start(){
   if(this.capturing)return;this.clearClip();const generation=++this.generation;this.emit('permission');
   let stream;

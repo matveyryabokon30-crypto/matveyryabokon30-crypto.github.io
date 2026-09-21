@@ -45,7 +45,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   const hasText=draft.value.trim().length>0,hasAudio=Boolean(recording?.hasAudio);
   $('#sendButton').hidden=!hasText&&!hasAudio;
   $('#sendButton').disabled=textPending||(hasAudio?!recording.canSend:!hasText||Boolean(recording?.busy));
-  draft.disabled=Boolean(recording?.busy||hasAudio);composer.dataset.recording=String(Boolean(recording?.busy||hasAudio));
+  draft.disabled=Boolean(recording?.capturing||hasAudio);composer.dataset.recording=String(Boolean(recording?.busy||hasAudio));
  }
  function updateVoice(state){
   if(['connecting','live','listening','speaking'].includes(state))cache.get('home')?.hideConversation();
