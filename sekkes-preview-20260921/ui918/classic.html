@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ru" data-build="2026.09.20-s3.28">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#023859">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sekkes">
+<meta name="description" content="SEKKES — личный AI, игры и Живой мир. Проверка нового интерфейса.">
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="assets/ui-s1-1.css?v=2026.09.20-s3.28">
+<link rel="stylesheet" href="assets/voice-s3-0.css?v=2026.09.20-s3.28">
+<title>SEKKES</title>
+</head>
+<body>
+<svg class="svg-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="m3.5 10 8.5-7 8.5 7v9a2 2 0 0 1-2 2h-4v-7h-5v7h-4a2 2 0 0 1-2-2Z"/></symbol>
+<symbol id="i-games" viewBox="0 0 24 24"><path d="M7 7h10a3 3 0 0 1 2.9 2.2l1.8 7a2.8 2.8 0 0 1-4.6 2.8L14.7 17H9.3L6.9 19a2.8 2.8 0 0 1-4.6-2.8l1.8-7A3 3 0 0 1 7 7Z"/><path d="M7.5 10v5M5 12.5h5M16.5 11.5h.01M19 14h.01"/></symbol>
+<symbol id="i-world" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.8"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="8" y="2.5" width="8" height="13" rx="4"/><path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3M9 22h6"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="m5 9 7 7 7-7"/></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3ZM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-vr" viewBox="0 0 24 24"><path d="M4.5 6.5h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H16l-4-3-4 3H4.5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><circle cx="7" cy="11.5" r="1.7"/><circle cx="17" cy="11.5" r="1.7"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+<symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M12 20V4M5 11l7-7 7 7"/></symbol>
+<symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2M16 5a3.5 3.5 0 0 1 0 7M19 14a6 6 0 0 1 3 5v2"/></symbol>
+<linearGradient id="ocean-base" x1="0" x2="1" y2="1"><stop stop-color="#052637"/><stop offset=".37" stop-color="#066776"/><stop offset=".73" stop-color="#06405a"/><stop offset="1" stop-color="#001930"/></linearGradient>
+<linearGradient id="water-edge" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#a7ebf2" stop-opacity=".1"/><stop offset=".32" stop-color="#61dfe5" stop-opacity=".8"/><stop offset=".48" stop-color="#23a9be" stop-opacity=".4"/><stop offset=".8" stop-color="#032739" stop-opacity=".7"/><stop offset="1" stop-color="#9cd7e9" stop-opacity=".2"/></linearGradient>
+<linearGradient id="water-depth" x1="0" x2="1" y2=".2"><stop stop-color="#023249"/><stop offset=".5" stop-color="#116e80"/><stop offset=".7" stop-color="#4ea5b4"/><stop offset="1" stop-color="#031c31"/></linearGradient>
+<radialGradient id="ocean-light" cx=".71" cy=".14" r=".72"><stop stop-color="#c4f3e7" stop-opacity=".46"/><stop offset=".4" stop-color="#58c5cf" stop-opacity=".12"/><stop offset="1" stop-color="#081c2b" stop-opacity="0"/></radialGradient>
+<linearGradient id="gate-bg" x1="0" x2="1" y2="1"><stop stop-color="#26418d"/><stop offset=".48" stop-color="#081d49"/><stop offset="1" stop-color="#020a1c"/></linearGradient>
+<linearGradient id="gate-light" x1="0" x2="1" y2="1"><stop stop-color="#c0cafd"/><stop offset=".45" stop-color="#5b83ed"/><stop offset="1" stop-color="#0c2044"/></linearGradient>
+<linearGradient id="world-bg" x1="0" x2="0" y2="1"><stop stop-color="#246b79"/><stop offset=".42" stop-color="#0e3e54"/><stop offset="1" stop-color="#031526"/></linearGradient>
+<linearGradient id="cliff" x1="0" x2="1" y2="1"><stop stop-color="#8baaa4"/><stop offset=".35" stop-color="#3d7b7c"/><stop offset="1" stop-color="#092735"/></linearGradient>
+</defs>
+</svg>
+<main id="app" class="app">
+<section id="home" class="home screen" aria-label="Главная">
+<div id="hero" class="hero" data-progress="0">
+<div class="hero-art" data-drag-zone aria-hidden="true">
+<svg class="water-scene" viewBox="0 0 600 1000" preserveAspectRatio="xMidYMid slice">
+<rect width="600" height="1000" fill="url(#ocean-base)"/>
+<g class="water-folds">
+<path d="M-160-120C630-80 840 30 260 320S-60 910 780 1130L880 730C-160 830 580 600 720 350S380-120-160-120" fill="url(#water-depth)"/>
+<path d="M-80-80C210 165 765 83 558 300S-94 452 56 672s547 110 692 335L820 760C230 638 591 678 160 557S486 407 648 230 206 122-80-80" fill="url(#water-edge)"/>
+<path d="M-90 84C192 201 549 81 592 192S33 403 21 485s168 137 306 154 133 124 101 300" fill="none" stroke="#b6eceb" stroke-opacity=".19" stroke-width="2"/>
+<path d="M-90 103C199 220 572 98 608 211S40 418 39 496s158 123 308 144 139 130 114 320" fill="none" stroke="#b6eceb" stroke-opacity=".08" stroke-width="7"/>
+<path d="M84-50C-68 220 444 77 405 233S-160 391-40 546 515 574 750 810" fill="none" stroke="#162d3c" stroke-opacity=".5" stroke-width="48"/>
+</g>
+<rect width="600" height="1000" fill="url(#ocean-light)"/>
+</svg>
+<div class="hero-scrim"></div>
+</div>
+<header class="hero-header">
+<button class="circle glass" data-open="profile" aria-label="Мой профиль"><svg><use href="#i-user"/></svg></button>
+<span class="brand">sekkes</span>
+<button class="circle glass" id="heroExpand" aria-label="Развернуть AI" aria-expanded="false" aria-controls="aiFull"><svg><use href="#i-arrow"/></svg></button>
+</header>
+<div class="hero-intro" data-drag-zone>
+<div class="eyebrow"><svg><use href="#i-spark"/></svg> AI-психолог</div>
+<h1 id="heroTitle">Здесь можно<br>быть собой.</h1>
+<p>Твоё пространство разговора</p>
+</div>
+<section id="aiFull" class="ai-full" aria-label="Пространство AI" hidden>
+<div class="quiet-tag"><span></span><span id="aiStateLabel">Войди в SEKKES для разговора</span></div>
+<div class="voice-view" id="voiceView">
+<div class="wave" id="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<p id="voiceHint">Нажми голос — и просто говори.<br>Я отвечу сам, без дополнительных кнопок.</p>
+<button class="text-link" id="micTestLink">Начать голосовой разговор</button>
+</div>
+<div class="text-view" id="textView" hidden>
+<label for="draft">О чём ты хочешь поговорить?</label>
+<textarea id="draft" rows="4" maxlength="2000" placeholder="Можно начать с одной мысли…"></textarea>
+<p>Текстовый режим работает отдельно от голосового разговора.</p>
+</div>
+</section>
+<div class="composer-wrap">
+<div class="composer glass">
+<button class="composer-text" id="openText"><svg><use href="#i-keyboard"/></svg><span id="composerLabel">О чём поговорим?</span></button>
+<button class="circle light mic-button" id="micButton" aria-label="Открыть голосовой режим"><svg><use href="#i-mic"/></svg></button>
+</div>
+<button class="drag-handle" id="dragHandle" data-drag-zone aria-label="Потянуть вниз или нажать, чтобы раскрыть AI" aria-expanded="false"><span></span></button>
+</div>
+</div>
+<section id="portals" class="portals" aria-label="Другие пространства">
+<div class="section-caption"><h2>Твои пространства</h2><span>Выбери своё</span></div>
+<div class="portal-grid">
+<button class="portal games-portal" data-route="games" aria-label="Открыть Игры">
+<svg class="portal-art" viewBox="0 0 360 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="360" height="420" fill="url(#gate-bg)"/><path d="M0 332 210 221l150 83v116H0" fill="#091129"/><path d="M70 336V137a100 100 0 0 1 200 0v199h-27V137a73 73 0 0 0-146 0v199Z" fill="url(#gate-light)"/><path d="M97 335V141a74 74 0 0 1 146 0v195h-20V142a53 53 0 0 0-106 0v194Z" fill="#365998"/><path d="M117 335V142a53 53 0 0 1 106 0v195" fill="#051027"/><path d="M153 339V157a19 19 0 0 1 38 0v182" fill="#a7cbe5" opacity=".78"/><path d="m153 340-65 80h178l-75-80" fill="#78a3e4" opacity=".13"/><path d="m0 358 170-98 190 105M0 380l170-98 190 105" fill="none" stroke="#96b5ee" stroke-opacity=".15"/></svg>
+<span class="portal-arrow glass"><svg><use href="#i-arrow"/></svg></span><span class="portal-label"><strong>Игры</strong><small>Новый взгляд на себя</small></span>
+</button>
+<button class="portal world-portal" data-route="world" aria-label="Открыть Живой мир">
+<svg class="portal-art" viewBox="0 0 360 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="360" height="420" fill="url(#world-bg)"/><path d="M0 204 38 189 63 205l30-49 44 9 25-51 48 13 37 62 36-9 77 46v194H0" fill="#1c515e"/><path d="m0 260 70-41 25-90 27-17 36 25 8 97 36 54 63-55 28 2 67 36v149H0Z" fill="url(#cliff)"/><path d="m93 133 25-20 36 25-12 105 54 74-79-14-46-43Z" fill="#123c43"/><path d="m155 158 8 85 34 57 26 18 9 87-80-10 22-76-31-52-3-117Z" fill="#b1d9d1" opacity=".36"/><path d="m0 333 44-14 44 11 29-27 51 20 52-18 30 19 57-9 53 18v87H0Z" fill="#092b35"/><path d="M0 362q120-42 360-4M0 384q150-36 360-8" fill="none" stroke="#6dbec5" opacity=".25"/><path d="M118 111v-25l8-11 8 11v29Z" fill="#b6ddcd" opacity=".8"/><path d="M126 89v7" stroke="#25565b" stroke-width="2"/></svg>
+<span class="portal-arrow glass"><svg><use href="#i-arrow"/></svg></span><span class="portal-label"><strong>Живой мир</strong><small>Отдельная вселенная</small></span>
+</button>
+</div>
+<div class="extra-routes"><button data-open="vr"><svg><use href="#i-vr"/></svg><span>Погружение / VR</span><svg class="tiny"><use href="#i-arrow"/></svg></button><button data-open="pro"><svg><use href="#i-people"/></svg><span>Со специалистом</span><svg class="tiny"><use href="#i-arrow"/></svg></button></div>
+</section>
+</section>
+<section id="games" class="secondary screen" aria-label="Игры" hidden>
+<header class="page-header"><button class="circle white" data-route="home" aria-label="На главную"><svg><use href="#i-back"/></svg></button><span>Игры</span><button class="circle white" data-open="profile" aria-label="Мой профиль"><svg><use href="#i-user"/></svg></button></header>
+<div class="page-body"><div class="kicker">SEKKES / GAMES</div><h1>Прожить.<br>Увидеть иначе.</h1><p class="page-lead">Выборы, перспективы и новые способы действовать.</p>
+<div class="filter-row" aria-label="Форматы игр"><span class="filter active">Один</span><span class="filter">Вдвоём</span><span class="filter">Вместе</span></div>
+<button class="game-feature" data-open="game001"><div class="architecture-art" aria-hidden="true"><i></i><i></i><i></i><b></b></div><span class="chip glass">GAME-001 · в разработке</span><div><h2>Призрачный<br>атлас</h2><p>Рабочее название первой игры</p></div><span class="feature-arrow circle glass"><svg><use href="#i-arrow"/></svg></span></button>
+<div class="catalog-note"><span class="catalog-number">50</span><p>игр в плане развития.<br><span>Сейчас готовится первый маршрут.</span></p></div>
+<div class="route-outline"><h3>Первое путешествие</h3><p>Холл <span>→</span> Зеркало <span>→</span> Перекрёсток <span>→</span> Перспектива</p></div>
+</div></section>
+<section id="world" class="secondary dark screen" aria-label="Живой мир" hidden>
+<div class="world-backdrop" aria-hidden="true"><div></div><div></div><div></div></div>
+<header class="page-header"><button class="circle glass" data-route="home" aria-label="На главную"><svg><use href="#i-back"/></svg></button><span>Живой мир</span><button class="circle glass" data-open="profile" aria-label="Мой профиль"><svg><use href="#i-user"/></svg></button></header>
+<div class="world-copy"><span class="chip glass">Самостоятельный жанр</span><h1>Мир, у которого<br>своя история.</h1><p>Персонажи. События. Последствия.<br>Отдельная вселенная внутри SEKKES.</p><button class="rounded-action light" data-open="worldInfo">Как устроен мир <svg><use href="#i-arrow"/></svg></button><small>Визуальный прототип · автономный мир ещё не запущен</small></div>
+</section>
+<nav id="dock" class="dock" aria-label="Главная навигация"><button data-route="home" aria-label="Главная" aria-current="page"><svg><use href="#i-home"/></svg></button><button data-route="games" aria-label="Игры"><svg><use href="#i-games"/></svg></button><button data-route="world" aria-label="Живой мир"><svg><use href="#i-world"/></svg></button><button data-open="profile" aria-label="Мой профиль"><svg><use href="#i-user"/></svg></button></nav>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<dialog id="dialog" aria-labelledby="dialogTitle"><div class="dialog-card"><button id="dialogClose" class="circle dialog-close" aria-label="Закрыть"><svg><use href="#i-close"/></svg></button><div id="dialogContent"></div></div></dialog>
+</main>
+<noscript><div class="noscript">Для жестов и переходов SEKKES нужен JavaScript.</div></noscript>
+<script src="assets/ui-s2-3.js?v=2026.09.20-s3.28" defer></script>
+<script type="module" src="assets/voice-s3-0.mjs?v=2026.09.20-s3.28"></script>
+</body></html>
+
+
