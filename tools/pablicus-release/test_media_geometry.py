@@ -74,8 +74,8 @@ with sync_playwright() as pw:
    geometry(page,'decoded legacy and rich photos reflow adjacent deleted/text rows');bottom(page,'last text remains above composer after delayed decoding')
    check('no resolution from measureBox',page.evaluate('mediaRequests.length')==5,page.evaluate('mediaRequests'))
    clip=page.evaluate("getComputedStyle($('vp')).clipPath")
-   check('viewport clips the live composer inset',clip!='none' and str(int(page.evaluate('Fixture.list.insets.bottom'))) in clip,clip)
-   check('clipped messages are not hit-tested behind composer',page.evaluate("!document.elementsFromPoint(2,$('composer').getBoundingClientRect().top+15).some(n=>n.closest('#vp'))"))
+   check('history has no full-width footer clip',clip=='none',clip)
+   check('transparent footer gutters reach history',page.evaluate("!!document.elementFromPoint(2,$('composer').getBoundingClientRect().top+15)?.closest('#vp')"))
    page.screenshot(path=str(out/(label+'-bottom.png')))
    page.evaluate('Fixture.list.go(0)');page.wait_for_timeout(150);geometry(page,'scroll to oldest photo');page.screenshot(path=str(out/(label+'-start.png')))
    # New delayed decode while reading earlier messages: keep the reading anchor.

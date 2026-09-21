@@ -110,9 +110,10 @@
 #app .row .richMessage>.richMedia-video>.richVideo{object-fit:contain}
 #app .row .messageImage{width:100%;height:auto;max-height:420px;object-fit:contain}
 
-/* The scroll model reserves this live composer inset; clip the same area so
-   offscreen messages cannot paint or receive taps behind the writing surface. */
-#app:not(.canvas-active):not(.composer-fullscreen) #vp{clip-path:inset(0 0 var(--chat-bottom-inset,0px) 0)}
+/* UI-GL3: bottom inset is scroll padding, not a full-width paint cutoff.
+   History continues behind the floating glass capsule; the last row still ends
+   above it via the unchanged NaturalList bottom inset and live measurements. */
+#app:not(.canvas-active):not(.composer-fullscreen) #vp{clip-path:none}
 
 /* UI-V4: the rounded frame and its pixels have exactly the same natural ratio.
    Bound both axes together; a max-height on the pixels alone creates blank bars. */

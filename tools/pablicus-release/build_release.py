@@ -62,7 +62,7 @@ def build(root, sha):
     if n != 1:
         raise ValueError('Expected exactly one release meta tag')
     html, count = re.subn(r'(<p\b[^>]*\bid="releaseLabel"[^>]*>)[^<]*(</p>)',
-                          lambda m: m.group(1) + 'UI-AU2 · ' + sha[:12] + m.group(2), html, count=1)
+                          lambda m: m.group(1) + 'UI-GL3 · ' + sha[:12] + m.group(2), html, count=1)
     if count != 1:
         raise ValueError('Expected one visible release label')
     script = '<script src="release-info.js"></script>'
@@ -82,9 +82,9 @@ def build(root, sha):
    ch.port1.onmessage=e=>finish(e.data);
    try{controller.postMessage({type:'PABLICUS_RELEASE'},[ch.port2]);}catch{finish(null);}
   });
-  return {buildId:id,sourceSha,stage:'UI-AU2',htmlBuildId:document.querySelector('meta[name="pablicus-release"]')?.content||null,workerBuildId:worker?.buildId||null,workerVersion:worker?.version||null,coherent:worker?.buildId===id,notificationPermission:g.Notification?.permission||'unsupported',standalone:!!(g.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone)};
+  return {buildId:id,sourceSha,stage:'UI-GL3',htmlBuildId:document.querySelector('meta[name="pablicus-release"]')?.content||null,workerBuildId:worker?.buildId||null,workerVersion:worker?.version||null,coherent:worker?.buildId===id,notificationPermission:g.Notification?.permission||'unsupported',standalone:!!(g.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone)};
  }
- g.PablicusBuild=Object.freeze({id,sourceSha,stage:'UI-AU2',inspect});
+ g.PablicusBuild=Object.freeze({id,sourceSha,stage:'UI-GL3',inspect});
 })(window);
 """.replace('IDENTITY', json.dumps(identity)).replace('SOURCE', json.dumps(sha))
     (root / 'release-info.js').write_text(info)
@@ -124,7 +124,7 @@ self.addEventListener('message',event=>{if(event.data?.type!=='PABLICUS_RELEASE_
     if 'buildId:BUILD_ID,sourceSha:BUILD_SOURCE_SHA' not in sw or push_digest(sw) != original_push:
         raise ValueError('Worker identity/push preservation failed')
     (root / 'sw.js').write_text(sw)
-    release = dict(schema=1, release='UI-AU2', build_id=identity, source_sha=sha,
+    release = dict(schema=1, release='UI-GL3', build_id=identity, source_sha=sha,
                    worker_version=worker_version, assets=assets, sw_sha256=digest(sw.encode()),
                    push_sha256=original_push)
     text = json.dumps(release, ensure_ascii=False, indent=2) + '\n'
@@ -151,7 +151,7 @@ def check(root):
     html = (root / 'index.html').read_text()
     if not referenced(root, html).issubset(m['assets']):
         raise ValueError('Referenced resources missing from inventory')
-    if ('UI-AU2 · ' + m['source_sha'][:12]) not in html:
+    if ('UI-GL3 · ' + m['source_sha'][:12]) not in html:
         raise ValueError('Visible release label diverges')
     if f'content="{m["build_id"]}"' not in html or json.dumps(m['build_id']) not in (root / 'release-info.js').read_text():
         raise ValueError('HTML/diagnostic build identity diverges')
