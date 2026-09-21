@@ -537,7 +537,7 @@ function paintQueue(){const q=queueSummary();$('queueBtn').textContent=q.groups?
 function ingestQueue(rows){queueRows=rows;for(const r of rows.filter(OutboxVault.active))for(const f of r.files){if(assets.has(f.id))continue;const a={id:f.id,name:f.name,file:f.file,kind:f.kind,preview:null,state:f.kind==='document'?'ready':'pending',duration:0};assets.set(f.id,a);metadataQueue=metadataQueue.then(()=>makePreview(a)).catch(fatal)}
  const held=new Set([...draft.attachments,...rows.filter(OutboxVault.active).flatMap(r=>r.files.map(f=>f.id))]);for(const [id,a]of assets){if(!held.has(id)){urlRevoke(a.preview);assets.delete(id)}}
  if(list){const a=list.capture(),f=list.follow;list.messages=list.messages.filter(m=>!m.outboxId).concat(queueMessages());list.sync(a,f,'queue-update');}paintQueue();}
-async function refreshQueue(){const rows=await vault.store.readQueue();ingestQueue(rows);return rows;}
+async function refreshQueue(){const target=vault,store=target?.store;if(!store)return[];const rows=await store.readQueue();if(vault===target&&vault.store===store)ingestQueue(rows);return rows;}
 async function localSend(){
  if(submitBusy||draft.composing||richComposer?.composing||richComposer?.recording||richComposer?.pending)return;
  if(!list||submitBusy||!window.PablicusHost?.canSend()||draft.composing||richComposer?.composing||!hasComposerContent())return;

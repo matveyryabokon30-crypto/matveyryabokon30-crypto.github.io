@@ -1,0 +1,126 @@
+name: Pablicus UI-V5 sending and media verified release
+on:
+  push:
+    branches: [fix/pablicus-send-media-v5-20260921]
+permissions:
+  contents: read
+concurrency:
+  group: pablicus-send-media-v5
+  cancel-in-progress: true
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: chromium
+            os: ubuntu-24.04
+          - engine: webkit
+            os: macos-15
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exact baseline and reviewed candidate
+        run: |
+          set -euo pipefail
+          mkdir -p baseline send-baseline results
+          git archive a771db2d3d9d66c4d658aaac65c71394672a2fc4 vision-talk/pablicus | tar -x -C baseline
+          git archive 3ef4f7998c0797ca55555053ccf17ef4dd01bd9c vision-talk/pablicus | tar -x -C send-baseline
+          python tools/pablicus-release/apply_send_media_v5.py
+          python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
+          python tools/pablicus-release/test_release.py
+          for f in vision-talk/pablicus/*.js; do node --check "$f"; done
+          for f in tools/pablicus-r1/test_sw.mjs tools/pablicus-r2/test_client.mjs tools/pablicus-r3/test_client_health.mjs tools/pablicus-f03/test_client.mjs tools/pablicus-f04/test_client.mjs tools/pablicus-f05/test_client.mjs tools/pablicus-f05/test_sw.mjs tools/pablicus-f06/test_client.mjs tools/pablicus-f06/test_sw.mjs tools/pablicus-f06/test_update.mjs; do node "$f"; done
+          python tools/pablicus-f01/test.py
+          python tools/pablicus-f02/test.py
+          python tools/pablicus-p06/test.py
+          cp vision-talk/pablicus/release.json results/release.json
+      - name: Install supported browser
+        run: |
+          python -m pip install playwright==1.63.0 pillow
+          python -m playwright install --with-deps ${{ matrix.engine }}
+      - name: Reproduce queue blockade on unchanged UI-V4
+        run: python -u tools/pablicus-release/test_send_queue_v5.py --root send-baseline/vision-talk/pablicus --engine ${{ matrix.engine }} --baseline
+      - name: Real IndexedDB and bundled SDK send pipeline with isolated HTTP
+        run: python -u tools/pablicus-release/test_send_queue_v5.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+      - name: Larger photos and non-destructive black-border presentation
+        run: python -u tools/pablicus-release/test_media_size_v5.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+      - name: Retained full conversation and gestures
+        run: |
+          python tools/pablicus-release/test_media_geometry.py --root vision-talk/pablicus --engine ${{ matrix.engine }} --full-app
+          python tools/pablicus-release/test_media_presentation.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+          python tools/pablicus-release/test_chat_header.py --engine ${{ matrix.engine }}
+      - name: Retained feature regression
+        run: |
+          python - <<'PY'
+          import subprocess,sys
+          for f in ['f06','f05','f04']:
+              subprocess.run([sys.executable,'-u','tools/pablicus-'+f+'/test_browser.py','--root','vision-talk/pablicus','--engine','${{ matrix.engine }}'],check=True,timeout=180)
+          PY
+          python tools/pablicus-release/run_bounded.py --engine ${{ matrix.engine }} --seconds 150
+          python tools/pablicus-r2/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+          python tools/pablicus-f03/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pablicus-v5-${{ matrix.engine }}
+          path: results/
+          retention-days: 14
+          if-no-files-found: error
+  finalize:
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pablicus-v5-*
+          path: verified
+      - name: Finalize only the exact successfully tested runtime
+        run: |
+          set -euo pipefail
+          python tools/pablicus-release/apply_send_media_v5.py
+          python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
+          python tools/pablicus-release/build_release.py --check
+          python - <<'PY'
+          import hashlib,json,pathlib
+          r=pathlib.Path('vision-talk/pablicus')
+          for engine in ['chromium','webkit']:
+              f=pathlib.Path('verified')/('pablicus-v5-'+engine)
+              assert (f/'release.json').read_bytes()==(r/'release.json').read_bytes()
+              for name,minimum in [('send-v5-'+engine+'.json',17),('media-v5-'+engine+'.json',23),('media-geometry-'+engine+'.json',52),('presentation-'+engine+'.json',71)]:
+                  e=json.loads((f/name).read_text())
+                  assert e['failed']==0 and e['passed']>=minimum,name
+                  for n,d in e['source_sha256'].items():assert hashlib.sha256((r/n).read_bytes()).hexdigest()==d,n
+              old=json.loads((f/('send-v5-'+engine+'-baseline.json')).read_text())
+              assert old['failed']==0 and old['passed']==1
+              bounded=json.loads((f/(engine+'-bounded.json')).read_text())
+              assert len(bounded)==3 and all(e['passed'] for e in bounded)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vision-talk/pablicus tools/pablicus-release/build_release.py tools/pablicus-release/test_chat_header.py tools/pablicus-release/test_media_presentation.py
+          git commit -m 'build(pablicus): retain verified UI-V5 sending and larger media'
+          git push origin HEAD:fix/pablicus-send-media-v5-20260921
+          mkdir artifact
+          git rev-parse HEAD > artifact/GENERATED_COMMIT.txt
+          cp vision-talk/pablicus/release.json artifact/release.json
+          tar -czf artifact/runtime.tar.gz vision-talk/pablicus
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pablicus-v5-runtime
+          path: artifact/
+          retention-days: 14

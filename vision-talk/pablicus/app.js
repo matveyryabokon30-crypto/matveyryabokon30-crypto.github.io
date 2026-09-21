@@ -5,7 +5,7 @@
  const URL='https://ctcoqgsztdtsazdiwcmd.supabase.co',KEY='sb_publishable_kMGqZAM2vadfXbBr8r5uzw_l9EiBtIw',BUCKET='message-media',VERSION='P06';
  const $=x=>document.getElementById(x),el=(tag,cls,text)=>{const n=document.createElement(tag); window.PablicusUI?.prepareControl?.(n);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n};
  const safeGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}},safeSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
- const timeoutFetch=async(u,opts={},ms=25000)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);const abort=()=>c.abort();opts.signal?.addEventListener('abort',abort,{once:true});try{return await fetch(u,{...opts,signal:c.signal})}finally{clearTimeout(t);opts.signal?.removeEventListener('abort',abort)}};
+ const timeoutFetch=async(u,opts={},ms=25000)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);const abort=()=>c.abort();opts.signal?.addEventListener('abort',abort,{once:true});if(opts.signal?.aborted)c.abort();try{return await fetch(u,{...opts,signal:c.signal})}finally{clearTimeout(t);opts.signal?.removeEventListener('abort',abort)}};
  const authStorageKey='sb-ctcoqgsztdtsazdiwcmd-auth-token';
  const passkeyGuardKey='pablicus:passkey-unvalidated';
  let passkeyUnvalidated=safeGet(passkeyGuardKey)===true;
@@ -568,7 +568,7 @@
   else if(r.type==='video'){const md=r.attachment_metadata||{};b.append(renderRichContent({v:1,blocks:[{id:'legacy-video',type:'video',path:r.attachment_path,name:md.name,mime:md.mime_type,size:md.size_bytes,width:md.width,height:md.height}]},false,r));if(r.body)t.textContent=r.body;}
   else if(r.type==='text')t.textContent=r.body||'';
   else{const md=r.attachment_metadata||{},button=el('button','mediaOpen'),name=PablicusRichMessage.attachmentLabel({type:r.type,name:md.name});button.dataset.mediaType=r.type;button.setAttribute('aria-label','Открыть '+name);
-   if(r.type==='image'){const im=el('img','messageImage');im.alt='Фото';im.draggable=false;button.draggable=false;im.onload=()=>PablicusRichMessage.setMediaDimensions(button,im.naturalWidth,im.naturalHeight);im.loading='lazy';if(/^data:image\/(jpeg|png|webp);base64,/.test(md.thumb_data_url||''))im.src=md.thumb_data_url;else{const instant=PablicusMediaCache.peek(BUCKET,r.attachment_path,{width:960});if(instant)im.src=instant}button.append(im);if(!im.src){const fallback=el('span','mediaLabel','Фото');button.append(fallback);requestAnimationFrame(()=>{if(!im.isConnected||!im.closest('#canvas'))return;signedUrl(r.attachment_path,{type:'image',width:960}).then(u=>{if(im.isConnected){im.src=u;fallback.remove()}}).catch(()=>{fallback.textContent='Фото · нажмите, чтобы повторить'})})}}
+   if(r.type==='image'){const im=el('img','messageImage');im.alt='Фото';im.draggable=false;button.draggable=false;im.onload=()=>PablicusRichMessage.fitChatImage(button,im,md);im.loading='lazy';if(/^data:image\/(jpeg|png|webp);base64,/.test(md.thumb_data_url||''))im.src=md.thumb_data_url;else{const instant=PablicusMediaCache.peek(BUCKET,r.attachment_path,{width:960});if(instant)im.src=instant}button.append(im);if(!im.src){const fallback=el('span','mediaLabel','Фото');button.append(fallback);requestAnimationFrame(()=>{if(!im.isConnected||!im.closest('#canvas'))return;signedUrl(r.attachment_path,{type:'image',width:960}).then(u=>{if(im.isConnected){im.src=u;fallback.remove()}}).catch(()=>{fallback.textContent='Фото · нажмите, чтобы повторить'})})}}
    else button.append(el('span','mediaGlyph',r.type==='video'?'▷':'▤'),el('span','fileName',name),el('span','muted',md.size_bytes?Math.round(md.size_bytes/1024)+' КБ':''));
    button.onclick=()=>viewAttachment(r).catch(problem);b.append(button);if(r.body)t.textContent=r.body;
   }
@@ -664,42 +664,57 @@
   const check=()=>{if(controls?.signal?.aborted||(controls?.isCurrent&&!controls.isCurrent()))throw new DOMException('Разговор изменился','AbortError');};
   check();const id=await pablicusClientId(item.id,m.id),path=cid+'/'+uid+'/'+(richMessageId?richMessageId+'/'+m.id:id)+'/'+attachmentName(f);
   if(await objectExists(path)){check();return{path,id};}check();if(user?.id!==uid)throw Error('Аккаунт изменился');
-  if(f.size<=6*1024*1024){const bytes=await f.file.arrayBuffer();check();if(bytes.byteLength!==f.size)throw Error('Не удалось прочитать полный файл');const r=await sb.storage.from(BUCKET).upload(path,bytes,{contentType:f.type||'application/octet-stream',upsert:false});check();if(r.error&&!await objectExists(path))throw r.error;if(f.type?.startsWith('image/')){await PablicusMediaCache.prepare(BUCKET,path);check();}return{path,id}}
+  if(f.size<=6*1024*1024){const bytes=await f.file.arrayBuffer();check();if(bytes.byteLength!==f.size)throw Error('Не удалось прочитать полный файл');const r=await sb.storage.from(BUCKET).upload(path,bytes,{contentType:f.type||'application/octet-stream',upsert:false});check();if(r.error&&!await objectExists(path))throw r.error;if(f.type?.startsWith('image/')){void PablicusMediaCache.prepare(BUCKET,path);check();}return{path,id}}
   const endpoint=URL.replace('.supabase.co','.storage.supabase.co')+'/storage/v1/upload/resumable';let location=item.parts?.[m.id]?.upload_url;
   const auth=async()=>{check();if(user?.id!==uid)throw Error('Аккаунт изменился');const s=await sb.auth.getSession();check();if(!s.data.session)throw Error('Войдите для продолжения отправки');if(s.data.session.user.id!==uid)throw Error('Аккаунт изменился');return{Authorization:'Bearer '+s.data.session.access_token,apikey:KEY,'Tus-Resumable':'1.0.0'}};
   let offset=0;if(location){const lu=new window.URL(location),eu=new window.URL(endpoint);if(lu.origin!==eu.origin||!lu.pathname.startsWith('/storage/v1/upload/resumable/'))throw Error('Некорректный адрес загрузки');const h=await timeoutFetch(location,{method:'HEAD',headers:await auth(),signal:controls?.signal});if(h.ok)offset=+(h.headers.get('Upload-Offset')||0);else if([404,410].includes(h.status))location=null;else throw Error('Не удалось продолжить загрузку: '+h.status)}
   if(!location){const r=await timeoutFetch(endpoint,{method:'POST',signal:controls?.signal,headers:{...await auth(),'Upload-Length':String(f.size),'Upload-Metadata':[['bucketName',BUCKET],['objectName',path],['contentType',f.type||'application/octet-stream'],['cacheControl','3600']].map(([k,v])=>k+' '+b64(v)).join(',')}});if(!r.ok)throw Error('Ошибка начала загрузки: '+r.status);if(!r.headers.get('Location'))throw Error('Сервер не вернул адрес загрузки');location=new window.URL(r.headers.get('Location'),endpoint).href;if(new window.URL(location).origin!==new window.URL(endpoint).origin)throw Error('Некорректный адрес загрузки');await store.progress(item.id,owner,m.id,{upload_url:location})}
   while(offset<f.size){check();const end=Math.min(offset+6*1024*1024,f.size),r=await timeoutFetch(location,{method:'PATCH',signal:controls?.signal,headers:{...await auth(),'Upload-Offset':String(offset),'Content-Type':'application/offset+octet-stream'},body:await f.file.slice(offset,end).arrayBuffer()},60000);if(!r.ok)throw Error('Загрузка прервана: '+r.status);offset=+(r.headers.get('Upload-Offset')||end);await store.progress(item.id,owner,m.id,{upload_url:location,uploaded:offset})}
-  if(f.type?.startsWith('image/')){await PablicusMediaCache.prepare(BUCKET,path);check();}
+  if(f.type?.startsWith('image/')){void PablicusMediaCache.prepare(BUCKET,path);check();}
   return{path,id};
  }
+ // Network-stage deadline also covers SDK token acquisition before fetch starts.
+ function sendStep(operation,signal,ms=30000){
+  return new Promise((resolve,reject)=>{
+   let settled=false;const finish=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);error?reject(error):resolve(value);};
+   const abort=()=>finish(new DOMException('Отправка приостановлена','AbortError'));
+   const timer=setTimeout(()=>finish(Object.assign(Error('Истекло время ожидания отправки. Сообщение сохранено для повтора.'),{name:'TimeoutError'})),ms);
+   if(signal?.aborted){abort();return;}signal?.addEventListener('abort',abort,{once:true});
+   Promise.resolve().then(operation).then(value=>finish(null,value),error=>finish(error));
+  });
+ }
  async function pump(){if(worker){pumpPending=true;return}if(!user||!navigator.onLine||document.hidden)return;worker=true;const uid=user.id,owner=DraftVault.uid();try{
-  for(const d of dialogs){if(user?.id!==uid)break;const store=PablicusChat.scope.user===uid&&PablicusChat.scope.chat===d.id?PablicusChat.store:new PablicusStore(uid,d.id);if(!store)continue;try{
-   const queue=await store.readQueue();for(const it of queue){if(user?.id!==uid||!navigator.onLine)break;if(it.state==='error'&&(!it.retryable||it.nextAttemptAt>Date.now()))break;if(!['queued','sending','error'].includes(it.state))continue;const claimed=await store.claim(it.id,owner);if(!claimed)break;const item={...claimed,files:it.files};
+  for(const d of [...new Map([current,...dialogs].filter(Boolean).map(d=>[d.id,d])).values()]){if(user?.id!==uid)break;const store=PablicusChat.scope.user===uid&&PablicusChat.scope.chat===d.id?PablicusChat.store:new PablicusStore(uid,d.id);if(!store)continue;try{
+   const queue=await store.readQueue();for(const it of queue){if(user?.id!==uid||!navigator.onLine)break;if(it.state==='error'&&(!it.retryable||it.nextAttemptAt>Date.now()))continue;if(!['queued','sending','error'].includes(it.state))continue;const claimed=await store.claim(it.id,owner);if(!claimed)continue;const item={...claimed,files:it.files};
+    const ac=new AbortController(),isCurrent=()=>!ac.signal.aborted&&user?.id===uid;
+    const controls={signal:ac.signal,isCurrent},step=fn=>sendStep(fn,ac.signal);
+    let renewing=false;const heartbeat=setInterval(async()=>{if(renewing)return;if(!isCurrent()){ac.abort();return;}renewing=true;try{if(!await store.renew(item.id,owner))ac.abort();}catch{ac.abort();}finally{renewing=false;}},15000);
     try{for(const m of item.messages){if(user?.id!==uid)throw Error('Аккаунт изменился');if(item.parts?.[m.id]?.ack)continue;const id=await pablicusClientId(item.id,m.id);
      const content=m.kind==='rich'?richContent(item,m,d.id,uid,id):null;
-     const existing=await sb.from('messages').select('id,server_seq,client_message_id,conversation_id,type,attachment_metadata').eq('sender_id',uid).eq('client_message_id',id).maybeSingle();if(existing.error)throw existing.error;let ack=existing.data;
+     const existing=await step(()=>sb.from('messages').select('id,server_seq,client_message_id,conversation_id,type,attachment_metadata').eq('sender_id',uid).eq('client_message_id',id).maybeSingle().abortSignal(ac.signal));if(existing.error)throw existing.error;let ack=existing.data;
      if(ack&&ack.conversation_id!==d.id)throw Error('Подтверждение относится к другому разговору');
      if(ack&&content&&(ack.type!=='rich'||stableContent(ack.attachment_metadata)!==stableContent(content)))throw Error('Сервер вернул другое содержимое сообщения. Исходящее сохранено.');
      if(!ack){let r;if(m.kind==='rich'){
       for(const block of m.blocks){
        if(block.type==='text')continue;
        const f=item.files.find(file=>file.id===block.assetId);if(!f)throw Error('Байты вложения не найдены');
-       await upload(store,item,{id:block.id},f,owner,d.id,uid,id);
+       await sendStep(()=>upload(store,item,{id:block.id},f,owner,d.id,uid,id,controls),ac.signal,180000);
       }
       if(user?.id!==uid)throw Error('Аккаунт изменился');
-      r=await sb.rpc('send_rich_message',{p_conversation_id:d.id,p_client_message_id:id,p_content:content});
-     }else if(m.kind==='text'){if(user?.id!==uid)throw Error('Аккаунт изменился');r=await sb.rpc('send_message',{p_conversation_id:d.id,p_client_message_id:id,p_type:'text',p_body:m.text,p_attachment_path:null})}
-      else{const f=item.files.find(f=>f.id===m.assetId);if(!f)throw Error('Байты вложения не найдены');if(f.size>25*1024*1024)throw Error('Этот файл пока не поддерживается текущим релизом');const media=await upload(store,item,m,f,owner,d.id,uid);if(user?.id!==uid)throw Error('Аккаунт изменился');r=await sb.rpc('send_attachment_message',{p_conversation_id:d.id,p_client_message_id:id,p_type:['image','video'].includes(m.kind)?m.kind:'document',p_attachment_path:media.path,p_attachment_name:f.name,p_mime_type:f.type||'application/octet-stream',p_size_bytes:f.size,p_caption:null,p_thumb_data_url:null})}
+      r=await step(()=>sb.rpc('send_rich_message',{p_conversation_id:d.id,p_client_message_id:id,p_content:content}).abortSignal(ac.signal));
+     }else if(m.kind==='text'){if(user?.id!==uid)throw Error('Аккаунт изменился');r=await step(()=>sb.rpc('send_message',{p_conversation_id:d.id,p_client_message_id:id,p_type:'text',p_body:m.text,p_attachment_path:null}).abortSignal(ac.signal))}
+      else{const f=item.files.find(f=>f.id===m.assetId);if(!f)throw Error('Байты вложения не найдены');if(f.size>25*1024*1024)throw Error('Этот файл пока не поддерживается текущим релизом');const media=await sendStep(()=>upload(store,item,m,f,owner,d.id,uid,null,controls),ac.signal,180000);if(user?.id!==uid)throw Error('Аккаунт изменился');r=await step(()=>sb.rpc('send_attachment_message',{p_conversation_id:d.id,p_client_message_id:id,p_type:['image','video'].includes(m.kind)?m.kind:'document',p_attachment_path:media.path,p_attachment_name:f.name,p_mime_type:f.type||'application/octet-stream',p_size_bytes:f.size,p_caption:null,p_thumb_data_url:null}).abortSignal(ac.signal))}
       if(r.error)throw r.error;ack=r.data;
      }
      if(user?.id!==uid)throw Error('Аккаунт изменился');
+     if(!isCurrent())throw new DOMException('Аккаунт изменился','AbortError');
      if(!ack?.id||!ack.server_seq||ack.client_message_id!==id)throw Error('Нет корректного подтверждения сервера');await store.progress(item.id,owner,m.id,{ack:{id:ack.id,server_seq:ack.server_seq,client_message_id:id}});
     }
-    await store.finish(item.id,owner);if(current?.id===d.id){await syncMessages();await PablicusChat.refreshQueue()}
-   }catch(e){await store.failed(item.id,owner,e,!navigator.onLine);if(current?.id===d.id)await PablicusChat.refreshQueue();if(navigator.onLine)toast('Исходящее сохранено. '+e.message);break}
+    await store.finish(item.id,owner);if(user?.id===uid&&current?.id===d.id){void syncMessages().catch(problem);await PablicusChat.refreshQueue()}
+   }catch(e){ac.abort();await store.failed(item.id,owner,e,!navigator.onLine);if(user?.id===uid&&current?.id===d.id)await PablicusChat.refreshQueue();if(user?.id===uid&&navigator.onLine)toast('Исходящее сохранено. '+e.message);}
+    finally{clearInterval(heartbeat);ac.abort();}
    }
-  }finally{if(store!==PablicusChat.store)store.close()}}
+  }catch(e){if(user?.id===uid)problem(e);}finally{if(store!==PablicusChat.store)store.close()}}
  }catch(e){problem(e)}finally{worker=false;if(pumpPending){pumpPending=false;setTimeout(()=>pump(),0)}}}
  async function showOutbox(){const c=dialog('Исходящие'),store=PablicusChat.store;if(!store)return;const q=(await store.readQueue(false)).filter(r=>!['sent','cancelled'].includes(r.state));if(!q.length)c.append(el('p','','Все исходящие подтверждены сервером. Это не означает, что получатель их прочитал.'));for(const r of q){const b=el('section','outboxItem');b.append(el('strong','',({queued:'В очереди',sending:'Отправляется',error:'Ошибка'})[r.state]||r.state),el('p','',r.messages.find(m=>m.kind==='text')?.text.slice(0,180)||'Вложения'));if(r.error)b.append(el('p','danger',r.error.message));const retry=el('button','setting','Повторить');retry.onclick=async()=>{try{await store.retry(r.id);$('productDialog').close();pump()}catch(e){problem(e)}};b.append(retry);c.append(b)}}
  if(window.PablicusController){

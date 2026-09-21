@@ -24,9 +24,46 @@
     const ratio = width / height;
     frame.dataset.sourceRatio = String(ratio);
     frame.style.setProperty('--rich-image-ratio', String(ratio));
-    frame.style.setProperty('--chat-media-limit', (320 * ratio) + 'px');
+    frame.style.setProperty('--chat-media-limit', (420 * ratio) + 'px');
     const bubble = frame.closest('.chatSingleMedia');
-    if (bubble) bubble.style.setProperty('--chat-media-limit', (320 * ratio) + 'px');
+    if (bubble) bubble.style.setProperty('--chat-media-limit', (420 * ratio) + 'px');
+  }
+  // Display-only trim for uniform, paired black letterbox borders. The original
+  // file and original viewer are untouched. Tainted/animated/dark images fall back.
+  function fitChatImage(frame,image,block={}) {
+    const w=image.naturalWidth,h=image.naturalHeight;
+    if(!(w>0&&h>0))return;
+    const previous=frame.dataset.borderTrim;
+    if(previous){for(const key of ['width','height','left','top','right','bottom'])image.style.removeProperty(key);delete frame.dataset.borderTrim;}
+    setMediaDimensions(frame,w,h);
+    if(frame.closest('.richMediaGallery')||/gif|apng/i.test(block.mime||block.mime_type||block.name||'')||w<64||h<64)return;
+    try {
+      const c=document.createElement('canvas'),scale=Math.min(1,256/Math.max(w,h));
+      c.width=Math.max(1,Math.round(w*scale));c.height=Math.max(1,Math.round(h*scale));
+      const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0,c.width,c.height);
+      const {data}=ctx.getImageData(0,0,c.width,c.height),W=c.width,H=c.height;
+      const black=(x,y)=>{const i=(y*W+x)*4;return data[i+3]>250&&Math.max(data[i],data[i+1],data[i+2])<=8;};
+      const row=y=>{for(let x=0;x<W;x++)if(!black(x,y))return false;return true;};
+      const col=x=>{for(let y=0;y<H;y++)if(!black(x,y))return false;return true;};
+      let top=0,bottom=0,left=0,right=0;
+      while(top<H*.18&&row(top))top++;
+      while(bottom<H*.18&&row(H-1-bottom))bottom++;
+      while(left<W*.18&&col(left))left++;
+      while(right<W*.18&&col(W-1-right))right++;
+      const paired=(a,b,max)=>a>=2&&b>=2&&a<max*.18&&b<max*.18&&Math.abs(a-b)<=Math.max(3,Math.min(a,b)*.15);
+      if(!paired(top,bottom,H))top=bottom=0;
+      if(!paired(left,right,W))left=right=0;
+      if(!(top||left))return;
+      // Never turn an almost-black photograph into an arbitrary crop.
+      let bright=0,total=0;
+      for(let y=top;y<H-bottom;y++)for(let x=left;x<W-right;x++){const i=(y*W+x)*4;total++;if(Math.max(data[i],data[i+1],data[i+2])>32)bright++;}
+      if(bright<total*.25)return;
+      // Sampling undershoots, so retain the boundary pixel instead of content crop.
+      const l=left/W,r=right/W,t=top/H,b=bottom/H,cw=1-l-r,ch=1-t-b;
+      setMediaDimensions(frame,w*cw,h*ch);frame.dataset.borderTrim=JSON.stringify({left:l,top:t,right:r,bottom:b});
+      image.style.width=(100/cw)+'%';image.style.height=(100/ch)+'%';
+      image.style.left=(-100*l/cw)+'%';image.style.top=(-100*t/ch)+'%';image.style.right='auto';image.style.bottom='auto';
+    }catch{/* Pixel access is optional; still retain correct decoded dimensions. */}
   }
   function prepareChatBubble(bubble) {
     const rich = [...bubble.children].find(n => n.classList.contains('richMessage'));
@@ -224,7 +261,7 @@
         item.image.onload = () => {
           if (disposed || !isLiveRow()) return;
           item.status = 'ready';
-          setMediaDimensions(item.button,item.image.naturalWidth,item.image.naturalHeight);
+          fitChatImage(item.button,item.image,item.block);
           item.button.classList.add('richImageReady');
           item.statusNode.textContent = '';
           releaseObserverWhenFinished();
@@ -682,7 +719,7 @@
     return root;
   }
 
-  const api = Object.freeze({setMediaDimensions,prepareChatBubble, render, validate, textContent, groupBlocks, stopAll, readableName, attachmentLabel });
+  const api = Object.freeze({setMediaDimensions,fitChatImage,prepareChatBubble, render, validate, textContent, groupBlocks, stopAll, readableName, attachmentLabel });
   scope.PablicusRichMessage = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
