@@ -1,5 +1,5 @@
 import {ClothField} from './topology-cloth.mjs';
-import {SceneClock,FlowField,geometry,renderDensity,paletteAt} from './topology-evolving-core.mjs';
+import {SceneClock,FlowField,geometry,renderDensity,paletteAt,PALETTE,COLOR_SECONDS} from './topology-evolving-core.mjs';
 // One persistent sketch for all routes. Audio only modulates presentation.
 export function installEvolving(win,doc){
  const clock=new SceneClock();let state={active:false,motion:true,user:0,agent:0},levels={user:0,agent:0};
@@ -7,7 +7,7 @@ export function installEvolving(win,doc){
  const count=4500,vector=new Float32Array(2),temp=new Float32Array(2);
  function pause(){sketch?.noLoop();clock.pause();}
  function apply(){if(!ready)return;if(state.active&&state.motion&&!doc.hidden)sketch.loop();else pause();}
- function diagnostic(){const canvas=doc.querySelector('canvas');if(!canvas)return;canvas.dataset.elapsed=clock.seconds.toFixed(2);canvas.dataset.epoch=String(field?.epoch||0);canvas.dataset.palette=String(Math.floor(clock.seconds/100)%8);canvas.dataset.frame=String(frame);canvas.dataset.angle=cloth.angle.toFixed(3);canvas.dataset.density=String(density);}
+ function diagnostic(){const canvas=doc.querySelector('canvas');if(!canvas)return;canvas.dataset.elapsed=clock.seconds.toFixed(2);canvas.dataset.epoch=String(field?.epoch||0);canvas.dataset.palette=String(Math.floor(clock.seconds/COLOR_SECONDS)%PALETTE.length);canvas.dataset.frame=String(frame);canvas.dataset.angle=cloth.angle.toFixed(3);canvas.dataset.density=String(density);}
  function chrome(force=false){
   if(!force&&clock.seconds-lastChrome<.25)return;lastChrome=clock.seconds;
   win.parent.postMessage({type:'sekkes-topology-palette',rgb:paletteAt(clock.seconds)},win.location.origin);

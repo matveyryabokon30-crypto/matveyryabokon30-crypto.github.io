@@ -2,7 +2,40 @@
 // Attribution and MIT terms: topology-LICENSE.txt. Original effect: Kjetil Midtgarden Golid.
 // Original distributions and UI9.12/UI9.13 implementations remain unchanged.
 export const SHAPE_SECONDS=10, COLOR_SECONDS=100, COLOR_TRANSITION=10;
-export const PALETTE=Object.freeze([[137,150,78],[56,183,145],[55,172,205],[103,132,230],[165,111,222],[220,101,164],[228,138,91],[215,187,101]].map(Object.freeze));
+// Thirty rich anchors arranged as one continuous colour journey. The original
+// eight RGB values are preserved; each anchor still owns the same 100s interval.
+export const PALETTE=Object.freeze([
+ [137,150,78],  // Olive gold — original
+ [176,183,71],  // Citron silk
+ [131,187,82],  // Chartreuse
+ [88,157,99],   // Forest fern
+ [46,170,118],  // Jade
+ [56,183,145],  // Emerald — original
+ [36,154,128],  // Malachite
+ [84,192,172],  // Sea glass
+ [41,184,184],  // Turquoise
+ [55,172,205],  // Cyan — original
+ [65,157,222],  // Azure
+ [79,116,211],  // Cobalt
+ [103,132,230], // Blue — original
+ [125,112,220], // Iris
+ [143,94,202],  // Amethyst
+ [165,111,222], // Violet — original
+ [188,137,225], // Lilac
+ [202,106,207], // Orchid
+ [218,81,181],  // Fuchsia
+ [220,101,164], // Rose — original
+ [211,78,126],  // Raspberry
+ [190,71,98],   // Ruby
+ [230,104,117], // Living coral
+ [212,110,88],  // Copper
+ [228,138,91],  // Peach — original
+ [234,159,104], // Apricot
+ [221,161,70],  // Amber
+ [215,187,101], // Sand gold — original
+ [224,203,141], // Champagne
+ [178,151,83],  // Bronze
+].map(Object.freeze));
 export const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*t*(t*(t*6-15)+10)};
 export function paletteAt(seconds){
  const t=Math.max(0,seconds),index=Math.floor(t/COLOR_SECONDS)%PALETTE.length;
@@ -22,7 +55,7 @@ export function geometry(width,height){const scale=Math.min(1,850/width,1200/hei
 export function makeField(noise,width,height,epoch){
  const cell=20,cols=Math.ceil((width+200)/cell)+1,rows=Math.ceil((height+200)/cell)+1;
  const values=new Float32Array(cols*rows*2),z=epoch*.43;
- const radius=.1,scale=.00055;
+ const radius=.1,scale=.00046;
  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
   let low=Infinity,high=-Infinity,lx=0,ly=0,hx=0,hy=0;
   for(let k=0;k<8;k++){

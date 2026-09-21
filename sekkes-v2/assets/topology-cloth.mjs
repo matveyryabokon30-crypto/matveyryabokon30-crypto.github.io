@@ -1,6 +1,6 @@
 // Persistent fibres share the particle field, but cannot drain into its sinks.
 // A rotating, overscanned material plane leaves no privileged screen direction.
-export const THREAD_GAP=1.7, CLOTH_MARGIN=150;
+export const THREAD_GAP=1.7, CLOTH_MARGIN=210;
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const hash=n=>{const v=Math.sin(n*127.1+311.7)*43758.5453;return v-Math.floor(v)};
 export class ClothField{
@@ -14,7 +14,7 @@ export class ClothField{
   this.strands=[];
   // Fixed, gently irregular spacing breaks the screen-aligned interference grid.
   for(let x=-this.extent,i=0;x<=this.extent+THREAD_GAP;i++){
-   const light=clamp(.45+.27*Math.sin(i*.039)+.2*Math.sin(i*.013+1.7)+.08*(hash(i+800)-.5),0,.999);
+   const light=clamp(.45+.27*Math.sin(i*.0325)+.2*Math.sin(i*.0108+1.7)+.08*(hash(i+800)-.5),0,.999);
    this.strands.push({x,band:Math.floor(light*12)});x+=THREAD_GAP*(.84+.32*hash(i));
   }
  }
@@ -24,11 +24,14 @@ export class ClothField{
   const {cols,rows,values,cellX,cellY,cos,sin,extent}=this,limit=cellX*.5;
   for(let row=0;row<rows;row++){
    const v=(row-1)*cellY-extent;
+   // Long travelling folds add local freedom as the plane turns. A common
+   // offset for each row changes curvature without stretching fibre spacing.
+   const fold=36*Math.sin(v/210+.28*Math.sin(seconds*.025))+18*Math.sin(v/340-seconds*.014);
    for(let col=0;col<cols;col++){
     const u=(col-1)*cellX-extent;
     field.sample(this.width/2+u*cos-v*sin+100,this.height/2+u*sin+v*cos+100,this.vector,this.temp);
     const [x,y]=this.vector;
-    values[row*cols+col]=110*(x*cos+y*sin)/(Math.hypot(x,y)+.035);
+    values[row*cols+col]=fold+130*(x*cos+y*sin)/(Math.hypot(x,y)+.035);
    }
    // The derivative bound survives cubic B-spline interpolation. Threads stay
    // distinct even where the shared particle field forms bright wandering knots.
