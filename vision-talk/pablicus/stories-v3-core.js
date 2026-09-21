@@ -48,6 +48,7 @@
   frame=0;if(!ui)return;const {ws,panel,rail,pet,nodes}=ui,y=Math.max(0,ws.scrollTop),p=Math.min(1,y/G.range);lastScroll=y;
   if(ui.p===0&&p>0){ui.frozenX=rail.scrollLeft;ui.first=Math.min(Math.floor(rail.scrollLeft/G.step),Math.max(0,nodes.size-3));}
   const first=ui.first||0,count=Math.min(3,nodes.size-first),small=36,group=count?small+(count-1)*25:0,start=(ws.clientWidth-group)/2,scale=1+(small/G.diameter-1)*p;
+  panel.style.setProperty('--avatar-ring-scale',String(scale));
   panel.style.height=(G.expanded-G.range*p)+'px';panel.dataset.presentation=p===0?'expanded':p===1?'compact':'transition';panel.dataset.progress=p.toFixed(4);
   rail.style.overflowX=p===0?'auto':'hidden';const scrollX=p===0?rail.scrollLeft:ui.frozenX||0;if(p>0&&rail.scrollLeft!==scrollX)rail.scrollLeft=scrollX;
   Array.from(rail.querySelectorAll(':scope > .storyShelfItem')).forEach((n,i)=>{const origin=16+i*G.step-scrollX,target=start+(i-first)*25;const x=(target-origin)*p;

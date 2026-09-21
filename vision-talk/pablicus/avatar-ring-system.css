@@ -1,15 +1,24 @@
-/* All circles: image 90% of diameter, white radial gap 2%, colored radial band 3%.
-   Overlay-only paint: no padding/borders resize a photo or interfere with its carousel. */
-:root{--story-ring-active:var(--ob-story-ring,linear-gradient(135deg,#3ba7f2,#7fe7d6))}
+/* UI-AR1: active story rings use one 4px colored band and one 2px white gap.
+   Dimensions are CSS pixels, independent of avatar diameter. The shelf exposes its
+   existing visual scale so even its compact avatars retain these same distances.
+   Paint only: preserve image nodes, carousel geometry, hit targets and idle rings. */
+:root{--avatar-ring-width:4px;--avatar-ring-gap:2px;--story-ring-active:var(--ob-story-ring,linear-gradient(135deg,#3ba7f2,#7fe7d6))}
 :root body :is(.pablicusStoryAvatar,.profileNavAvatar,.storyShelfAvatar),
 :root body #app>.chatAvatarDock>#conversationAvatar#conversationAvatar#conversationAvatar,
 :root body #mainNav>[data-page=profile].profileAvatarNav>.profileNavAvatar{position:relative!important;box-sizing:border-box!important;padding:0!important;border:0!important;border-radius:50%!important;background:none!important;box-shadow:none!important;overflow:hidden!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;isolation:isolate}
 :root body :is(.pablicusStoryAvatar,.profileNavAvatar,.storyShelfAvatar)>img{display:block!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;object-fit:cover!important;border:0!important;border-radius:50%!important;box-shadow:none!important}
 :root body :is(.pablicusStoryAvatar,.profileNavAvatar,.storyShelfAvatar)::before,
-:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile::before{content:''!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;border-radius:50%!important;pointer-events:none!important;z-index:6!important;box-shadow:none!important;transform:none!important;background:radial-gradient(closest-side,transparent 89.9%,#fff 90%)!important;mask:none!important;-webkit-mask:none!important}
+:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile::before{content:''!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;border-radius:50%!important;pointer-events:none!important;z-index:6!important;box-shadow:none!important;transform:none!important;background:radial-gradient(closest-side,transparent var(--avatar-ring-photo-soft,89.9%),#fff var(--avatar-ring-photo-cut,90%))!important;mask:none!important;-webkit-mask:none!important}
 :root body :is(.pablicusStoryAvatar,.profileNavAvatar,.storyShelfAvatar)::after,
-:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile::after{content:''!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;border-radius:50%!important;pointer-events:none!important;z-index:7!important;box-shadow:none!important;transform:none!important;background:#fff!important;-webkit-mask:radial-gradient(closest-side,transparent 93.9%,#000 94%)!important;mask:radial-gradient(closest-side,transparent 93.9%,#000 94%)!important}
+:root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile::after{content:''!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;border-radius:50%!important;pointer-events:none!important;z-index:7!important;box-shadow:none!important;transform:none!important;background:#fff!important;-webkit-mask:radial-gradient(closest-side,transparent var(--avatar-ring-band-soft,93.9%),#000 var(--avatar-ring-band-cut,94%))!important;mask:radial-gradient(closest-side,transparent var(--avatar-ring-band-soft,93.9%),#000 var(--avatar-ring-band-cut,94%))!important}
 :root body :is(.pablicusStoryAvatar,.profileNavAvatar,.storyShelfAvatar)[data-pablicus-story-ring=active]::after,
 :root body .youMotionPage[data-profile-presentation=portrait] .pablicusStoryProfile[data-pablicus-story-ring=active]::after{background:var(--story-ring-active)!important}
 :root body .youMotionPage:not([data-profile-presentation=portrait]) .pablicusStoryProfile::before,
 :root body .youMotionPage:not([data-profile-presentation=portrait]) .pablicusStoryProfile::after{content:none!important}
+
+:root body :is(.pablicusStoryAvatar,.profileNavAvatar,.storyShelfAvatar,.pablicusStoryProfile)[data-pablicus-story-ring=active]{
+ --avatar-ring-photo-cut:calc(100% - (var(--avatar-ring-width) + var(--avatar-ring-gap)) / var(--avatar-ring-scale,1));
+ --avatar-ring-photo-soft:calc(var(--avatar-ring-photo-cut) - .15px / var(--avatar-ring-scale,1));
+ --avatar-ring-band-cut:calc(100% - var(--avatar-ring-width) / var(--avatar-ring-scale,1));
+ --avatar-ring-band-soft:calc(var(--avatar-ring-band-cut) - .15px / var(--avatar-ring-scale,1));
+}
