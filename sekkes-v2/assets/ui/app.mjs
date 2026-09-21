@@ -1,3 +1,4 @@
+import {mountLivingIcons} from './living-icons.mjs';
 import {mountTopology} from '../topology-global.mjs';
 import {sections,routeId} from './registry.mjs';
 import {icon,el} from './components.mjs';
@@ -95,7 +96,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  const dockObserver=new ResizeObserver(()=>app.style.setProperty('--dock-height',$('#sessionDock').getBoundingClientRect().height+'px'));dockObserver.observe($('#sessionDock'));
  document.addEventListener('visibilitychange',()=>app.classList.toggle('document-hidden',document.hidden),{signal});
  addEventListener('offline',()=>notify('Нет сети. Черновик сохранён на экране.'),{signal});
- watchPreferences(signal);route();
+ watchPreferences(signal);let livingIcons;try{livingIcons=mountLivingIcons(document)}catch{/* Vector icons remain usable if the decorative renderer is unavailable. */}route();
  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).then(reg=>{swRegistration=reg}).catch(()=>{});
- return {dispose(){visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
+ return {dispose(){livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
 }

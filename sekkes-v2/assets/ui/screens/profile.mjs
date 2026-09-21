@@ -1,7 +1,5 @@
-import {el,icon,row,paths} from '../components.mjs';
+import {el,icon,row} from '../components.mjs';
 import {openProfileStore,validateMedia,mediaTypes} from '../profile-store.mjs';
-// Thin line symbols share the application's existing icon renderer.
-Object.assign(paths,{photo:'M3 3h18v18H3ZM3 16l5-6 5 6 3-3 5 5M15 7h.01',video:'M4 3h16v18H4ZM4 8h16M8 3l4 5m2-5 4 5M10 12l5 3-5 3Z',carousel:'M7 7h14v14H7ZM3 17V3h14',story:'M12 3a9 9 0 1 1-6.36 2.64M3 8V3h5M10 8l6 4-6 4Z',feed:'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',channels:'M4 5h16v12H9l-5 4ZM8 9h8m-8 4h5',community:'M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M2 22v-3a6 6 0 0 1 12 0v3M17 4a4 4 0 0 1 0 8m0 3a5 5 0 0 1 5 5v2',edit:'m4 16 12-12 4 4L8 20l-5 1ZM14 6l4 4',plus:'M12 4v16M4 12h16',progress:'M3 21V13h4v8M10 21V8h4v13M17 21V3h4v18',heart:'M12 21 3 12C-3 3 7-1 12 6 17-1 27 3 21 12Z',back:'m14 5-7 7 7 7'});
 export function create(ctx){
  const node=el('section','screen profile-screen');node.setAttribute('aria-label','Профиль');
  const body=el('div','profile-body'),nav=el('nav','profile-bottom');nav.setAttribute('aria-label','Разделы профиля');

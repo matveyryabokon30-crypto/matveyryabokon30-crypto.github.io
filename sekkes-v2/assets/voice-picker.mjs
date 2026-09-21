@@ -1,7 +1,15 @@
 import {assessVoice} from './registry-foundation.mjs?v=2026.09.20-s3.28';
 import {StaticVoicePreview} from './preview-player.mjs?v=2026.09.20-s3.28';
+import {icon} from './ui/components.mjs';
 
 const errors={AUDIO_GESTURE_REQUIRED:'Нажми «Послушать» ещё раз, чтобы включить звук.',AUDIO_ASSET_ERROR:'Не удалось загрузить пример. Попробуй ещё раз.',AUDIO_LOAD_TIMEOUT:'Пример загружается слишком долго. Попробуй ещё раз.'};
+function paintAction(button,symbol,text){
+  const state=`${symbol||''}:${text}`;if(button.dataset.actionPaint===state)return;
+  button.dataset.actionPaint=state;button.classList.add('voice-icon-action');
+  button.style.setProperty('--icon-size','18px');
+  button.innerHTML=symbol?icon(symbol):'';
+  const label=document.createElement('span');label.className='voice-action-label';label.textContent=text;button.append(label);
+}
 export class VoicePicker {
   constructor({root,voices,preferences,isLive=()=>false,notify=()=>{},audioFactory=()=>new Audio(),origin=location.origin}) {
     Object.assign(this,{root,voices,preferences,isLive,notify});
@@ -37,14 +45,14 @@ export class VoicePicker {
       const row=document.createElement('div');row.className='voice-choice'+(selected?' selected':'');
       const label=document.createElement('div'),name=document.createElement('strong'),hint=document.createElement('small');
       name.textContent=voice.name||voice.id;hint.textContent=(selected?'Выбран':ready?'Русский пример':'Голос ещё не готов')+(voice.default_for_group?' · По умолчанию':'');label.append(name,hint);
-      const play=document.createElement('button');play.type='button';play.dataset.preview=voice.id;play.textContent='▶ Послушать';play.disabled=!ready;play.setAttribute('aria-label','Послушать '+name.textContent);
+      const play=document.createElement('button');play.type='button';play.dataset.preview=voice.id;paintAction(play,'play','Послушать');play.disabled=!ready;play.setAttribute('aria-label','Послушать '+name.textContent);
       play.onclick=()=>{
         if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
         // Audio.play executes synchronously inside this click, preserving iOS activation.
         if(this.playingVoice===voice.id){this.stopPreview();return;}
         try{this.player.play(voice).catch(e=>{if(e?.name!=='AbortError'&&this.opened)this.message.textContent='Не удалось включить пример. Нажми ещё раз.';});}catch{this.message.textContent='Не удалось включить пример. Нажми ещё раз.';}
       };
-      const choose=document.createElement('button');choose.type='button';choose.dataset.select=voice.id;choose.textContent=selected?'✓ Выбран':'Выбрать';choose.setAttribute('aria-label','Выбрать '+name.textContent);choose.setAttribute('aria-pressed',String(selected));choose.disabled=!ready||this.preferences.busy;
+      const choose=document.createElement('button');choose.type='button';choose.dataset.select=voice.id;paintAction(choose,selected?'check':null,selected?'Выбран':'Выбрать');choose.setAttribute('aria-label','Выбрать '+name.textContent);choose.setAttribute('aria-pressed',String(selected));choose.disabled=!ready||this.preferences.busy;
       choose.onclick=async()=>{
         if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
         this.player.stop();
@@ -62,11 +70,12 @@ export class VoicePicker {
     this.playingVoice=['loading','playing'].includes(state.state)?state.voice:null;
     for(const button of this.list.querySelectorAll('[data-preview]')) {
       const current=button.dataset.preview===state.voice;
-      button.textContent=current&&state.state==='loading'?'Загрузка…':current&&state.state==='playing'?'■ Остановить':'▶ Послушать';
+      if(current&&state.state==='loading')paintAction(button,null,'Загрузка…');
+      else if(current&&state.state==='playing')paintAction(button,'stop','Остановить');
+      else paintAction(button,'play','Послушать');
     }
     this.message.textContent=state.state==='error'?(errors[state.code]||'Не удалось включить звук. Нажми «Послушать» ещё раз.'):'';
   }
   stopPreview(){this.player.stop();this.playback({state:'idle',voice:null});}
   close(){this.stopPreview();this.opened=false;}
 }
-

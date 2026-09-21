@@ -3,7 +3,7 @@ import {icon} from './components.mjs';
 // One disclosure owns focus, background blocking and its exit animation.
 export function navigation({root,button,panel,backdrop,app,signal}){
  let open=false,closingTimer=null,openingTimer=null;
- const paint=()=>{button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');button.dataset.open=String(open)};
+ const paint=()=>{button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');button.dataset.open=String(open);button.innerHTML=icon(open?'close':'menu')};
  function close({restoreFocus=true}={}){
   if(!open)return;open=false;clearTimeout(openingTimer);root.classList.remove('is-opening');paint();app.inert=false;panel.inert=true;
   root.removeAttribute('role');root.removeAttribute('aria-modal');root.classList.remove('is-open');root.classList.add('is-closing');backdrop.hidden=true;
@@ -26,6 +26,6 @@ export function navigation({root,button,panel,backdrop,app,signal}){
   if(e.shiftKey&&i<=0){e.preventDefault();items.at(-1).focus()}
   else if(!e.shiftKey&&i===items.length-1){e.preventDefault();button.focus()}
  },{signal});
- button.innerHTML=icon('menu');paint();panel.hidden=true;panel.inert=true;
+ paint();panel.hidden=true;panel.inert=true;
  return {close,dispose(){clearTimeout(closingTimer);clearTimeout(openingTimer);app.inert=false;panel.hidden=true;backdrop.hidden=true;root.classList.remove('is-open','is-closing','is-opening')}};
 }
