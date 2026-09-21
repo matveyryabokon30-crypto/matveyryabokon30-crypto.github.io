@@ -32,7 +32,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   const list=ctx.messages,atEnd=list.scrollHeight-list.scrollTop-list.clientHeight<100;
   const previous=meta.id?[...list.children].find(n=>n.dataset.messageId===meta.id):null;
   const node=message(role,text,{showImage});if(meta.id)node.dataset.messageId=meta.id;if(meta.at)node.dataset.at=meta.at;
-  if(previous)previous.replaceWith(node);else list.append(node);
+  if(meta.state)node.dataset.delivery=meta.state;if(previous)previous.replaceWith(node);else list.append(node);
   cache.get('home')?.messageAdded();if(atEnd)list.scrollTop=list.scrollHeight;
  }
  function sendError(code){
@@ -48,6 +48,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   draft.disabled=Boolean(recording?.busy||hasAudio);composer.dataset.recording=String(Boolean(recording?.busy||hasAudio));
  }
  function updateVoice(state){
+  if(['connecting','live','listening','speaking'].includes(state))cache.get('home')?.hideConversation();
   voice=state;app.dataset.voice=state;const active=['connecting','live','listening','speaking'].includes(state),waiting=['closing','recovering','finalizing'].includes(state),busy=active||waiting||state==='recovery';
   stop.hidden=current!=='home'&&!busy;controls.hidden=current!=='home'&&!busy;
   stop.disabled=waiting||(!busy&&(textPending||Boolean(recording?.busy||dictation?.busy)));
@@ -62,7 +63,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
    for(const row of items){appendMessage(row.speaker==='user'?'user':'ai',row.text,{id:row.id});const node=[...list.children].find(n=>n.dataset.messageId===row.id);if(node)node.dataset.at=row.at;}
    [...list.children].sort((a,b)=>(a.dataset.at||'9999').localeCompare(b.dataset.at||'9999')||(a.dataset.messageId||'').localeCompare(b.dataset.messageId||'')).forEach(n=>list.append(n));
    if(older)list.scrollTop=oldTop+list.scrollHeight-oldHeight;else if(oldHeight-oldTop-list.clientHeight<100||!oldIds.size)requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight});
-  },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render(role,text,meta){ctx.showConversation();appendMessage(role,text,meta)},beforeText(){ctx.showConversation()},
+  },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render(role,text,meta){ctx.showConversation();appendMessage(role,text,meta);requestAnimationFrame(()=>{if(ctx.messages)ctx.messages.scrollTop=ctx.messages.scrollHeight})},beforeText(){ctx.showConversation()},
   get captureBusy(){return Boolean(recording?.busy||dictation?.busy)},sendRecording(){recording?.send()},
   textBusy(busy){textPending=busy;ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){ctx.account=user;ctx.profileUpdate?.()},
   reset(){ctx.pauseMedia();dictation?.cancel();recording?.reset();for(const url of attachmentURLs)URL.revokeObjectURL(url);attachmentURLs.clear();pendingMessages.length=0;ctx.messages?.replaceChildren(el('p','empty-state','Диалог пуст.'));cache.get('home')?.reset();ctx.account=null;ctx.profileUpdate?.()},
@@ -71,7 +72,8 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  for(const s of sections){const a=el('a','rail-item');a.href=s.route;a.innerHTML=icon(s.icon);a.append(el('span','rail-label',s.title));a.dataset.route=s.id;a.title=s.title;nav.append(a)}
  $('#dialogClose').innerHTML=icon('close');$('#dialogClose').addEventListener('click',()=>dialog.close(),{signal});dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()},{signal});
  composer.addEventListener('submit',async e=>{e.preventDefault();if(textPending)return;try{if(recording.hasAudio)await recording.send();else if(draft.value.trim()&&!recording.busy)await ctx.runtime()?.sendText();}finally{updateSend()}},{signal});
- draft.addEventListener('input',()=>{sendError('');ctx.runtime()?.saveDraft?.();updateSend();},{signal});
+ draft.addEventListener('focus',()=>{if(!ctx.runtime()?.voiceActive)ctx.showConversation()},{signal});
+ draft.addEventListener('input',()=>{if(!ctx.runtime()?.voiceActive)ctx.showConversation();sendError('');ctx.runtime()?.saveDraft?.();updateSend();},{signal});
  $('#draft').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();composer.requestSubmit()}},{signal});
  recordButton.innerHTML=icon('record');$('#micButton').innerHTML=icon('mic');$('#sendButton').innerHTML=icon('send');bindLiveControl(stop,{signal,state:()=>ctx.runtime()?.voiceActive?'live':voice,start:()=>ctx.startVoice(),stop:()=>{const runtime=ctx.runtime();if(runtime?.stopVoice)runtime.stopVoice();else runtime?.toggleMic()}});
  recording=recordingControl(ctx,$('#recordingPanel'),recordButton,signal,recorderOptions);

@@ -1,11 +1,15 @@
 import {ChatRecorder,audioBase64} from './chat-recorder.mjs';
+import {micWave} from './mic-wave.mjs';
 import {icon} from './components.mjs';
 // One microphone and one send button, both inside the existing composer.
 export function recordingControl(ctx,panel,mic,signal,recorderOptions={}){
  let sending=false,requestId=null,disposed=false,generation=0,sendWhenReady=false;
+ const composer=mic.closest('form'),canvas=document.createElement('canvas');canvas.className='mic-wave';canvas.hidden=true;canvas.setAttribute('aria-label','Запись голоса');composer.insertBefore(canvas,mic);const wave=micWave(canvas);
  const recorder=new ChatRecorder({...recorderOptions,onState:render});
  function render({state,code}){
-  if(disposed)return;panel.hidden=true;panel.replaceChildren();
+  if(disposed)return;canvas.hidden=state!=='recording';composer.dataset.wave=String(state==='recording');if(state==='recording')wave.start(recorder.record.stream);else if(state!=='permission')wave.stop();
+  if(state==='error'&&requestId)ctx.runtime()?.voiceFailed?.(requestId);
+  panel.hidden=true;panel.replaceChildren();
   mic.dataset.recording=state;mic.setAttribute('aria-pressed',String(state==='recording'));
   mic.disabled=sending||state==='processing';
   mic.setAttribute('aria-label',recorder.capturing||recorder.clip?'Отменить запись':'Записать сообщение');
@@ -15,9 +19,9 @@ export function recordingControl(ctx,panel,mic,signal,recorderOptions={}){
  }
  async function send(){
   if(sending||disposed)return;
-  if(recorder.state==='recording'){sendWhenReady=true;recorder.finish();return;}
+  if(recorder.state==='recording'){requestId ||= crypto.randomUUID();ctx.runtime()?.voicePending?.(requestId);sendWhenReady=true;recorder.finish();return;}
   if(!recorder.clip)return;
-  const epoch=generation;sending=true;requestId ||= crypto.randomUUID();render({state:'sending'});
+  const epoch=generation;sending=true;requestId ||= crypto.randomUUID();ctx.runtime()?.voicePending?.(requestId);render({state:'sending'});
   try{
    const response=await ctx.runtime()?.sendVoice({id:requestId,audio:audioBase64(recorder.clip.bytes)});
    if(disposed||epoch!==generation)return;
@@ -27,11 +31,11 @@ export function recordingControl(ctx,panel,mic,signal,recorderOptions={}){
  }
  mic.addEventListener('click',()=>{
   if(sending)return;if(recorder.capturing||recorder.clip){sendWhenReady=false;requestId=null;recorder.cancel();return;}
-  if(ctx.runtime()?.busy)return;ctx.sendError('');ctx.pauseMedia();recorder.start();
+  if(ctx.runtime()?.busy)return;ctx.sendError('');ctx.pauseMedia();ctx.runtime()?.recordingStarted?.();wave.unlock();recorder.start();
  },{signal});
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&recorder.capturing){sendWhenReady=false;recorder.finish();}},{signal});
  return {get busy(){return recorder.capturing||sending},get hasAudio(){return Boolean(recorder.clip)||recorder.state==='recording'},get canSend(){return !sending&&(Boolean(recorder.clip)||recorder.state==='recording')},send,
   beforeRoute(){sendWhenReady=false;if(recorder.capturing)recorder.finish();},
   reset(){++generation;sending=false;requestId=null;sendWhenReady=false;recorder.cancel();},
-  dispose(){++generation;disposed=true;recorder.dispose();}};
+  dispose(){++generation;disposed=true;wave.stop();canvas.remove();recorder.dispose();}};
 }

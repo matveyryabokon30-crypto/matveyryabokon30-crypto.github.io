@@ -113,3 +113,13 @@ html[data-theme=light]{--chrome-tint:#326f99}
 .composer textarea:focus-visible{outline:none}
 .composer:focus-within{box-shadow:inset 0 0 0 1px rgba(232,246,255,.5)}
 #recordingPanel,#dictationStatus,#recordButtonParking{display:none!important}
+
+/* UI9.8: readable outgoing text and measured recording waveform. */
+#shell[data-route=home] .message.user{background:rgba(9,36,62,.82);color:#fff;border:1px solid rgba(205,231,255,.5);box-shadow:inset 0 1px 0 #ffffff18}
+#shell[data-route=home] .message.user :is(.speaker,.copy-button){color:#d9edff}
+.message[data-delivery=pending]{border-style:dashed!important}
+.message[data-delivery=failed]{border-color:#ffb4a8!important}
+.mic-wave{flex:1;min-width:0;height:44px;align-self:center;color:#eef9ff}
+.composer[data-wave=true] textarea{display:none}
+.composer[data-wave=true] .mic-wave{display:block}
+.mic-wave[hidden]{display:none!important}

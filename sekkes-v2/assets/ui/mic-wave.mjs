@@ -1,0 +1,11 @@
+// The analyser shares the recorder stream; it never requests another microphone.
+export function micWave(canvas,{Context=globalThis.AudioContext||globalThis.webkitAudioContext,raf=globalThis.requestAnimationFrame,caf=globalThis.cancelAnimationFrame}={}){
+ let context,source,analyser,frame,stream;
+ const paint=canvas.getContext('2d');
+ function unlock(){try{context ||= new Context();context.resume().catch(()=>{});}catch{}}
+ function stop(){if(frame!=null)caf(frame);frame=null;source?.disconnect();analyser?.disconnect();source=analyser=stream=null;const old=context;context=null;old?.close().catch(()=>{});}
+ function start(input){if(stream===input)return;unlock();if(!context||!paint)return;stream=input;source=context.createMediaStreamSource(input);analyser=context.createAnalyser();analyser.fftSize=512;source.connect(analyser);const data=new Uint8Array(analyser.fftSize),levels=Array(36).fill(0);
+  function draw(){if(!analyser)return;analyser.getByteTimeDomainData(data);let energy=0;for(const n of data)energy+=((n-128)/128)**2;levels.shift();levels.push(Math.min(1,Math.sqrt(energy/data.length)*5));const w=canvas.width=canvas.clientWidth*2||480,h=canvas.height=88;paint.clearRect(0,0,w,h);paint.strokeStyle='#eef9ff';paint.lineWidth=4;paint.lineCap='round';levels.forEach((v,i)=>{const x=(i+.5)*w/levels.length,y=Math.max(2,v*36);paint.beginPath();paint.moveTo(x,h/2-y);paint.lineTo(x,h/2+y);paint.stroke()});frame=raf(draw)}draw();
+ }
+ return {unlock,start,stop};
+}

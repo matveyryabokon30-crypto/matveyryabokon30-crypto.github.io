@@ -4,14 +4,10 @@ export function create(ctx){
  const scene=el('div','wallpaper');function update(){scene.replaceChildren(picture(document.documentElement.dataset.theme==='light'?'lake-day':'lake-night','','scene-image'))}update();
  const observer=new MutationObserver(update);observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
  const conversation=el('section','home-conversation');conversation.setAttribute('aria-label','Переписка с SEKKES');conversation.hidden=true;
- const toolbar=el('div','conversation-toolbar'),collapse=el('button','collapse-conversation','Свернуть переписку');collapse.type='button';toolbar.append(collapse);
- const messages=el('div','messages');messages.id='messages';messages.setAttribute('aria-label','Сообщения');conversation.append(toolbar,messages);
+ const messages=el('div','messages');messages.id='messages';messages.setAttribute('aria-label','Сообщения');conversation.append(messages);
  messages.addEventListener('scroll',()=>{if(!conversation.hidden&&messages.scrollHeight>messages.clientHeight&&messages.scrollTop<40)ctx.runtime()?.loadEarlier?.().catch(()=>{});});
- const reopen=el('button','reopen-conversation','Показать переписку');reopen.type='button';reopen.hidden=true;
- function showConversation(){node.dataset.conversation='open';conversation.hidden=false;reopen.hidden=true;requestAnimationFrame(()=>{messages.scrollTop=messages.scrollHeight})}
- collapse.onclick=()=>{node.dataset.conversation='closed';conversation.hidden=true;reopen.hidden=!messages.children.length;reopen.focus({preventScroll:true})};
- reopen.onclick=showConversation;
- node.append(scene,conversation,reopen);ctx.messages=messages;ctx.flushMessages();
- if(messages.children.length)reopen.hidden=false;
- return {node,showConversation,messageAdded(){if(conversation.hidden)reopen.hidden=!messages.children.length},reset(){node.dataset.conversation='closed';conversation.hidden=true;reopen.hidden=true;messages.replaceChildren()},dispose(){observer.disconnect();collapse.onclick=reopen.onclick=null;ctx.messages=null}};
+ function showConversation(){const opening=conversation.hidden;node.dataset.conversation='open';conversation.hidden=false;if(opening)requestAnimationFrame(()=>{messages.scrollTop=messages.scrollHeight})}
+ function hideConversation(){node.dataset.conversation='closed';conversation.hidden=true}
+ node.append(scene,conversation);ctx.messages=messages;ctx.flushMessages();
+ return {node,showConversation,hideConversation,messageAdded(){},reset(){hideConversation();messages.replaceChildren()},dispose(){observer.disconnect();ctx.messages=null}};
 }
