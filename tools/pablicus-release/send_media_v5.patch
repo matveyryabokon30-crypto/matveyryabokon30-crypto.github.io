@@ -1,0 +1,154 @@
+--- a/vision-talk/pablicus/app.js
++++ b/vision-talk/pablicus/app.js
+@@ -7,3 +7,3 @@
+  const safeGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}},safeSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+- const timeoutFetch=async(u,opts={},ms=25000)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);const abort=()=>c.abort();opts.signal?.addEventListener('abort',abort,{once:true});try{return await fetch(u,{...opts,signal:c.signal})}finally{clearTimeout(t);opts.signal?.removeEventListener('abort',abort)}};
++ const timeoutFetch=async(u,opts={},ms=25000)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);const abort=()=>c.abort();opts.signal?.addEventListener('abort',abort,{once:true});if(opts.signal?.aborted)c.abort();try{return await fetch(u,{...opts,signal:c.signal})}finally{clearTimeout(t);opts.signal?.removeEventListener('abort',abort)}};
+  const authStorageKey='sb-ctcoqgsztdtsazdiwcmd-auth-token';
+@@ -570,3 +570,3 @@
+   else{const md=r.attachment_metadata||{},button=el('button','mediaOpen'),name=PablicusRichMessage.attachmentLabel({type:r.type,name:md.name});button.dataset.mediaType=r.type;button.setAttribute('aria-label','Открыть '+name);
+-   if(r.type==='image'){const im=el('img','messageImage');im.alt='Фото';im.draggable=false;button.draggable=false;im.onload=()=>PablicusRichMessage.setMediaDimensions(button,im.naturalWidth,im.naturalHeight);im.loading='lazy';if(/^data:image\/(jpeg|png|webp);base64,/.test(md.thumb_data_url||''))im.src=md.thumb_data_url;else{const instant=PablicusMediaCache.peek(BUCKET,r.attachment_path,{width:960});if(instant)im.src=instant}button.append(im);if(!im.src){const fallback=el('span','mediaLabel','Фото');button.append(fallback);requestAnimationFrame(()=>{if(!im.isConnected||!im.closest('#canvas'))return;signedUrl(r.attachment_path,{type:'image',width:960}).then(u=>{if(im.isConnected){im.src=u;fallback.remove()}}).catch(()=>{fallback.textContent='Фото · нажмите, чтобы повторить'})})}}
++   if(r.type==='image'){const im=el('img','messageImage');im.alt='Фото';im.draggable=false;button.draggable=false;im.onload=()=>PablicusRichMessage.fitChatImage(button,im,md);im.loading='lazy';if(/^data:image\/(jpeg|png|webp);base64,/.test(md.thumb_data_url||''))im.src=md.thumb_data_url;else{const instant=PablicusMediaCache.peek(BUCKET,r.attachment_path,{width:960});if(instant)im.src=instant}button.append(im);if(!im.src){const fallback=el('span','mediaLabel','Фото');button.append(fallback);requestAnimationFrame(()=>{if(!im.isConnected||!im.closest('#canvas'))return;signedUrl(r.attachment_path,{type:'image',width:960}).then(u=>{if(im.isConnected){im.src=u;fallback.remove()}}).catch(()=>{fallback.textContent='Фото · нажмите, чтобы повторить'})})}}
+    else button.append(el('span','mediaGlyph',r.type==='video'?'▷':'▤'),el('span','fileName',name),el('span','muted',md.size_bytes?Math.round(md.size_bytes/1024)+' КБ':''));
+@@ -666,3 +666,3 @@
+   if(await objectExists(path)){check();return{path,id};}check();if(user?.id!==uid)throw Error('Аккаунт изменился');
+-  if(f.size<=6*1024*1024){const bytes=await f.file.arrayBuffer();check();if(bytes.byteLength!==f.size)throw Error('Не удалось прочитать полный файл');const r=await sb.storage.from(BUCKET).upload(path,bytes,{contentType:f.type||'application/octet-stream',upsert:false});check();if(r.error&&!await objectExists(path))throw r.error;if(f.type?.startsWith('image/')){await PablicusMediaCache.prepare(BUCKET,path);check();}return{path,id}}
++  if(f.size<=6*1024*1024){const bytes=await f.file.arrayBuffer();check();if(bytes.byteLength!==f.size)throw Error('Не удалось прочитать полный файл');const r=await sb.storage.from(BUCKET).upload(path,bytes,{contentType:f.type||'application/octet-stream',upsert:false});check();if(r.error&&!await objectExists(path))throw r.error;if(f.type?.startsWith('image/')){void PablicusMediaCache.prepare(BUCKET,path);check();}return{path,id}}
+   const endpoint=URL.replace('.supabase.co','.storage.supabase.co')+'/storage/v1/upload/resumable';let location=item.parts?.[m.id]?.upload_url;
+@@ -672,11 +672,24 @@
+   while(offset<f.size){check();const end=Math.min(offset+6*1024*1024,f.size),r=await timeoutFetch(location,{method:'PATCH',signal:controls?.signal,headers:{...await auth(),'Upload-Offset':String(offset),'Content-Type':'application/offset+octet-stream'},body:await f.file.slice(offset,end).arrayBuffer()},60000);if(!r.ok)throw Error('Загрузка прервана: '+r.status);offset=+(r.headers.get('Upload-Offset')||end);await store.progress(item.id,owner,m.id,{upload_url:location,uploaded:offset})}
+-  if(f.type?.startsWith('image/')){await PablicusMediaCache.prepare(BUCKET,path);check();}
++  if(f.type?.startsWith('image/')){void PablicusMediaCache.prepare(BUCKET,path);check();}
+   return{path,id};
+  }
++ // Network-stage deadline also covers SDK token acquisition before fetch starts.
++ function sendStep(operation,signal,ms=30000){
++  return new Promise((resolve,reject)=>{
++   let settled=false;const finish=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);error?reject(error):resolve(value);};
++   const abort=()=>finish(new DOMException('Отправка приостановлена','AbortError'));
++   const timer=setTimeout(()=>finish(Object.assign(Error('Истекло время ожидания отправки. Сообщение сохранено для повтора.'),{name:'TimeoutError'})),ms);
++   if(signal?.aborted){abort();return;}signal?.addEventListener('abort',abort,{once:true});
++   Promise.resolve().then(operation).then(value=>finish(null,value),error=>finish(error));
++  });
++ }
+  async function pump(){if(worker){pumpPending=true;return}if(!user||!navigator.onLine||document.hidden)return;worker=true;const uid=user.id,owner=DraftVault.uid();try{
+-  for(const d of dialogs){if(user?.id!==uid)break;const store=PablicusChat.scope.user===uid&&PablicusChat.scope.chat===d.id?PablicusChat.store:new PablicusStore(uid,d.id);if(!store)continue;try{
+-   const queue=await store.readQueue();for(const it of queue){if(user?.id!==uid||!navigator.onLine)break;if(it.state==='error'&&(!it.retryable||it.nextAttemptAt>Date.now()))break;if(!['queued','sending','error'].includes(it.state))continue;const claimed=await store.claim(it.id,owner);if(!claimed)break;const item={...claimed,files:it.files};
++  for(const d of [...new Map([current,...dialogs].filter(Boolean).map(d=>[d.id,d])).values()]){if(user?.id!==uid)break;const store=PablicusChat.scope.user===uid&&PablicusChat.scope.chat===d.id?PablicusChat.store:new PablicusStore(uid,d.id);if(!store)continue;try{
++   const queue=await store.readQueue();for(const it of queue){if(user?.id!==uid||!navigator.onLine)break;if(it.state==='error'&&(!it.retryable||it.nextAttemptAt>Date.now()))continue;if(!['queued','sending','error'].includes(it.state))continue;const claimed=await store.claim(it.id,owner);if(!claimed)continue;const item={...claimed,files:it.files};
++    const ac=new AbortController(),isCurrent=()=>!ac.signal.aborted&&user?.id===uid;
++    const controls={signal:ac.signal,isCurrent},step=fn=>sendStep(fn,ac.signal);
++    let renewing=false;const heartbeat=setInterval(async()=>{if(renewing)return;if(!isCurrent()){ac.abort();return;}renewing=true;try{if(!await store.renew(item.id,owner))ac.abort();}catch{ac.abort();}finally{renewing=false;}},15000);
+     try{for(const m of item.messages){if(user?.id!==uid)throw Error('Аккаунт изменился');if(item.parts?.[m.id]?.ack)continue;const id=await pablicusClientId(item.id,m.id);
+      const content=m.kind==='rich'?richContent(item,m,d.id,uid,id):null;
+-     const existing=await sb.from('messages').select('id,server_seq,client_message_id,conversation_id,type,attachment_metadata').eq('sender_id',uid).eq('client_message_id',id).maybeSingle();if(existing.error)throw existing.error;let ack=existing.data;
++     const existing=await step(()=>sb.from('messages').select('id,server_seq,client_message_id,conversation_id,type,attachment_metadata').eq('sender_id',uid).eq('client_message_id',id).maybeSingle().abortSignal(ac.signal));if(existing.error)throw existing.error;let ack=existing.data;
+      if(ack&&ack.conversation_id!==d.id)throw Error('Подтверждение относится к другому разговору');
+@@ -687,8 +700,8 @@
+        const f=item.files.find(file=>file.id===block.assetId);if(!f)throw Error('Байты вложения не найдены');
+-       await upload(store,item,{id:block.id},f,owner,d.id,uid,id);
++       await sendStep(()=>upload(store,item,{id:block.id},f,owner,d.id,uid,id,controls),ac.signal,180000);
+       }
+       if(user?.id!==uid)throw Error('Аккаунт изменился');
+-      r=await sb.rpc('send_rich_message',{p_conversation_id:d.id,p_client_message_id:id,p_content:content});
+-     }else if(m.kind==='text'){if(user?.id!==uid)throw Error('Аккаунт изменился');r=await sb.rpc('send_message',{p_conversation_id:d.id,p_client_message_id:id,p_type:'text',p_body:m.text,p_attachment_path:null})}
+-      else{const f=item.files.find(f=>f.id===m.assetId);if(!f)throw Error('Байты вложения не найдены');if(f.size>25*1024*1024)throw Error('Этот файл пока не поддерживается текущим релизом');const media=await upload(store,item,m,f,owner,d.id,uid);if(user?.id!==uid)throw Error('Аккаунт изменился');r=await sb.rpc('send_attachment_message',{p_conversation_id:d.id,p_client_message_id:id,p_type:['image','video'].includes(m.kind)?m.kind:'document',p_attachment_path:media.path,p_attachment_name:f.name,p_mime_type:f.type||'application/octet-stream',p_size_bytes:f.size,p_caption:null,p_thumb_data_url:null})}
++      r=await step(()=>sb.rpc('send_rich_message',{p_conversation_id:d.id,p_client_message_id:id,p_content:content}).abortSignal(ac.signal));
++     }else if(m.kind==='text'){if(user?.id!==uid)throw Error('Аккаунт изменился');r=await step(()=>sb.rpc('send_message',{p_conversation_id:d.id,p_client_message_id:id,p_type:'text',p_body:m.text,p_attachment_path:null}).abortSignal(ac.signal))}
++      else{const f=item.files.find(f=>f.id===m.assetId);if(!f)throw Error('Байты вложения не найдены');if(f.size>25*1024*1024)throw Error('Этот файл пока не поддерживается текущим релизом');const media=await sendStep(()=>upload(store,item,m,f,owner,d.id,uid,null,controls),ac.signal,180000);if(user?.id!==uid)throw Error('Аккаунт изменился');r=await step(()=>sb.rpc('send_attachment_message',{p_conversation_id:d.id,p_client_message_id:id,p_type:['image','video'].includes(m.kind)?m.kind:'document',p_attachment_path:media.path,p_attachment_name:f.name,p_mime_type:f.type||'application/octet-stream',p_size_bytes:f.size,p_caption:null,p_thumb_data_url:null}).abortSignal(ac.signal))}
+       if(r.error)throw r.error;ack=r.data;
+@@ -696,8 +709,10 @@
+      if(user?.id!==uid)throw Error('Аккаунт изменился');
++     if(!isCurrent())throw new DOMException('Аккаунт изменился','AbortError');
+      if(!ack?.id||!ack.server_seq||ack.client_message_id!==id)throw Error('Нет корректного подтверждения сервера');await store.progress(item.id,owner,m.id,{ack:{id:ack.id,server_seq:ack.server_seq,client_message_id:id}});
+     }
+-    await store.finish(item.id,owner);if(current?.id===d.id){await syncMessages();await PablicusChat.refreshQueue()}
+-   }catch(e){await store.failed(item.id,owner,e,!navigator.onLine);if(current?.id===d.id)await PablicusChat.refreshQueue();if(navigator.onLine)toast('Исходящее сохранено. '+e.message);break}
++    await store.finish(item.id,owner);if(user?.id===uid&&current?.id===d.id){void syncMessages().catch(problem);await PablicusChat.refreshQueue()}
++   }catch(e){ac.abort();await store.failed(item.id,owner,e,!navigator.onLine);if(user?.id===uid&&current?.id===d.id)await PablicusChat.refreshQueue();if(user?.id===uid&&navigator.onLine)toast('Исходящее сохранено. '+e.message);}
++    finally{clearInterval(heartbeat);ac.abort();}
+    }
+-  }finally{if(store!==PablicusChat.store)store.close()}}
++  }catch(e){if(user?.id===uid)problem(e);}finally{if(store!==PablicusChat.store)store.close()}}
+  }catch(e){problem(e)}finally{worker=false;if(pumpPending){pumpPending=false;setTimeout(()=>pump(),0)}}}
+--- a/vision-talk/pablicus/chat.js
++++ b/vision-talk/pablicus/chat.js
+@@ -539,3 +539,3 @@
+  if(list){const a=list.capture(),f=list.follow;list.messages=list.messages.filter(m=>!m.outboxId).concat(queueMessages());list.sync(a,f,'queue-update');}paintQueue();}
+-async function refreshQueue(){const rows=await vault.store.readQueue();ingestQueue(rows);return rows;}
++async function refreshQueue(){const target=vault,store=target?.store;if(!store)return[];const rows=await store.readQueue();if(vault===target&&vault.store===store)ingestQueue(rows);return rows;}
+ async function localSend(){
+--- a/vision-talk/pablicus/transport-store.js
++++ b/vision-talk/pablicus/transport-store.js
+@@ -9,2 +9,3 @@
+   async claim(id,owner){return this.change(id,r=>{if(!live(r))return false;if(r.lease&&r.lease.owner!==owner&&r.lease.until>Date.now())return false;r.state='sending';r.error=null;r.nextAttemptAt=0;r.lease={owner,until:Date.now()+60000};r.version++})}
++  async renew(id,owner){return this.change(id,r=>{if(!live(r)||r.state!=='sending'||r.lease?.owner!==owner)return false;r.lease.until=Date.now()+60000;});}
+   async progress(id,owner,part,patch){return this.change(id,r=>{if(r.lease?.owner!==owner)throw Error('Вкладка больше не владеет отправкой');r.parts||={};r.parts[part]={...r.parts[part],...patch};r.lease.until=Date.now()+60000;r.version++})}
+@@ -15,3 +16,3 @@
+   })}
+-  async failed(id,owner,e,offline=false){return this.change(id,r=>{if(r.lease?.owner!==owner)return false;const text=String(e?.message||e),transient=offline||e?.name==='AbortError'||e?.name==='TypeError'||/network|fetch|timeout|temporar|429|500|502|503|504|загрузк.*(прерван|ошиб)/i.test(text);r.attempts=(r.attempts||0)+1;r.retryable=transient;r.state=offline?'queued':'error';r.nextAttemptAt=transient?Date.now()+Math.min(30000,1000*2**Math.min(r.attempts-1,5)):0;r.error={message:text,at:new Date().toISOString(),retryable:transient};r.lease=null;r.version++})}
++  async failed(id,owner,e,offline=false){return this.change(id,r=>{if(r.lease?.owner!==owner)return false;const text=String(e?.message||e),transient=offline||e?.name==='AbortError'||e?.name==='TimeoutError'||e?.name==='TypeError'||/network|fetch|timeout|temporar|429|500|502|503|504|загрузк.*(прерван|ошиб)/i.test(text);r.attempts=(r.attempts||0)+1;r.retryable=transient;r.state=offline?'queued':'error';r.nextAttemptAt=transient?Date.now()+Math.min(30000,1000*2**Math.min(r.attempts-1,5)):0;r.error={message:text,at:new Date().toISOString(),retryable:transient};r.lease=null;r.version++})}
+   async retry(id){return this.change(id,r=>{if(!live(r))throw Error('Повтор не требуется');if(r.lease&&r.lease.until>Date.now())throw Error('Отправка ещё выполняется');r.state='queued';r.error=null;r.lease=null;r.nextAttemptAt=0;r.retries++;r.version++})}
+--- a/vision-talk/pablicus/rich-message.js
++++ b/vision-talk/pablicus/rich-message.js
+@@ -26,5 +26,42 @@
+     frame.style.setProperty('--rich-image-ratio', String(ratio));
+-    frame.style.setProperty('--chat-media-limit', (320 * ratio) + 'px');
++    frame.style.setProperty('--chat-media-limit', (420 * ratio) + 'px');
+     const bubble = frame.closest('.chatSingleMedia');
+-    if (bubble) bubble.style.setProperty('--chat-media-limit', (320 * ratio) + 'px');
++    if (bubble) bubble.style.setProperty('--chat-media-limit', (420 * ratio) + 'px');
++  }
++  // Display-only trim for uniform, paired black letterbox borders. The original
++  // file and original viewer are untouched. Tainted/animated/dark images fall back.
++  function fitChatImage(frame,image,block={}) {
++    const w=image.naturalWidth,h=image.naturalHeight;
++    if(!(w>0&&h>0))return;
++    const previous=frame.dataset.borderTrim;
++    if(previous){for(const key of ['width','height','left','top','right','bottom'])image.style.removeProperty(key);delete frame.dataset.borderTrim;}
++    setMediaDimensions(frame,w,h);
++    if(frame.closest('.richMediaGallery')||/gif|apng/i.test(block.mime||block.mime_type||block.name||'')||w<64||h<64)return;
++    try {
++      const c=document.createElement('canvas'),scale=Math.min(1,256/Math.max(w,h));
++      c.width=Math.max(1,Math.round(w*scale));c.height=Math.max(1,Math.round(h*scale));
++      const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0,c.width,c.height);
++      const {data}=ctx.getImageData(0,0,c.width,c.height),W=c.width,H=c.height;
++      const black=(x,y)=>{const i=(y*W+x)*4;return data[i+3]>250&&Math.max(data[i],data[i+1],data[i+2])<=8;};
++      const row=y=>{for(let x=0;x<W;x++)if(!black(x,y))return false;return true;};
++      const col=x=>{for(let y=0;y<H;y++)if(!black(x,y))return false;return true;};
++      let top=0,bottom=0,left=0,right=0;
++      while(top<H*.18&&row(top))top++;
++      while(bottom<H*.18&&row(H-1-bottom))bottom++;
++      while(left<W*.18&&col(left))left++;
++      while(right<W*.18&&col(W-1-right))right++;
++      const paired=(a,b,max)=>a>=2&&b>=2&&a<max*.18&&b<max*.18&&Math.abs(a-b)<=Math.max(3,Math.min(a,b)*.15);
++      if(!paired(top,bottom,H))top=bottom=0;
++      if(!paired(left,right,W))left=right=0;
++      if(!(top||left))return;
++      // Never turn an almost-black photograph into an arbitrary crop.
++      let bright=0,total=0;
++      for(let y=top;y<H-bottom;y++)for(let x=left;x<W-right;x++){const i=(y*W+x)*4;total++;if(Math.max(data[i],data[i+1],data[i+2])>32)bright++;}
++      if(bright<total*.25)return;
++      // Sampling undershoots, so retain the boundary pixel instead of content crop.
++      const l=left/W,r=right/W,t=top/H,b=bottom/H,cw=1-l-r,ch=1-t-b;
++      setMediaDimensions(frame,w*cw,h*ch);frame.dataset.borderTrim=JSON.stringify({left:l,top:t,right:r,bottom:b});
++      image.style.width=(100/cw)+'%';image.style.height=(100/ch)+'%';
++      image.style.left=(-100*l/cw)+'%';image.style.top=(-100*t/ch)+'%';image.style.right='auto';image.style.bottom='auto';
++    }catch{/* Pixel access is optional; still retain correct decoded dimensions. */}
+   }
+@@ -226,3 +263,3 @@
+           item.status = 'ready';
+-          setMediaDimensions(item.button,item.image.naturalWidth,item.image.naturalHeight);
++          fitChatImage(item.button,item.image,item.block);
+           item.button.classList.add('richImageReady');
+@@ -684,3 +721,3 @@
+ 
+-  const api = Object.freeze({setMediaDimensions,prepareChatBubble, render, validate, textContent, groupBlocks, stopAll, readableName, attachmentLabel });
++  const api = Object.freeze({setMediaDimensions,fitChatImage,prepareChatBubble, render, validate, textContent, groupBlocks, stopAll, readableName, attachmentLabel });
+   scope.PablicusRichMessage = api;
+--- a/vision-talk/pablicus/public-ui-foundation.css
++++ b/vision-talk/pablicus/public-ui-foundation.css
+@@ -129,2 +129,3 @@
+ #app .row .richMessage>.richMedia-image>.richImage,
++#app .row .richMessage>.richMedia-image.richImageReady>.richImage,
+ #app .row .richMessage>.richMedia-video>.richVideo,
