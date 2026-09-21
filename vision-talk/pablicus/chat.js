@@ -42,8 +42,17 @@ this.follow=true;this.lastAnchor=null;this.frame=0;this.destroyed=false;this.bus
 this.measureBox=document.createElement('div');this.measureBox.className='measureBox';
 this.measureBox.setAttribute('aria-hidden','true');app.append(this.measureBox);
 this.pendingBelow=0;
+// Placeholder measurements cannot predict asynchronously decoded media heights.
+// Observe the actual rows, not their offscreen measurement copies.
+this.rowObserver=new ResizeObserver(()=>this.refreshLiveHeights());
 this.onScroll=()=>{
 if(this.destroyed||this.busy)return;
+// A viewport/keyboard resize can clamp scrollTop before its observer runs.
+// Do not interpret that clamp against stale dimensions as a user's scroll.
+const insets=historyInsets();
+if(Math.abs(vp.clientWidth-this.width)>.5||Math.abs(vp.clientHeight-this.height)>.5||Math.abs(insets.top-this.insets.top)>.5||Math.abs(insets.bottom-this.insets.bottom)>.5){
+this.sync(this.lastAnchor,this.follow,'viewport-size');return;
+}
 this.follow=this.bottomDistance()<=3;this.lastAnchor=this.capture(false);
 scrollEvidence.events++;scrollEvidence.min_top=Math.min(scrollEvidence.min_top,vp.scrollTop);
 if(vp.scrollTop<=2)scrollEvidence.reached_start=true;
@@ -117,9 +126,42 @@ if(this.fault==='skip-anchor')return;
 if(follow)this.writeScroll(Math.ceil(this.total+this.pad+this.insets.bottom)-this.height,reason);
 else if(a?.id&&this.index.has(a.id))this.writeScroll(this.offsets[this.index.get(a.id)]+this.pad-a.offset,reason);
 }
+measureLiveRows(){
+let changed=false;
+for(const [id,n] of this.nodes){
+const i=this.index.get(id),m=this.messages[i];
+if(!m||m.id!==id||n.hidden||!n.isConnected||n.dataset.rev!==String(m.revision))continue;
+const height=n.getBoundingClientRect().height;
+if(height>0&&Math.abs(height-(this.heights.get(id)||0))>.25){
+this.heights.set(id,height);this.revisions.set(id,m.revision);changed=true;
+}
+}
+return changed;
+}
+positionRows(){
+for(const [id,n] of this.nodes){
+const i=this.index.get(id);if(i===undefined)continue;
+const transform='translateY('+(this.offsets[i]+this.pad)+'px)';
+if(n.style.transform!==transform)n.style.transform=transform;
+}
+}
+refreshLiveHeights(){
+if(this.destroyed||this.busy||vp.clientWidth<2||vp.clientHeight<2)return;
+const anchor=this.capture(false),follow=this.follow;
+if(!this.measureLiveRows())return;
+// ResizeObserver runs before paint: update all offsets in the same delivery,
+// preserving the read anchor or the bottom, never rebuilding unloaded copies.
+this.rebuild();this.restore(anchor,follow,'row-resize');this.positionRows();
+this.lastAnchor=this.capture(false);this.updateReturnButton();this.scheduleRender();
+}
 scheduleRender(){if(this.frame||this.destroyed)return;this.frame=requestAnimationFrame(()=>{this.frame=0;this.render()})}
 render(){
-if(this.destroyed||!this.messages.length)return;
+if(this.destroyed)return;
+if(!this.messages.length){
+for(const n of this.nodes.values()){this.rowObserver.unobserve(n);n.remove();}
+this.nodes.clear();this.updateReturnButton();return;
+}
+const anchor=this.capture(false),follow=this.follow;
 const y=vp.scrollTop;
 const start=this.at(Math.max(0,y-OVERSCAN)),end=this.at(y+this.height+OVERSCAN);
 const wanted=new Set(),fragment=document.createDocumentFragment();
@@ -127,20 +169,26 @@ for(let i=start;i<=end;i++){
 const m=this.messages[i];wanted.add(m.id);let n=this.nodes.get(m.id);
 if(n){n.hidden=false;this.nodes.delete(m.id);this.nodes.set(m.id,n);}
 if(!n||n.dataset.rev!==String(m.revision)){
-n?.remove();n=nodeFor(m);this.nodes.set(m.id,n);fragment.append(n);
+if(n){this.rowObserver.unobserve(n);n.remove();}
+n=nodeFor(m);this.nodes.set(m.id,n);fragment.append(n);this.rowObserver.observe(n);
 }
 const transform='translateY('+(this.offsets[i]+this.pad)+'px)';
 if(n.style.transform!==transform)n.style.transform=transform;
 }
 for(const[id,n]of this.nodes)if(!wanted.has(id)){
- if(!this.index.has(id)||n.querySelector('video,audio')){n.remove();this.nodes.delete(id);}else n.hidden=true;
+ if(!this.index.has(id)||n.querySelector('video,audio')){this.rowObserver.unobserve(n);n.remove();this.nodes.delete(id);}else n.hidden=true;
 }
 let warmRows=0,warmImages=0;
 for(const[id,n]of [...this.nodes].reverse())if(!wanted.has(id)){
  warmRows++;warmImages+=n.querySelectorAll('img').length;
- if(warmRows>12||warmImages>32||this.nodes.size>LIMIT){n.remove();this.nodes.delete(id);}
+ if(warmRows>12||warmImages>32||this.nodes.size>LIMIT){this.rowObserver.unobserve(n);n.remove();this.nodes.delete(id);}
 }
 canvas.append(fragment);
+// Capture synchronous cache hits and newly mounted rows before the next paint.
+if(this.measureLiveRows()){
+this.rebuild();this.restore(anchor,follow,'row-mount');this.positionRows();
+this.lastAnchor=this.capture(false);this.scheduleRender();
+}
 counters.max_dom=Math.max(counters.max_dom,this.nodes.size);
 if(this.nodes.size>LIMIT)throw Error('DOM limit exceeded: '+this.nodes.size);
 this.updateReturnButton();
@@ -153,7 +201,8 @@ try{
 const width=vp.clientWidth;
 if(Math.abs(width-this.width)>.5){this.width=width;this.heights.clear();this.revisions.clear();}
 this.height=vp.clientHeight;this.insets=historyInsets();
-this.measureMissing();this.rebuild();this.restore(anchor,follow,reason);this.render();
+this.follow=follow;
+this.measureMissing();this.measureLiveRows();this.rebuild();this.restore(anchor,follow,reason);this.render();
 this.follow=follow;this.lastAnchor=this.capture(false);
 }finally{this.busy=false}
 }
@@ -174,7 +223,7 @@ append(m,force=false){const a=this.capture(),f=force||this.follow;if(!f)this.pen
 edit(id,suffix){const a=this.capture(),f=this.follow,m=this.messages[this.index.get(id)];if(!m)return;m.text+=suffix;m.revision++;this.sync(a,f,'edit');}
 refreshFont(){const a=this.lastAnchor,f=this.follow;this.heights.clear();this.revisions.clear();this.sync(a,f,'font-change');}
 destroy(){
-if(this.destroyed)return;this.destroyed=true;cancelAnimationFrame(this.frame);cancelAnimationFrame(this.resizeFrame);this.observer.disconnect();
+if(this.destroyed)return;this.destroyed=true;cancelAnimationFrame(this.frame);cancelAnimationFrame(this.resizeFrame);this.observer.disconnect();this.rowObserver.disconnect();
 vp.removeEventListener('scroll',this.onScroll);vp.removeEventListener('touchstart',this.onTouch);
 this.measureBox.remove();this.nodes.clear();canvas.replaceChildren();counters.active_lists--;counters.destroyed++;
 }
