@@ -13,11 +13,11 @@ export function create(ctx){
  const release=set=>{for(const u of set)URL.revokeObjectURL(u);set.clear();};
  function closeDialog(){ownDialog.querySelectorAll('video').forEach(v=>v.pause());ownDialog.close();ownDialog.replaceChildren();release(dialogUrls);}
  ownDialog.addEventListener('close',()=>{if(ownDialog.open)return;ownDialog.querySelectorAll('video').forEach(v=>v.pause());release(dialogUrls);});
- function button(label,symbol,action,cls='profile-action'){const b=el('button',cls);b.type='button';if(symbol)b.innerHTML=icon(symbol);b.append(el('span','',label));b.onclick=action;return b;}
+ function button(label,symbol,action,cls='profile-action'){const b=el('button',cls);b.type='button';b.setAttribute('aria-label',label);if(symbol)b.innerHTML=icon(symbol);b.append(el('span','',label));b.onclick=action;return b;}
  function header(title){const head=el('div','profile-page-heading');head.append(button('Профиль','back',()=>setView('profile'),'profile-back'),el('h1','',title));body.append(head);}
  function empty(title,text){const n=el('div','profile-empty');n.append(el('h2','',title),el('p','',text));body.append(n);}
  function requireAccount(){if(!ctx.account){ctx.runtime()?.accountAction();return false;}if(!loaded){ctx.notify('Профиль ещё загружается.');return false;}return true;}
- function dialog(title){closeDialog();ownDialog.append(button('Закрыть','close',closeDialog,'profile-dialog-close'),el('h2','',title));ownDialog.showModal();}
+ function dialog(title){closeDialog();ownDialog.setAttribute('aria-label',title);ownDialog.append(button('Закрыть','close',closeDialog,'profile-dialog-close'),el('h2','',title));ownDialog.showModal();}
  async function persist(next,owner,token){if(busy)return false;busy=true;try{await store.save(owner,next);if(token!==epoch||disposed)return false;data=next;return true;}finally{busy=false;}}
  function errorText(error){return error?.name==='QuotaExceededError'?'На устройстве недостаточно места. Удали ненужные материалы.':error.message||'Не удалось сохранить. Попробуй ещё раз.';}
  function edit(){
