@@ -6,7 +6,7 @@ from playwright.sync_api import sync_playwright
 from build_release import build
 p=argparse.ArgumentParser();p.add_argument('--root',default='vision-talk/pablicus');p.add_argument('--baseline',default='update-baseline/vision-talk/pablicus');p.add_argument('--engine',required=True);a=p.parse_args()
 r=pathlib.Path(a.root).resolve();old=pathlib.Path(a.baseline).resolve();out=pathlib.Path('results');out.mkdir(exist_ok=True)
-checks=[];errors=[];requests=[];state={'root':old,'offline':False}
+checks=[];errors=[];console=[];diagnostic=None;requests=[];state={'root':old,'offline':False}
 class Handler(http.server.BaseHTTPRequestHandler):
  def log_message(self,*args):pass
  def do_GET(self):
@@ -28,7 +28,8 @@ ids={'old':json.loads((old/'release.json').read_text())['build_id'],'new':json.l
 with tempfile.TemporaryDirectory() as tmp,sync_playwright() as pw:
  future=pathlib.Path(tmp)/'future';shutil.copytree(r,future);build(future,'b'*40)
  browser=getattr(pw,a.engine).launch(headless=True);ctx=browser.new_context(viewport={'width':390,'height':844});ctx.route('**/*',lambda q:q.continue_() if q.request.url.startswith((origin+'/', 'data:', 'blob:')) else q.abort())
- page=ctx.new_page();navigations=[];page.on('framenavigated',lambda frame:navigations.append(frame.url) if frame==page.main_frame else None);page.on('pageerror',lambda e:errors.append(str(e)))
+ ctx.add_init_script("""(()=>{window.workerMessages=[];const native=ServiceWorker.prototype.postMessage;ServiceWorker.prototype.postMessage=function(...args){workerMessages.push({at:performance.now(),state:this.state,type:typeof args[0]==='string'?args[0]:args[0]?.type});return native.apply(this,args)};navigator.serviceWorker.addEventListener('controllerchange',()=>workerMessages.push({at:performance.now(),event:'controllerchange',state:navigator.serviceWorker.controller?.state}));})()""")
+ page=ctx.new_page();page.on('console',lambda m:console.append({'type':m.type,'text':m.text}));navigations=[];page.on('framenavigated',lambda frame:navigations.append(frame.url) if frame==page.main_frame else None);page.on('pageerror',lambda e:errors.append(str(e)))
  try:
   page.goto(url);page.wait_for_function('window.PablicusUpdateGuards&&window.PablicusChat&&navigator.serviceWorker.controller',timeout=30000);page.wait_for_timeout(4500)
   check('published baseline installed with actual service worker',page.evaluate('PablicusBuild.id')==ids['old'])
@@ -75,8 +76,10 @@ with tempfile.TemporaryDirectory() as tmp,sync_playwright() as pw:
   page.screenshot(path=str(out/('auto-native-'+a.engine+'.png')))
   check('no application JavaScript errors',not errors,errors)
  except Exception as e:
+  try:diagnostic=page.evaluate("""async()=>{const r=await navigator.serviceWorker.getRegistration();return {ready:document.readyState,hidden:document.hidden,active:document.activeElement?.outerHTML?.slice(0,200),call:PablicusCallsActive?.(),busy:PablicusUpdateGuards?.busy(),build:await PablicusBuild?.inspect(),waiting:r?.waiting?.state,installing:r?.installing?.state,activeWorker:r?.active?.state,controller:navigator.serviceWorker.controller?.state,messages:window.workerMessages}}""");print('DIAGNOSTIC',json.dumps(diagnostic),flush=True)
+  except Exception as detail:diagnostic=str(detail)
   checks.append(dict(name='suite completion',passed=False,detail=str(e),traceback=traceback.format_exc()));print(traceback.format_exc(),flush=True);page.screenshot(path=str(out/('auto-native-'+a.engine+'-failure.png')))
  finally:
-  result=dict(engine=a.engine,passed=sum(c['passed'] for c in checks),failed=sum(not c['passed'] for c in checks),checks=checks,navigations=navigations,source_sha256={n:hashlib.sha256((r/n).read_bytes()).hexdigest() for n in ['auto-update.js','index.html','sw.js']},boundary='Actual browser SW/Cache Storage and IndexedDB on local HTTP, no physical iPhone or production user identity.')
+  result=dict(engine=a.engine,passed=sum(c['passed'] for c in checks),failed=sum(not c['passed'] for c in checks),checks=checks,navigations=navigations,diagnostic=diagnostic,console=console,errors=errors,source_sha256={n:hashlib.sha256((r/n).read_bytes()).hexdigest() for n in ['auto-update.js','index.html','sw.js']},boundary='Actual browser SW/Cache Storage and IndexedDB on local HTTP, no physical iPhone or production user identity.')
   (out/('auto-native-'+a.engine+'.json')).write_text(json.dumps(result,ensure_ascii=False,indent=2));browser.close();server.shutdown();server.server_close()
 if result['failed']:raise SystemExit(1)
