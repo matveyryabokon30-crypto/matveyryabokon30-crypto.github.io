@@ -18,5 +18,5 @@ export function voiceTrace(event,code=''){
  }else if(!origin){return;} // Idle pagehide must not replace another attempt's evidence.
  const safe=String(code).replace(/[^a-zA-Z0-9_.-]/g,'').slice(0,64);
  entries.push({ms:Date.now()-origin,event,...(safe?{code:safe}:{})});entries=entries.slice(-100);
- try{localStorage.setItem(KEY,JSON.stringify({version:'ui.9.5',startedAt:origin,entries,history}));}catch{}
+ try{localStorage.setItem(KEY,JSON.stringify({version:'ui.9.6',startedAt:origin,entries,history}));}catch{}
 }

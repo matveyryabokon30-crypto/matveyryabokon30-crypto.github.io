@@ -5,7 +5,6 @@ import {watchPreferences} from './preferences.mjs';
 import {lockViewport} from './viewport.mjs';
 import {recordingControl} from './recording-control.mjs';
 import {navigation} from './navigation.mjs';
-import {dictationControl} from './dictation-control.mjs';
 import {bindLiveControl,paintLiveIcon} from './live-control.mjs';
 const $=s=>document.querySelector(s);
 let mounted=false;
@@ -13,26 +12,41 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  if(mounted)return;mounted=true;
  const lifetime=new AbortController(),signal=lifetime.signal,cache=new Map(),pendingMessages=[],attachmentURLs=new Set();
  let generation=0,current=null,voice='idle',swRegistration=null,recording,dictation,menu,textPending=false;
- const app=$('#shell'),host=$('#routeHost'),dialog=$('#dialog'),composer=$('#composer'),stop=$('#micTestLink'),status=$('#aiStateLabel'),nav=$('#menuItems'),recordButton=$('#recordButton'),draft=$('#draft'),controls=$('#conversationControls');
+ const app=$('#shell'),host=$('#routeHost'),dialog=$('#dialog'),composer=$('#composer'),stop=$('#micTestLink'),status=$('#aiStateLabel'),nav=$('#menuItems'),recordButton=$('#micButton'),draft=$('#draft'),controls=$('#conversationControls');
  const ctx={recordButton,account:null,messages:null,profileUpdate:null,runtime:()=>window.SekkesS2,
   navigate(id){const target=routeId('#'+id);if(target!==current)location.hash=target},
   showConversation(){ctx.navigate('home');const home=cache.get('home');if(home)home.showConversation()},
-  captureChanged(){const busy=Boolean(dictation?.busy);$('#sendButton').disabled=textPending||busy;recordButton.disabled=busy;updateSend();updateVoice(voice);},
+  captureChanged(){updateSend();updateVoice(voice);},
   otherCaptureBusy(){return Boolean(recording?.busy)},dictationBusy(){return Boolean(dictation?.busy)},
   startVoice(){if(recording?.busy||dictation?.busy)return notify('Сначала заверши голосовой ввод.');if(voice==='idle'||voice==='error'){ctx.pauseMedia();ctx.runtime()?.toggleMic()}},
   pauseMedia(){document.querySelectorAll('audio').forEach(a=>a.pause())},notify,info(title,text){$('#dialogContent').replaceChildren(el('h2','',title),el('p','',text));$('#dialogContent').firstChild.id='dialogTitle';if(!dialog.open)dialog.showModal()},
   flushMessages(){if(!ctx.messages)return;for(const item of pendingMessages.splice(0))appendMessage(...item)},
-  renderVoice(response,clip){appendMessage('user',response.text,clip);appendMessage('ai',response.reply)},
+  sendError,
+  renderVoice(response){appendMessage('user',response.text);appendMessage('ai',response.reply)},
   refresh(){if(ctx.runtime()?.busy||recording?.busy||dictation?.busy){notify('Сначала заверши разговор или дождись ответа.');return}if(ctx.runtime()?.dirty&&!confirm('Обновить приложение? Текущий текст на экране будет сброшен.'))return;if(swRegistration?.waiting){notify('Обновление готово. Закрой вкладки SEKKES Preview и открой приложение снова.');return}swRegistration?.update().catch(()=>{});location.reload()}
  };
  function notify(text){$('#toast').textContent=text;$('#toast').hidden=false;clearTimeout(notify.timer);notify.timer=setTimeout(()=>$('#toast').hidden=true,6500)}
  function showImage(url,alt){const img=el('img','viewer-image');img.src=url;img.alt=alt;$('#dialogContent').replaceChildren(el('h2','',alt),img);$('#dialogContent').firstChild.id='dialogTitle';dialog.showModal()}
- function appendMessage(role,text,clip){
-  if(!ctx.messages){pendingMessages.push([role,text,clip]);return}const list=ctx.messages,atEnd=list.scrollHeight-list.scrollTop-list.clientHeight<100;$('#chatEmpty')?.remove();const node=message(role,text,{showImage});
-  if(clip){const url=URL.createObjectURL(new Blob([clip.bytes],{type:'audio/wav'}));attachmentURLs.add(url);const audio=el('audio');audio.controls=true;audio.src=url;audio.preload='metadata';audio.setAttribute('aria-label','Голосовое сообщение');node.prepend(audio,el('small','','Расшифровка'));}
-  list.append(node);const home=cache.get('home');home?.messageAdded();if(atEnd)list.scrollTop=list.scrollHeight;$('#chatAnnouncement').textContent=role==='ai'?'Получен ответ SEKKES':'';
+ function appendMessage(role,text,meta={}){
+  if(!ctx.messages){pendingMessages.push([role,text,meta]);return;}
+  const list=ctx.messages,atEnd=list.scrollHeight-list.scrollTop-list.clientHeight<100;
+  const previous=meta.id?[...list.children].find(n=>n.dataset.messageId===meta.id):null;
+  const node=message(role,text,{showImage});if(meta.id)node.dataset.messageId=meta.id;if(meta.at)node.dataset.at=meta.at;
+  if(previous)previous.replaceWith(node);else list.append(node);
+  cache.get('home')?.messageAdded();if(atEnd)list.scrollTop=list.scrollHeight;
  }
- function updateSend(){const hasText=draft.value.trim().length>0;$('#sendButton').hidden=!hasText;$('#sendButton').disabled=!hasText||textPending||Boolean(dictation?.busy||recording?.busy)}
+ function sendError(code){
+  composer.dataset.error=code||'';
+  const labels={BUDGET_STOP:'Достигнут лимит запросов',JOURNAL_SAVE_FAILED:'Не удалось сохранить сообщение',NotAllowedError:'Нет доступа к микрофону',MIC_DENIED:'Нет доступа к микрофону'};
+  const label=code?(labels[code]||'Не удалось отправить. Повторить отправку'):'Отправить сообщение';
+  $('#sendButton').setAttribute('aria-label',label);$('#sendButton').title=label;
+ }
+ function updateSend(){
+  const hasText=draft.value.trim().length>0,hasAudio=Boolean(recording?.hasAudio);
+  $('#sendButton').hidden=!hasText&&!hasAudio;
+  $('#sendButton').disabled=textPending||(hasAudio?!recording.canSend:!hasText||Boolean(recording?.busy));
+  draft.disabled=Boolean(recording?.busy||hasAudio);composer.dataset.recording=String(Boolean(recording?.busy||hasAudio));
+ }
  function updateVoice(state){
   voice=state;app.dataset.voice=state;const active=['connecting','live','listening','speaking'].includes(state),waiting=['closing','recovering','finalizing'].includes(state),busy=active||waiting||state==='recovery';
   stop.hidden=current!=='home'&&!busy;controls.hidden=current!=='home'&&!busy;
@@ -43,7 +57,12 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   $('#micButton').hidden=busy;recordButton.hidden=busy;
   status.hidden=!status.textContent||(current!=='home'&&!busy);
  }
- window.SekkesUI={status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render:appendMessage,beforeText(){ctx.showConversation()},
+ window.SekkesUI={sendError,history(items,older=false){
+   if(!ctx.messages){for(const row of items)pendingMessages.push([row.speaker==='user'?'user':'ai',row.text,{id:row.id,at:row.at}]);return;}const list=ctx.messages,oldHeight=list.scrollHeight,oldTop=list.scrollTop;const oldIds=new Set([...list.children].map(n=>n.dataset.messageId));
+   for(const row of items){appendMessage(row.speaker==='user'?'user':'ai',row.text,{id:row.id});const node=[...list.children].find(n=>n.dataset.messageId===row.id);if(node)node.dataset.at=row.at;}
+   [...list.children].sort((a,b)=>(a.dataset.at||'9999').localeCompare(b.dataset.at||'9999')||(a.dataset.messageId||'').localeCompare(b.dataset.messageId||'')).forEach(n=>list.append(n));
+   if(older)list.scrollTop=oldTop+list.scrollHeight-oldHeight;else if(!oldIds.size)list.scrollTop=list.scrollHeight;
+  },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render:appendMessage,beforeText(){ctx.showConversation()},
   get captureBusy(){return Boolean(recording?.busy||dictation?.busy)},sendRecording(){recording?.send()},
   textBusy(busy){textPending=busy;ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){ctx.account=user;ctx.profileUpdate?.()},
   reset(){ctx.pauseMedia();dictation?.cancel();recording?.reset();for(const url of attachmentURLs)URL.revokeObjectURL(url);attachmentURLs.clear();pendingMessages.length=0;ctx.messages?.replaceChildren(el('p','empty-state','Диалог пуст.'));cache.get('home')?.reset();ctx.account=null;ctx.profileUpdate?.()},
@@ -51,12 +70,12 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  };
  for(const s of sections){const a=el('a','rail-item');a.href=s.route;a.innerHTML=icon(s.icon);a.append(el('span','rail-label',s.title));a.dataset.route=s.id;a.title=s.title;nav.append(a)}
  $('#dialogClose').innerHTML=icon('close');$('#dialogClose').addEventListener('click',()=>dialog.close(),{signal});dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()},{signal});
- composer.addEventListener('submit',async e=>{e.preventDefault();if(!draft.value.trim()||recording.busy||dictation.busy)return;try{await ctx.runtime()?.sendText()}finally{updateSend()}},{signal});
- draft.addEventListener('input',updateSend,{signal});
+ composer.addEventListener('submit',async e=>{e.preventDefault();if(textPending)return;try{if(recording.hasAudio)await recording.send();else if(draft.value.trim()&&!recording.busy)await ctx.runtime()?.sendText();}finally{updateSend()}},{signal});
+ draft.addEventListener('input',()=>{sendError('');ctx.runtime()?.saveDraft?.();updateSend();},{signal});
  $('#draft').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();composer.requestSubmit()}},{signal});
  recordButton.innerHTML=icon('record');$('#micButton').innerHTML=icon('mic');$('#sendButton').innerHTML=icon('send');bindLiveControl(stop,{signal,state:()=>ctx.runtime()?.voiceActive?'live':voice,start:()=>ctx.startVoice(),stop:()=>{const runtime=ctx.runtime();if(runtime?.stopVoice)runtime.stopVoice();else runtime?.toggleMic()}});
  recording=recordingControl(ctx,$('#recordingPanel'),recordButton,signal,recorderOptions);
- dictation=dictationControl({ctx,button:$('#micButton'),draft:$('#draft'),status:$('#dictationStatus'),signal,options:dictationOptions});
+ dictation={busy:false,cancel(){},dispose(){}};
  menu=navigation({root:$('#navigationLayer'),button:$('#menuTrigger'),panel:$('#navigationPanel'),backdrop:$('#menuBackdrop'),app,signal});
  async function route(){
   const id=routeId(location.hash),ticket=++generation,descriptor=sections.find(s=>s.id===id);if(id!=='home'){recording.beforeRoute();dictation.cancel()}menu.close({restoreFocus:false});if(/^#\/?chat$/.test(location.hash))history.replaceState(null,'','#home');if(id!==current)ctx.pauseMedia();

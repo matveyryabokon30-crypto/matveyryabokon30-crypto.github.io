@@ -100,3 +100,16 @@ html{--scene-canvas:#071a35;--scene-image:url('../media/lake-night-1024.jpg');ba
 html[data-theme=light]{--scene-canvas:#317caf;--scene-image:url('../media/lake-day-1024.jpg')}
 body{background:transparent}
 #shell[data-route=home]{background:transparent;height:100%;min-height:100%}
+/* The same endpoint color is used by iOS chrome and the photo overlay. */
+html{--chrome-tint:#163348}
+html[data-theme=light]{--chrome-tint:#326f99}
+#shell[data-route=home] .app-header{background:transparent}
+#shell[data-route=home] .wallpaper:after{background:linear-gradient(to bottom,var(--chrome-tint) 0,var(--chrome-tint) 8px,transparent 250px),linear-gradient(transparent 68%,#071019aa)}
+#shell[data-route=home] .wallpaper:before{content:'';position:absolute;z-index:1;inset:0 0 auto;height:180px;pointer-events:none;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);mask-image:linear-gradient(#000,transparent);-webkit-mask-image:linear-gradient(#000,transparent)}
+#shell[data-route=home] .wallpaper:after{z-index:2}
+#shell[data-route=home][data-voice=speaking] .wallpaper{filter:none}
+.composer[data-recording=true]{box-shadow:inset 0 0 0 1px rgba(255,166,153,.65),0 8px 32px #0003}
+.composer[data-error]:not([data-error=""]){border-color:#ffb4a8}
+.composer textarea:focus-visible{outline:none}
+.composer:focus-within{box-shadow:inset 0 0 0 1px rgba(232,246,255,.5)}
+#recordingPanel,#dictationStatus,#recordButtonParking{display:none!important}
