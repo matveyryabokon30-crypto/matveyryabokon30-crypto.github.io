@@ -40,8 +40,12 @@ $('home').hidden=true;app.hidden=false;$('startPanel').hidden=true;$('composeBox
 Fixture.mount(fixtureMessages);
 }"""
 checks=[];errors=[]
+# Retain progress even if a browser process stops answering during media setup.
+def progress():
+ (out/(label+'-progress.json')).write_text(json.dumps(checks,ensure_ascii=False,indent=2))
 def check(name,passed,details=None):
  checks.append(dict(name=name,passed=bool(passed),details=details));print(('PASS ' if passed else 'FAIL ')+name,details or '',flush=True)
+ progress()
  if not passed:raise AssertionError(name)
 def geometry(page,name):
  g=page.evaluate('Fixture.audit()');check(name,g['max_overlap_px']<=1.5 and g['max_gap_px']<=1.5 and g['model_error_px']<=1.5 and not g['clipped'] and not g['width_errors'] and g['active']==1,g)
@@ -91,8 +95,18 @@ with sync_playwright() as pw:
    # Last row itself is an unknown-size image; it must be reachable in full.
    page.evaluate("Fixture.list.append(mapped(rich(900,[im('last-photo','tall')]),1),true)");page.wait_for_timeout(250);geometry(page,'append tall photo as last message');bottom(page,'entire last photo ends above composer')
    check('source photo remains contained without crop',page.locator('#canvas [data-id="geometry-900"] img').evaluate('(n)=>n.naturalWidth===200&&n.naturalHeight===1800&&getComputedStyle(n).objectFit==="contain"'))
-   # Decode real local video, without camera/microphone or dimensions in metadata.
-   page.evaluate("""(encoded)=>{testUrls.clip=URL.createObjectURL(new Blob([Uint8Array.from(atob(encoded),c=>c.charCodeAt(0))],{type:'video/webm'}));Fixture.list.append(mapped(rich(902,[{id:'clip',type:'video',path:'clip'}]),1),true);}""",'GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAATMEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHWTbuMU6uEElTDZ1OsggEkTbuMU6uEHFO7a1OsggS27AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsCrXsYMPQkBNgIxMYXZmNjEuNy4xMDNXQYxMYXZmNjEuNy4xMDNEiYhAgsAAAAAAABZUrmvJrgEAAAAAAABA14EBc8WIDQ2bwrnAkvScgQAitZyDdW5kiIEAhoVWX1ZQOIOBASPjg4QL68IA4JGwgbS6ggFAmoECVbCEVbmBARJUw2f7c3OfY8CAZ8iZRaOHRU5DT0RFUkSHjExhdmY2MS43LjEwM3Nz1mPAi2PFiA0Nm8K5wJL0Z8ihRaOHRU5DT0RFUkSHlExhdmM2MS4xOS4xMDEgbGlidnB4Z8ihRaOIRFVSQVRJT05Eh5MwMDowMDowMC42MDAwMDAwMDAAH0O2dUMM54EAo0LIgQAAgLAjAJ0BKrQAQAEARwiFhYiZhIgCAhvnr+eJV/FAiUt2j4r+APOSZ64D+AP6wcYL2B/aDELPgP4W/M3lAf4D+APAB/QH+Qe1X+gPWA/0/+OegD1gP6A+hD/AewL/QTMAZkD8gOkB+QHLAdEB8gH+gaoL+V/jN/AekB/qf8B/dH+o/ID0AMs9qJnQ6AneIwemwQmJC+X8osGTK1uvP6Vc4upmSGXfs/BoqmNtPkEiCwbxcMI0/alwz2fDz+6E21FKemHWMSiAc7tGoIB0EEmDILNWbaikI2XNxJRAN8CeZZFKpjJnGgIz2fcOszLOgEogDRjkDHWlUv2fg0VTG2nyCRBYN4uGEaftS4Z7Ph5/dCbailPTDG5ly/4fdvqwIMenQdKO3DnJeAD+6tc//h+ddpf+tKQnrT//xg9QZUTWWkK11kP6J5mTuGbOZ1LQ/7TaPr6jnJt/cckovr///dYn+BIbkqGdONNX2h+v960CXb8MbRgDohTCFFkbBv7yuSJ4P/7+YGX2o56VUwzoxWb28SpMJNS9dTUGaoCTS8tnC3NvAPkDENyH1p//4lOykue3Umzv/299j7QPVoocK2C4s9b3SkVMwXy8G6l82McZt87x2G65jDxQfsE9RJOqVJgncBMWkqVpNQVQAAAECp0nP3SSBwLH48C00VXytxPCPKO+JY/HgWmiq+VuJ4R5R3xLH47rR//9be45oIUSEOFdXkVbXjf60oggN+kc0aT2HmiAdX/LzkSayoGeG+fU7pkDNtgD1eK38hIxYsYLhZDNbr0nembaqRygi2sVyoU5vk5HmI+r+PRDepI2lJp3egnV4vkOOdUJsXQK0IE4Bzr4gmhh1zzJ0LvKfIu9TslpVeDSosDUrH+x9QSoI+/3bxvb+8zxP7k3nUVsiVhN/Vb6R9+RGWC6qHLv2VzSbnUZWIIKUQPiAKOdgQDIALECAAUQrAAYABhYL/QACIAlYxqRZD7vAACjnYEBkACxAgAFEKwAGAAYWC/0AAiAJWMakWQ+7wAAHFO7a5G7j7OBALeK94EB8YIBpPCBAw==')
+   # Decode a native H.264 MP4 fixture; no camera, microphone or dimensions in metadata.
+   # The previous opaque-origin VP8 fixture stopped the WebKit test before decode.
+   # First prove this media fixture independently of the list; do not skip decoding.
+   print('BEGIN native MP4 fixture and standalone decode',flush=True)
+   encoded_clip = (pathlib.Path(__file__).with_name('media_geometry_portrait.b64')).read_text().strip()
+   page.evaluate("""(encoded)=>{testUrls.clip=URL.createObjectURL(new Blob([Uint8Array.from(atob(encoded),c=>c.charCodeAt(0))],{type:'video/mp4'}));const v=document.createElement('video');v.id='codecProbe';v.muted=true;v.playsInline=true;v.preload='metadata';v.style.cssText='position:fixed;width:90px;height:160px;top:0;left:0;';document.body.append(v);v.src=testUrls.clip;v.load();}""",encoded_clip)
+   page.wait_for_function("document.querySelector('#codecProbe')?.videoHeight===320",timeout=10000)
+   check('standalone native video fixture actually decodes',page.locator('#codecProbe').evaluate('(v)=>v.videoWidth===180&&v.videoHeight===320'))
+   page.evaluate("document.querySelector('#codecProbe').remove()")
+   print('BEGIN actual-list video insertion',flush=True)
+   page.evaluate("Fixture.list.append(mapped(rich(902,[{id:'clip',type:'video',path:'clip'}]),1),true)")
+   print('END actual-list video insertion; await metadata',flush=True)
    page.wait_for_function("document.querySelector('#canvas [data-id=\"geometry-902\"] video')?.videoHeight===320");page.wait_for_timeout(150)
    geometry(page,'decoded portrait video participates in row layout');bottom(page,'video bottom clears composer')
    page.evaluate("Fixture.list.append(mapped(rich(903,[{id:'text-before',type:'text',text:'Перед альбомом'},im('album-photo','square'),{id:'album-video',type:'video',path:'clip'},{id:'text-after',type:'text',text:'После альбома'}]),1),true)")
