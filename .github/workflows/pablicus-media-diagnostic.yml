@@ -1,0 +1,42 @@
+name: Pablicus isolated WebKit media fixture diagnosis
+on:
+  push:
+    branches: [diag/pablicus-webkit-fixture-20260921]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact candidate browser
+        run: |
+          python -m pip install playwright==1.63.0
+          python -m playwright install --with-deps webkit
+      - name: Compare isolated transport modes with hard per-process bounds
+        run: |
+          python - <<'PY'
+          import subprocess,pathlib,json,sys
+          out=pathlib.Path('probe-results');out.mkdir()
+          rows=[]
+          for mode in ['all','http','none']:
+              try:
+                  result=subprocess.run([sys.executable,'-u','tools/pablicus-release/probe_webkit_video.py',mode],capture_output=True,text=True,timeout=25)
+                  row={'mode':mode,'exit_code':result.returncode,'timeout':False};log=result.stdout+'\n'+result.stderr
+              except subprocess.TimeoutExpired as e:
+                  row={'mode':mode,'exit_code':None,'timeout':True};log=(e.stdout or b'').decode(errors='replace')+'\n'+(e.stderr or b'').decode(errors='replace')
+              (out/(mode+'.log')).write_text(log);rows.append(row);print(row,log,flush=True)
+          (out/'diagnosis.json').write_text(json.dumps(rows,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isolated-webkit-media-diagnosis
+          path: probe-results/
+          retention-days: 14
