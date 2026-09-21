@@ -1,7 +1,7 @@
 """Two real installed service-worker releases, cached launches and preserved local data.
 Loopback HTTP only. No production accounts, messages, push consent or subscriptions.
 """
-import argparse,hashlib,http.server,json,pathlib,shutil,sys,tempfile,threading,traceback,urllib.parse
+import argparse,hashlib,http.server,json,pathlib,shutil,sys,tempfile,threading,traceback,urllib.parse,urllib.request,time
 from playwright.sync_api import sync_playwright
 from build_release import build
 p=argparse.ArgumentParser();p.add_argument('--root',default='vision-talk/pablicus');p.add_argument('--baseline',default='update-baseline/vision-talk/pablicus');p.add_argument('--engine',required=True);a=p.parse_args()
@@ -13,8 +13,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
   path=urllib.parse.unquote(urllib.parse.urlsplit(self.path).path);requests.append(path)
   if state['offline']:self.send_error(503);return
   if not path.startswith('/app/'):self.send_error(404);return
-  target=state['root']/(path[5:] or 'index.html')
-  if not target.is_file() or not target.resolve().is_relative_to(state['root']):self.send_error(404);return
+  root=state['root'].resolve();target=root/(path[5:] or 'index.html')
+  if not target.is_file() or not target.resolve().is_relative_to(root):self.send_error(404);return
   data=target.read_bytes();self.send_response(200);self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(data)))
   self.send_header('Content-Type',{'.js':'application/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.png':'image/png','.svg':'image/svg+xml','.ttf':'font/ttf','.webmanifest':'application/manifest+json'}.get(target.suffix,'application/octet-stream'));self.end_headers()
   try:self.wfile.write(data)
@@ -23,6 +23,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
 def check(name,ok,detail=None):
  checks.append(dict(name=name,passed=bool(ok),detail=detail));print(('PASS ' if ok else 'FAIL ')+name,detail or '',flush=True)
  if not ok:raise AssertionError(name)
+def wait_async(page,expression,timeout=30000):
+ deadline=time.monotonic()+timeout/1000
+ while time.monotonic()<deadline:
+  result=page.evaluate(expression)
+  if result:return result
+  page.wait_for_timeout(150)
+ raise AssertionError('Asynchronous browser condition did not resolve: '+expression)
 server=http.server.ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();origin=f'http://127.0.0.1:{server.server_port}';url=origin+'/app/'
 ids={'old':json.loads((old/'release.json').read_text())['build_id'],'new':json.loads((r/'release.json').read_text())['build_id'],'next':'git:'+'b'*40}
 with tempfile.TemporaryDirectory() as tmp,sync_playwright() as pw:
@@ -58,12 +65,13 @@ with tempfile.TemporaryDirectory() as tmp,sync_playwright() as pw:
   # Existing client returns less than 30s after its previous check. A busy call
   # blocks activation; the guard releases it without a user update action.
   page.evaluate('window.originalCallGuard=window.PablicusCallsActive;window.fixtureCall=true;PablicusCallsActive=()=>fixtureCall');state['root']=future
-  page.evaluate('window.dispatchEvent(new Event("pageshow"))');page.wait_for_function('async()=>!!(await navigator.serviceWorker.getRegistration()).waiting',timeout=30000)
+  check('next-release fixture serves exact worker bytes',urllib.request.urlopen(origin+'/app/sw.js',timeout=5).read()==(future/'sw.js').read_bytes())
+  page.evaluate('window.dispatchEvent(new Event("pageshow"))');wait_async(page,'async()=> (await navigator.serviceWorker.getRegistration())?.waiting?.state==="installed"')
   page.wait_for_timeout(2800);check('newly downloaded release does not interrupt active call',page.evaluate('PablicusBuild.id')==ids['new'])
   check('foreground check bypasses old periodic cooldown',requests.count('/app/sw.js')>=3)
   page.evaluate('fixtureCall=false');page.wait_for_function('(id)=>window.PablicusBuild?.id===id',arg=ids['next'],timeout=20000)
   check('release applies automatically when active work ends',page.evaluate('PablicusBuild.id')==ids['next'])
-  page.wait_for_function('async()=> (await PablicusBuild.inspect()).coherent',timeout=15000)
+  wait_async(page,'async()=> (await PablicusBuild.inspect()).coherent',timeout=15000)
   check('future-release upgrade has coherent worker and page',page.evaluate('async()=> (await PablicusBuild.inspect()).coherent'))
   same=len(navigations);page.wait_for_timeout(4000);check('future release also stays stable without repeated reloads',len(navigations)==same)
   # Independently installed client has exactly the same automatic policy.
