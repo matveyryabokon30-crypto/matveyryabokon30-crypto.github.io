@@ -1,3 +1,4 @@
+import {mountTopology} from '../topology-global.mjs';
 import {sections,routeId} from './registry.mjs';
 import {icon,el} from './components.mjs';
 import {message} from './rich-message.mjs';
@@ -11,6 +12,7 @@ let mounted=false;
 export function initialize({recorderOptions={},dictationOptions={}}={}){
  if(mounted)return;mounted=true;
  const lifetime=new AbortController(),signal=lifetime.signal,cache=new Map(),pendingMessages=[],attachmentURLs=new Set();
+ let visual;const background=el('div','global-topology');background.id='appTopology';background.setAttribute('aria-hidden','true');document.body.prepend(background);try{visual=mountTopology(background)}catch{/* Decoration cannot block the application. */}
  let generation=0,current=null,voice='idle',swRegistration=null,recording,dictation,menu,textPending=false;
  const app=$('#shell'),host=$('#routeHost'),dialog=$('#dialog'),composer=$('#composer'),stop=$('#micTestLink'),status=$('#aiStateLabel'),nav=$('#menuItems'),recordButton=$('#micButton'),draft=$('#draft'),controls=$('#conversationControls');
  const ctx={recordButton,account:null,messages:null,profileUpdate:null,runtime:()=>window.SekkesS2,
@@ -95,5 +97,5 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  addEventListener('offline',()=>notify('Нет сети. Черновик сохранён на экране.'),{signal});
  watchPreferences(signal);route();
  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).then(reg=>{swRegistration=reg}).catch(()=>{});
- return {dispose(){lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
+ return {dispose(){visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
 }
