@@ -81,7 +81,7 @@ h1,h2,h3,.lead{max-width:100%;overflow-wrap:anywhere;hyphens:auto}
 @keyframes conversation-scene{from{transform:scale(1)}to{transform:scale(1.025)}}
 /* UI9.10: stationary landscape; only the dedicated lake layer moves. */
 #shell .home-screen .wallpaper{animation:none;transform:none;filter:none}
-.lake-visual{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.lake-visual,.topology-visual{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 @media(max-width:350px){.session-dock{padding-inline:8px}.composer{padding:6px;gap:0}.composer textarea{padding-inline:4px}.conversation-controls{gap:6px}}
 
 .live-control{touch-action:manipulation}.live-control svg{pointer-events:none}
@@ -99,18 +99,22 @@ h1,h2,h3,.lead{max-width:100%;overflow-wrap:anywhere;hyphens:auto}
 
 /* UI9.4: paint the document canvas too, not just the clipped route host.
    WebKit can expose the root canvas behind its translucent status area. */
-html{--scene-canvas:#071a35;--scene-image:url('../media/lake-night-1024.jpg');background:var(--scene-canvas) var(--scene-image) center 55% / cover no-repeat fixed}
-html[data-theme=light]{--scene-canvas:#317caf;--scene-image:url('../media/lake-day-1024.jpg')}
+html{--scene-canvas:#002222;--scene-image:none;background:var(--scene-canvas)}
+html[data-theme=light]{--scene-canvas:#002222;--scene-image:none}
 body{background:transparent}
 #shell[data-route=home]{background:transparent;height:100%;min-height:100%}
 /* The same endpoint color is used by iOS chrome and the photo overlay. */
-html{--chrome-tint:#163348}
-html[data-theme=light]{--chrome-tint:#326f99}
+html{--chrome-tint:#002222}
+html[data-theme=light]{--chrome-tint:#002222}
 #shell[data-route=home] .app-header{background:transparent}
 #shell[data-route=home] .wallpaper:after{background:linear-gradient(to bottom,var(--chrome-tint) 0,var(--chrome-tint) 8px,transparent 250px),linear-gradient(transparent 68%,#071019aa)}
 #shell[data-route=home] .wallpaper:before{content:'';position:absolute;z-index:1;inset:0 0 auto;height:180px;pointer-events:none;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);mask-image:linear-gradient(#000,transparent);-webkit-mask-image:linear-gradient(#000,transparent)}
 #shell[data-route=home] .wallpaper:after{z-index:2}
 #shell[data-route=home][data-voice=speaking] .wallpaper{filter:none}
+/* UI9.12: full-screen Topology; controls remain on their existing layers. */
+.wallpaper[data-effect=topology]{background:#002222;pointer-events:none;contain:strict}
+#shell[data-route=home] .wallpaper[data-effect=topology]:before{display:none}
+#shell[data-route=home] .wallpaper[data-effect=topology]:after{background:linear-gradient(#002222 0,transparent 120px,transparent 75%,#00222288)}
 .composer[data-recording=true]{box-shadow:inset 0 0 0 1px rgba(255,166,153,.65),0 8px 32px #0003}
 .composer[data-error]:not([data-error=""]){border-color:#ffb4a8}
 .composer textarea:focus-visible{outline:none}

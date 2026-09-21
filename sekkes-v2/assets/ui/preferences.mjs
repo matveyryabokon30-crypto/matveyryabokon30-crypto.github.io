@@ -9,7 +9,7 @@ export function applyPreferences(now=new Date()){
  root.dataset.textSize=getPreference('textSize','100');root.dataset.motion=getPreference('motion','system');root.dataset.transparency=getPreference('transparency','on');
  root.style.fontSize=({'100':'100%','125':'125%','150':'150%','200':'200%'}[getPreference('textSize','100')]||'100%');
  // Match the top of the photo's fog gradient on devices retaining a status inset.
- document.querySelector('meta[name="theme-color"]')?.setAttribute('content',theme==='light'?'#326f99':'#163348');
+ document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#002222');
 }
 export function watchPreferences(signal){
  let timer;const update=()=>{clearTimeout(timer);applyPreferences();if(!signal.aborted)timer=setTimeout(update,Math.min(nextThemeBoundary(),60000))};
