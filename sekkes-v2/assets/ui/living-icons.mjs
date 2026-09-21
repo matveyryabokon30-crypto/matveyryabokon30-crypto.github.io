@@ -32,7 +32,7 @@ export function mountLivingIcons(doc=document){
    }
    if(dots){cx.globalAlpha=(band+.8)/5;cx.fill();}
   }
-  cx.globalAlpha=1;record.node.classList.add('is-live');
+  cx.globalAlpha=1;record.canvas.hidden=false;record.node.classList.add('is-live');
  }
  function eligible(r){return !r.failed&&r.visible&&r.laidOut&&r.node.isConnected&&r.width>0&&r.height>0;}
  function stop(){if(raf)win.cancelAnimationFrame(raf);raf=0;previous=null;}
@@ -42,7 +42,7 @@ export function mountLivingIcons(doc=document){
   if(previous!==null)seconds+=Math.min(.1,Math.max(0,(now-previous)/1000));previous=now;
   if(now-lastPaint>=1000/24){
    lastPaint=now;for(const record of records.values())if(eligible(record)){
-    try{paint(record)}catch{record.node.classList.remove('is-live');record.failed=true;}
+    try{paint(record)}catch{record.node.classList.remove('is-live');record.canvas.hidden=true;record.failed=true;}
    }
   }
   schedule();
@@ -62,12 +62,12 @@ export function mountLivingIcons(doc=document){
   pending=false;if(disposed)return;
   for(const [node] of records)if(!node.isConnected){intersection?.unobserve(node);resize?.unobserve(node);records.delete(node);}
   for(const node of doc.querySelectorAll(selector))register(node);
-  for(const record of records.values()){size(record);if(eligible(record)){try{paint(record,reduced())}catch{record.node.classList.remove('is-live');record.failed=true;}}}
+  for(const record of records.values()){size(record);if(eligible(record)){try{paint(record,reduced())}catch{record.node.classList.remove('is-live');record.canvas.hidden=true;record.failed=true;}}}
   if(reduced()||doc.hidden||![...records.values()].some(eligible))stop();else schedule();
  }
  function queue(){if(pending||disposed)return;pending=true;win.queueMicrotask(sync);}
  const intersection=win.IntersectionObserver?new win.IntersectionObserver(entries=>{for(const entry of entries){const r=records.get(entry.target);if(r)r.visible=entry.isIntersecting;}if(![...records.values()].some(eligible))stop();else schedule();}):null;
- const resize=win.ResizeObserver?new win.ResizeObserver(entries=>{for(const entry of entries){const r=records.get(entry.target);if(r&&!r.failed){size(r);try{paint(r,reduced())}catch{r.node.classList.remove('is-live');r.failed=true;}}}schedule();}):null;
+ const resize=win.ResizeObserver?new win.ResizeObserver(entries=>{for(const entry of entries){const r=records.get(entry.target);if(r&&!r.failed){size(r);try{paint(r,reduced())}catch{r.node.classList.remove('is-live');r.canvas.hidden=true;r.failed=true;}}}schedule();}):null;
  const observer=new win.MutationObserver(queue);
  observer.observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','disabled','aria-pressed','aria-expanded']});
  observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion','data-theme']});
@@ -81,5 +81,5 @@ export function mountLivingIcons(doc=document){
  doc.addEventListener('visibilitychange',visibility);media.addEventListener('change',queue);
  for(const type of ['pointerdown','keydown','focusin'])doc.addEventListener(type,react,{capture:true,passive:true});
  sync();
- return {dispose(){if(disposed)return;disposed=true;stop();observer.disconnect();intersection?.disconnect();resize?.disconnect();media.removeEventListener('change',queue);doc.removeEventListener('visibilitychange',visibility);for(const type of ['pointerdown','keydown','focusin'])doc.removeEventListener(type,react,true);for(const r of records.values())r.node.classList.remove('is-live');records.clear();samples.clear();}};
+ return {dispose(){if(disposed)return;disposed=true;stop();observer.disconnect();intersection?.disconnect();resize?.disconnect();media.removeEventListener('change',queue);doc.removeEventListener('visibilitychange',visibility);for(const type of ['pointerdown','keydown','focusin'])doc.removeEventListener(type,react,true);for(const r of records.values()){r.node.classList.remove('is-live');r.canvas.hidden=true;}records.clear();samples.clear();}};
 }
