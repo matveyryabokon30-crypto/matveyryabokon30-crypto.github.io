@@ -568,11 +568,11 @@
   else if(r.type==='video'){const md=r.attachment_metadata||{};b.append(renderRichContent({v:1,blocks:[{id:'legacy-video',type:'video',path:r.attachment_path,name:md.name,mime:md.mime_type,size:md.size_bytes,width:md.width,height:md.height}]},false,r));if(r.body)t.textContent=r.body;}
   else if(r.type==='text')t.textContent=r.body||'';
   else{const md=r.attachment_metadata||{},button=el('button','mediaOpen'),name=PablicusRichMessage.attachmentLabel({type:r.type,name:md.name});button.dataset.mediaType=r.type;button.setAttribute('aria-label','Открыть '+name);
-   if(r.type==='image'){const im=el('img','messageImage');im.alt='Фото';im.loading='lazy';if(/^data:image\/(jpeg|png|webp);base64,/.test(md.thumb_data_url||''))im.src=md.thumb_data_url;else{const instant=PablicusMediaCache.peek(BUCKET,r.attachment_path,{width:960});if(instant)im.src=instant}button.append(im);if(!im.src){const fallback=el('span','mediaLabel','Фото');button.append(fallback);requestAnimationFrame(()=>{if(!im.isConnected||!im.closest('#canvas'))return;signedUrl(r.attachment_path,{type:'image',width:960}).then(u=>{if(im.isConnected){im.src=u;fallback.remove()}}).catch(()=>{fallback.textContent='Фото · нажмите, чтобы повторить'})})}}
+   if(r.type==='image'){const im=el('img','messageImage');im.alt='Фото';im.draggable=false;button.draggable=false;im.onload=()=>PablicusRichMessage.setMediaDimensions(button,im.naturalWidth,im.naturalHeight);im.loading='lazy';if(/^data:image\/(jpeg|png|webp);base64,/.test(md.thumb_data_url||''))im.src=md.thumb_data_url;else{const instant=PablicusMediaCache.peek(BUCKET,r.attachment_path,{width:960});if(instant)im.src=instant}button.append(im);if(!im.src){const fallback=el('span','mediaLabel','Фото');button.append(fallback);requestAnimationFrame(()=>{if(!im.isConnected||!im.closest('#canvas'))return;signedUrl(r.attachment_path,{type:'image',width:960}).then(u=>{if(im.isConnected){im.src=u;fallback.remove()}}).catch(()=>{fallback.textContent='Фото · нажмите, чтобы повторить'})})}}
    else button.append(el('span','mediaGlyph',r.type==='video'?'▷':'▤'),el('span','fileName',name),el('span','muted',md.size_bytes?Math.round(md.size_bytes/1024)+' КБ':''));
    button.onclick=()=>viewAttachment(r).catch(problem);b.append(button);if(r.body)t.textContent=r.body;
   }
-  b.append(t,messageMeta({created:r.created_at,state:m.mine?(+r.server_seq<=peersRead?'read':'sent'):null,edited:!!r.edited_at}));messageTools.decorate(row,b,m.remote);row.append(b);return row;
+  b.append(t,messageMeta({created:r.created_at,state:m.mine?(+r.server_seq<=peersRead?'read':'sent'):null,edited:!!r.edited_at}));messageTools.decorate(row,b,m.remote);PablicusRichMessage.prepareChatBubble(b);row.append(b);return row;
  }
 
  function renderRichContent(content,local=false,source=null){return PablicusRichMessage.render(content,{inlineVideo:true,
@@ -584,7 +584,18 @@
  function renderPendingMessage(m){const row=el('article','row mine outgoing-pending'),bubble=el('div','bubble');row.dataset.id=m.id;row.dataset.rev=m.revision;row.dataset.outboxId=m.outboxId;
   const blocks=m.richBlocks.map(block=>{if(block.type==='text')return block;const asset=PablicusChat.assets.get(block.assetId);return {...block,name:asset?.name||'Вложение',mime:asset?.file?.type||'',size:asset?.file?.size||0}});
   if(m.reply_to)bubble.append(replyQuote(m.reply_to));
-  bubble.append(renderRichContent({v:1,blocks},true),messageMeta({state:['queued','sending','error'].includes(m.queueState)?m.queueState:'queued'}));row.append(bubble);return row;
+  bubble.append(renderRichContent({v:1,blocks},true),messageMeta({state:['queued','sending','error'].includes(m.queueState)?m.queueState:'queued'}));
+  PablicusRichMessage.prepareChatBubble(bubble);
+  const store=PablicusChat.store,owner=PablicusChat.scope.user,chat=PablicusChat.scope.chat;
+  const active=()=>row.isConnected&&PablicusChat.store===store&&PablicusChat.scope.user===owner&&PablicusChat.scope.chat===chat;
+  messageTools.decoratePending(row,bubble,m,{
+   isCurrent:active,
+   open:block=>{if(!active())return;const visual=blocks.filter(b=>['image','video'].includes(b.type));return mediaViewer.open(visual.map(b=>mediaItem(b,true)),Math.max(0,visual.findIndex(b=>b.id===block?.id)));},
+   download:block=>{if(!active()||!block?.assetId)return;const asset=PablicusChat.assets.get(block.assetId);if(!asset?.file)throw Error('Вложение не найдено на устройстве');const a=document.createElement('a');a.href=PablicusChat.localAssetUrl(block.assetId);a.download=asset.name||'Вложение';document.body.append(a);a.click();a.remove();},
+   outbox:()=>{if(active())return showOutbox();},
+   retry:async()=>{if(!active())return;await store.retry(m.outboxId);if(active()){await PablicusChat.refreshQueue();if(PablicusChat.store===store)pump();}},
+   cancel:async()=>{if(!active()||!confirm('Отменить эту отправку? Если в ней несколько сообщений, будут отменены все ещё не отправленные сообщения этой отправки.'))return;await store.cancel(m.outboxId);if(PablicusChat.store===store)await PablicusChat.refreshQueue();}
+  });row.append(bubble);return row;
  }
  function mediaItem(block,local=false){return{type:block.type,path:block.path,localAssetId:local?block.assetId:null,name:block.name||'Вложение',mime:block.mime,size:block.size,blockId:block.id};}
  async function mediaUrl(item){const uid=user?.id;if(!uid)throw Error('Войдите в приложение');const result=item.localAssetId?PablicusChat.localAssetUrl(item.localAssetId):await signedUrl(item.path,{type:item.type,width:0});if(user?.id!==uid)throw Error('Аккаунт изменился');return result;}

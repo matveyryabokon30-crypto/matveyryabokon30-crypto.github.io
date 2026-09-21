@@ -18,6 +18,27 @@
     const label = LABELS[type] || 'Документ';
     return type === 'document' || !LABELS[type] ? readableName(block.name, label) : label;
   }
+  // Tight media frames: use decoded dimensions, never a fixed portrait canvas.
+  function setMediaDimensions(frame, width, height) {
+    if (!(width > 0 && height > 0 && Number.isFinite(width / height))) return;
+    const ratio = width / height;
+    frame.dataset.sourceRatio = String(ratio);
+    frame.style.setProperty('--rich-image-ratio', String(ratio));
+    frame.style.setProperty('--chat-media-limit', (320 * ratio) + 'px');
+    const bubble = frame.closest('.chatSingleMedia');
+    if (bubble) bubble.style.setProperty('--chat-media-limit', (320 * ratio) + 'px');
+  }
+  function prepareChatBubble(bubble) {
+    const rich = [...bubble.children].find(n => n.classList.contains('richMessage'));
+    const frame = rich?.children.length === 1 && rich.firstElementChild.matches('.richMedia-image,.richMedia-video')
+      ? rich.firstElementChild : [...bubble.children].find(n => n.matches('.mediaOpen[data-media-type="image"]'));
+    const extra = [...bubble.children].some(n => n !== rich && n !== frame && !n.matches('.meta,.messageReactions') && (n.textContent.trim() || n.querySelector('img,video')));
+    if (frame && !extra) {
+      bubble.classList.add('chatSingleMedia');
+      const limit = frame.style.getPropertyValue('--chat-media-limit');
+      if (limit) bubble.style.setProperty('--chat-media-limit', limit);
+    }
+  }
   const activeViews = new Set();
   let activeAudio = null;
   let removalObserver = null;
@@ -203,7 +224,7 @@
         item.image.onload = () => {
           if (disposed || !isLiveRow()) return;
           item.status = 'ready';
-          if(item.image.naturalWidth>0&&item.image.naturalHeight>0)item.button.style.setProperty('--rich-image-ratio',String(item.image.naturalWidth/item.image.naturalHeight));
+          setMediaDimensions(item.button,item.image.naturalWidth,item.image.naturalHeight);
           item.button.classList.add('richImageReady');
           item.statusNode.textContent = '';
           releaseObserverWhenFinished();
@@ -551,12 +572,13 @@
         const video = element('video', 'richVideo');
         video.controls = !options.inlineVideo;
         if (options.inlineVideo) {video.muted=true;video.defaultMuted=true;video.loop=true;container.classList.add('richInlineVideo');container.tabIndex=0;container.setAttribute('role','button');container.setAttribute('aria-label','Открыть видео');video.tabIndex=-1;}
+        video.draggable = false;container.draggable = false;
         video.playsInline = true;
         video.preload = 'metadata';
         if (block.width > 0 && block.height > 0) {
           video.width = Math.round(block.width);
           video.height = Math.round(block.height);
-          container.style.setProperty('--rich-image-ratio',String(block.width/block.height));
+          setMediaDimensions(container,block.width,block.height);
         }
         const statusNode = element('span', 'richMediaStatus', 'Загрузка видео…');
         statusNode.setAttribute('role', 'status');
@@ -570,7 +592,7 @@
           statusNode.textContent = 'Видео не загрузилось. Нажмите, чтобы повторить.';
           releaseObserverWhenFinished();
         });
-        video.addEventListener('loadedmetadata', () => {if(video.videoWidth>0&&video.videoHeight>0)container.style.setProperty('--rich-image-ratio',String(video.videoWidth/video.videoHeight));notifyResize();syncVideo(item);});
+        video.addEventListener('loadedmetadata', () => {setMediaDimensions(container,video.videoWidth,video.videoHeight);notifyResize();syncVideo(item);});
         video.addEventListener('canplay', () => syncVideo(item));
         container.addEventListener('keydown',event=>{if(options.inlineVideo&&(event.key==='Enter'||event.key===' ')){event.preventDefault();container.click();}});
         container.addEventListener('click', event => {
@@ -590,10 +612,11 @@
       if (block.type === 'image') {
         const image = element('img', 'richImage');
         image.alt = attachmentLabel(block);
+        image.draggable = false;button.draggable = false;
         image.loading = 'eager'; // IntersectionObserver owns scheduling; visibility changes on load.
         image.decoding = 'async';
         if (block.width > 0 && block.height > 0) {
-          button.style.setProperty('--rich-image-ratio', String(block.width / block.height));
+          setMediaDimensions(button,block.width,block.height);
           image.width = Math.round(block.width);
           image.height = Math.round(block.height);
         }
@@ -659,7 +682,7 @@
     return root;
   }
 
-  const api = Object.freeze({ render, validate, textContent, groupBlocks, stopAll, readableName, attachmentLabel });
+  const api = Object.freeze({setMediaDimensions,prepareChatBubble, render, validate, textContent, groupBlocks, stopAll, readableName, attachmentLabel });
   scope.PablicusRichMessage = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

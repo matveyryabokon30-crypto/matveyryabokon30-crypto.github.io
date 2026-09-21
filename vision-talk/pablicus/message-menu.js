@@ -97,7 +97,7 @@
     const content = node('div','pmmContent'); content.hidden = true;
     root.append(backdrop,reactions,preview,content,list); document.body.append(root);
     let config = null, previousFocus = null, destroyed = false, opened = false, positionFrame = 0;
-    let anchorAria = null, pointOffset = null, oldOverflow = null, blurStyle = null;
+    let anchorAria = null, pointOffset = null, oldOverflow = null, blurStyle = null, previewSize = null, ignoreOpeningClick = false;
     const viewport = () => {
       const vv = scope.visualViewport;
       return {left:vv?.offsetLeft || 0,top:vv?.offsetTop || 0,width:vv?.width || scope.innerWidth,height:vv?.height || scope.innerHeight};
@@ -108,13 +108,15 @@
     function snapshot(anchor) {
       const original = anchor;
       const copy = original.cloneNode(true);
+      const bounds=original.getBoundingClientRect();
+      previewSize={width:bounds.width,height:bounds.height,media:original.matches('.richMedia-image,.richMedia-video,.mediaOpen,.chatSingleMedia')};
       const sources = [original,...original.querySelectorAll('*')];
       const copies = [copy,...copy.querySelectorAll('*')];
       sources.forEach((source,i)=>{
         const target=copies[i], style=scope.getComputedStyle(source);
         for(const name of style) target.style.setProperty(name,style.getPropertyValue(name),'important');
         target.removeAttribute('id'); target.removeAttribute('autofocus'); target.removeAttribute('popover');
-        target.removeAttribute('srcset'); target.tabIndex=-1;
+        target.removeAttribute('srcset'); target.tabIndex=-1;target.draggable=false;
         target.style.setProperty('pointer-events','none','important');
         target.style.setProperty('animation','none','important');
         target.style.setProperty('transition','none','important');
@@ -128,6 +130,7 @@
       // Reset both logical and physical geometry; copied percentages otherwise
       // resolve against the narrower preview and shrink the message a second time.
       for(const [name,value] of Object.entries({position:'relative',inset:'auto',margin:'0',width:'100%','inline-size':'100%','max-width':'none','max-inline-size':'none','min-width':'0','min-inline-size':'0',height:'auto','block-size':'auto',transform:'none'}))copy.style.setProperty(name,value,'important');
+      if(previewSize.media){copy.style.setProperty('width',bounds.width+'px','important');copy.style.setProperty('inline-size',bounds.width+'px','important');copy.style.setProperty('height',bounds.height+'px','important');copy.style.setProperty('block-size',bounds.height+'px','important');copy.style.setProperty('max-height','none','important');copy.style.setProperty('transform-origin','top left','important');}
       preview.replaceChildren(copy);
     }
     function positionSpotlight(box,bounds) {
@@ -141,6 +144,11 @@
       const original=config.previewTarget||config.anchor;
       const rowBounds=original.getBoundingClientRect();
       preview.style.width=Math.min(rowBounds.width,box.width-24)+'px';preview.style.maxHeight=previewHeight+'px';
+      if(previewSize?.media&&previewSize.width>0&&previewSize.height>0){
+        const scale=Math.min(1,(box.width-24)/previewSize.width,previewHeight/previewSize.height);
+        preview.style.width=(previewSize.width*scale)+'px';preview.style.height=(previewSize.height*scale)+'px';preview.style.overflow='hidden';
+        preview.firstElementChild.style.setProperty('transform','scale('+scale+')','important');
+      }
       const ph=Math.min(preview.getBoundingClientRect().height,previewHeight);
       const total=reactionHeight+ph+actionHeight+gap*2;
       const top=Math.max(12,Math.min(bounds.top-box.top-reactionHeight-gap,box.height-total-12));
@@ -180,7 +188,7 @@
     }
     function close({restoreFocus = true} = {}) {
       if (!opened) return;
-      opened = false;
+      opened = false;ignoreOpeningClick=false;
       const anchor = config?.anchor, focus = previousFocus;
       if (positionFrame) scope.cancelAnimationFrame(positionFrame);
       positionFrame = 0;
@@ -191,7 +199,7 @@
       (config.previewTarget||anchor)?.classList.remove('pmmSourceHidden');
       root.classList.remove('pmmSpotlight');root.removeAttribute('style');
       for(const n of [reactions,list,preview])n.removeAttribute('style');
-      preview.replaceChildren();backdrop.hidden=preview.hidden=true;
+      preview.replaceChildren();previewSize=null;backdrop.hidden=preview.hidden=true;
       anchor?.classList.remove('pablicusMessageMenuAnchor');
       if (anchor && anchorAria) {
         for (const [key, value] of Object.entries(anchorAria)) {
@@ -259,7 +267,7 @@
         opened = true; close({restoreFocus:false}); return;
       }
       if(next.spotlight){root.classList.add('pmmSpotlight');backdrop.hidden=preview.hidden=false;oldOverflow=document.body.style.overflow;document.body.style.overflow='hidden';snapshot(next.previewTarget||next.anchor);(next.previewTarget||next.anchor).classList.add('pmmSourceHidden');}
-      opened = true; root.hidden = false;
+      opened = true;ignoreOpeningClick=true;root.hidden = false;
       if (typeof root.showPopover === 'function') root.showPopover();
       if(next.spotlight)scope.setTimeout(()=>{
         if(!opened||config!==next)return;
@@ -271,7 +279,13 @@
       first?.focus({preventScroll:true});
       schedulePosition();
     }
+    // A held finger can release over a newly positioned menu item. That release
+    // is not a second gesture and must never activate an action or dismiss it.
+    function onClick(event) {
+      if(opened && ignoreOpeningClick && event.detail>0){event.preventDefault();event.stopImmediatePropagation();ignoreOpeningClick=false;}
+    }
     function onPointerDown(event) {
+      if(opened)ignoreOpeningClick=false;
       if(opened && (event.target===backdrop || event.target===root && config.spotlight)){event.preventDefault();event.stopPropagation();close({restoreFocus:false});return}
       if (opened && !root.contains(event.target)) close({restoreFocus:false});
     }
@@ -304,6 +318,7 @@
     function destroy() {
       close({restoreFocus:false}); destroyed = true;
       document.removeEventListener('pointerdown',onPointerDown,true);
+      document.removeEventListener('click',onClick,true);
       document.removeEventListener('keydown',onKeyDown,true);
       document.removeEventListener('scroll',onScroll,true);
       scope.removeEventListener('resize',schedulePosition);
@@ -312,6 +327,7 @@
       root.remove();
     }
     document.addEventListener('pointerdown',onPointerDown,true);
+    document.addEventListener('click',onClick,true);
     document.addEventListener('keydown',onKeyDown,true);
     document.addEventListener('scroll',onScroll,true);
     scope.addEventListener('resize',schedulePosition);

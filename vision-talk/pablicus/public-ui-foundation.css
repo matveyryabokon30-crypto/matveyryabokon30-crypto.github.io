@@ -113,3 +113,27 @@
 /* The scroll model reserves this live composer inset; clip the same area so
    offscreen messages cannot paint or receive taps behind the writing surface. */
 #app:not(.canvas-active):not(.composer-fullscreen) #vp{clip-path:inset(0 0 var(--chat-bottom-inset,0px) 0)}
+
+/* UI-V4: the rounded frame and its pixels have exactly the same natural ratio.
+   Bound both axes together; a max-height on the pixels alone creates blank bars. */
+#app .row>.bubble.chatSingleMedia{width:min(62%,280px,var(--chat-media-limit,280px))!important;max-width:280px}
+#app .row .richMessage>.richMedia-image,
+#app .row .richMessage>.richMedia-image.richImageReady,
+#app .row .richMessage>.richMedia-video,
+#app .row .mediaOpen[data-media-type="image"]{
+ display:block;position:relative;box-sizing:border-box;width:min(100%,var(--chat-media-limit,280px));height:auto;min-width:0;min-height:0;max-height:none;
+ aspect-ratio:var(--rich-image-ratio,1.333333);padding:0!important;margin:0;gap:0;border:0!important;border-radius:16px!important;
+ overflow:hidden!important;clip-path:inset(0 round 16px);background:transparent!important;isolation:isolate;
+}
+#app .row.mine .richMessage>:is(.richMedia-image,.richMedia-video){align-self:flex-end}
+#app .row .richMessage>.richMedia-image>.richImage,
+#app .row .richMessage>.richMedia-video>.richVideo,
+#app .row .mediaOpen[data-media-type="image"]>.messageImage{
+ position:absolute;inset:0;display:block;width:100%;height:100%;min-width:0;min-height:0;max-width:none;max-height:none;
+ object-fit:contain;border-radius:inherit!important;margin:0;padding:0;pointer-events:none;
+}
+#app .row :is(.richMedia-image,.richMedia-video,.mediaOpen,img,video){-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;touch-action:pan-y}
+#app .row :is(.richMedia-image,.richMedia-video,.mediaOpen):active{transform:none!important}
+.pmmPreview,.pmmPreview *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+
+#app .row.mine .mediaOpen[data-media-type="image"]{margin-left:auto}

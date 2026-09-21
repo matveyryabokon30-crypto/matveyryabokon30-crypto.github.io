@@ -115,15 +115,47 @@
    const mark=node('span','messageSelectMark');mark.hidden=!selected.has(raw.id);mark.append(icon('check'));mark.setAttribute('aria-hidden','true');row.append(mark);row.classList.toggle('messageSelected',selected.has(raw.id));
    const metadata=state.get(raw.id);if(metadata?.reactions?.length){const reactions=node('div','messageReactions');for(const r of metadata.reactions){const react=node('button','messageReaction',r.emoji+' '+r.count);react.type='button';react.dataset.emoji=r.emoji;react.setAttribute('aria-label',r.emoji+' · '+r.count);react.setAttribute('aria-pressed',r.mine?'true':'false');react.onclick=event=>{event.stopPropagation();setReaction(raw,r.emoji).catch(options.onError)};reactions.append(react)}bubble.append(reactions)}
    if(raw.edited_at){const meta=bubble.querySelector('.meta');if(meta&&!meta.querySelector('.messageEdited'))meta.append(node('span','messageEdited',' · изм.'))}
-   let timer=0,start=null,suppressUntil=0;const blockFor=event=>raw.type==='rich'?event.target.closest('[data-block-id]')?.dataset.blockId||null:null;
+   bindGesture(bubble,event=>open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:raw.type==='rich'?event.target.closest('[data-block-id]')?.dataset.blockId||null:null}),()=>{if(!selected.size)return false;select(raw);return true;});
+  }
+  function bindGesture(bubble,invoke,selectMessage){
+   let timer=0,start=null,suppressUntil=0;
    const cancel=()=>{if(timer)scope.clearTimeout(timer);timer=0;start=null};
-   bubble.addEventListener('contextmenu',event=>{event.preventDefault();event.stopPropagation();cancel();if(bubble.getAttribute('aria-expanded')==='true')return;suppressUntil=Date.now()+900;open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})});
-   bubble.addEventListener('pointerdown',event=>{if(event.button!==0||event.isPrimary===false||event.target.closest('input,textarea,select'))return;cancel();start={x:event.clientX,y:event.clientY};timer=scope.setTimeout(()=>{timer=0;if(!bubble.isConnected)return;suppressUntil=Date.now()+900;open(raw,{anchor:bubble,point:{x:event.clientX,y:event.clientY},blockId:blockFor(event)})},500)});
-   bubble.addEventListener('pointermove',event=>{if(start&&Math.hypot(event.clientX-start.x,event.clientY-start.y)>10)cancel()});for(const name of['pointerup','pointercancel','pointerleave'])bubble.addEventListener(name,cancel);
-   bubble.addEventListener('click',event=>{if(Date.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation();return}if(selected.size){event.preventDefault();event.stopImmediatePropagation();try{select(raw)}catch(error){options.onError?.(error)}return}/* A short tap belongs to the content: links, media and audio keep their own actions. */},true);
+   bubble.draggable=false;
+   bubble.querySelectorAll('img,video,.richMedia,.mediaOpen').forEach(n=>n.draggable=false);
+   bubble.addEventListener('dragstart',e=>{e.preventDefault();e.stopPropagation();},true);
+   bubble.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();cancel();if(bubble.getAttribute('aria-expanded')==='true')return;suppressUntil=Date.now()+900;invoke(e);});
+   bubble.addEventListener('pointerdown',e=>{if(e.button!==0||e.isPrimary===false||e.target.closest('input,textarea,select,.richAudioPlay,.richAudioReply,.messageReceipt,.messageReaction'))return;cancel();start={id:e.pointerId,x:e.clientX,y:e.clientY};timer=scope.setTimeout(()=>{timer=0;if(!start||!bubble.isConnected)return;suppressUntil=Date.now()+900;invoke(e);},450);});
+   bubble.addEventListener('pointermove',e=>{if(start&&(e.pointerId!==start.id||Math.hypot(e.clientX-start.x,e.clientY-start.y)>10))cancel();});
+   for(const name of ['pointerup','pointercancel','pointerleave'])bubble.addEventListener(name,cancel);
+   bubble.addEventListener('click',e=>{if(Date.now()<suppressUntil){e.preventDefault();e.stopImmediatePropagation();return;}try{if(selectMessage?.()){e.preventDefault();e.stopImmediatePropagation();}}catch(error){options.onError?.(error);}},true);
+  }
+  function decoratePending(row,bubble,m,callbacks){
+   bubble.tabIndex=0;bubble.setAttribute('aria-haspopup','menu');bubble.setAttribute('aria-label','Исходящее сообщение. Удерживайте, чтобы открыть действия');
+   const openPending=event=>{
+    if(!callbacks.isCurrent())return;
+    const blockId=event?.target?.closest('[data-block-id]')?.dataset.blockId;
+    const blocks=m.richBlocks||[],media=blocks.filter(b=>b.type!=='text');
+    const block=media.find(b=>b.id===blockId)||(media.length===1?media[0]:null);
+    const guard=fn=>()=>{if(callbacks.isCurrent())return fn();};
+    const actions=[];
+    if(block&&['image','video'].includes(block.type))actions.push({id:'open',icon:'expand',label:'Открыть',onSelect:guard(()=>callbacks.open(block))});
+    if(block)actions.push({id:'download',label:'Скачать',onSelect:guard(()=>callbacks.download(block))});
+    const text=blocks.filter(b=>b.type==='text').map(b=>b.text||'').join('\n').trim();
+    if(text)actions.push({id:'copy',label:'Скопировать',onSelect:guard(()=>scope.navigator.clipboard.writeText(text))});
+    actions.push({id:'outbox',icon:'send',label:'Исходящие',onSelect:guard(callbacks.outbox)});
+    if(m.queueState!=='sending'){
+     actions.push({id:'retry',icon:'send',label:'Повторить отправку',onSelect:guard(callbacks.retry)});
+     actions.push({id:'cancel',icon:'delete',label:'Отменить отправку',danger:true,onSelect:guard(callbacks.cancel)});
+    }
+    const previewTarget=blockId?[...bubble.querySelectorAll('[data-block-id]')].find(n=>n.dataset.blockId===blockId):bubble;
+    menu.open({anchor:bubble,previewTarget,actions,spotlight:true,onError:error=>options.onError?.(error)});
+   };
+   bindGesture(bubble,openPending);
+   bubble.addEventListener('keydown',e=>{if(e.target===bubble&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openPending(e);}});
+
   }
   function destroy(){clear();destroyed=true;menu.destroy()}
-  return Object.freeze({open,decorate,revision,sync,dismiss,clear,destroy,effective,get selected(){return [...selected]}});
+  return Object.freeze({open,decorate,decoratePending,revision,sync,dismiss,clear,destroy,effective,get selected(){return [...selected]}});
  }
  scope.PablicusChatActions=Object.freeze({create,effective});
 })(typeof window==='undefined'?globalThis:window);
