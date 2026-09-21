@@ -3,15 +3,16 @@ import {AccountSession} from './account-session.mjs';
 import {openAccountPanel} from './account-panel.mjs';
 import {voiceTrace} from './voice-trace.mjs';
 import {sessionCues} from './session-cues.mjs';
+import {startLakeVisual} from './lake-visual.mjs';
 import {VoiceEndCommand} from './voice-end-command.mjs';
 import {runtimeConfig,voiceCatalog} from './runtime-config.mjs';
 import {restoreConversation} from './ui/chat-session.mjs';
 import {LiveTranscript} from './live-transcript.mjs';
 import {prepareFinalization} from './voice-finalize.mjs?v=2026.09.20-s3.28';
-import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.21-ui.9.9';
+import {VoiceIdentityHandshake} from './voice-identity.mjs?v=2026.09.21-ui.9.10';
 import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09.20-s3.28';
 import {VoicePicker} from './voice-picker.mjs?v=2026.09.20-s3.28';
-import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.9';
+import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.10';
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
 const msg={VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер SEKKES недоступен.',AUTH_REQUIRED:'Войди в SEKKES.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Лимит теста остановил новый запрос.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',DUPLICATE_TURN:'Этот запрос уже принят сервером. Не отправляй его повторно. Ответ можно проверить после повторного входа.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
 let account=null,accountPanel=null,accountRestore=null;
@@ -103,6 +104,7 @@ function voiceControls(state){
  document.body.classList.toggle('s3-live',state==='live');
 }
 function silenceTransport(x){
+ try{x.lake?.dispose()}catch{}
  const enableAudio=$('#voiceEnableAudio');if(enableAudio&&(live===x||startup===x||(!live&&!startup))){enableAudio.hidden=true;enableAudio.onclick=null;}
  // Stop every media resource even if another cleanup hook throws.
  try{if(x.retryAudio)document.removeEventListener('click',x.retryAudio)}catch{}
@@ -141,6 +143,7 @@ async function startLive(){
  const markReady=()=>{
   if(live!==x||x.cancelled||x.ready||!x.startedEvent||!x.channelReady||!x.outputReady||!x.micAttached)return;
   x.ready=true;clearTimeout(x.connectTimer);voiceTrace('ready');voiceControls('live');status('');
+  try{x.lake=startLakeVisual(x.pc)}catch{/* The call remains usable without animation. */}
   // Start the entrance only after transport + remote playback have settled.
   // Neither an unavailable cue nor a rejected cue may strand the live connection.
   Promise.resolve(sessionCues?.play('start')).then(result=>{

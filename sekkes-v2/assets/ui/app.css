@@ -79,6 +79,9 @@ h1,h2,h3,.lead{max-width:100%;overflow-wrap:anywhere;hyphens:auto}
 /* The scene, not the control, responds to confirmed live service states. */
 [data-voice=listening] .home-screen .wallpaper,[data-voice=live] .home-screen .wallpaper,[data-voice=speaking] .home-screen .wallpaper{animation:conversation-scene var(--scene-breath-duration) ease-in-out infinite alternate;transform-origin:center 60%}
 @keyframes conversation-scene{from{transform:scale(1)}to{transform:scale(1.025)}}
+/* UI9.10: stationary landscape; only the dedicated lake layer moves. */
+#shell .home-screen .wallpaper{animation:none;transform:none;filter:none}
+.lake-visual{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 @media(max-width:350px){.session-dock{padding-inline:8px}.composer{padding:6px;gap:0}.composer textarea{padding-inline:4px}.conversation-controls{gap:6px}}
 
 .live-control{touch-action:manipulation}.live-control svg{pointer-events:none}

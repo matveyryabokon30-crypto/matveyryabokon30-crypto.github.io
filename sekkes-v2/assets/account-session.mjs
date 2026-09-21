@@ -1,5 +1,5 @@
 import {createClient} from './vendor/supabase.mjs';
-import {S3Api,S3Error} from './s3-api.mjs?v=2026.09.21-ui.9.9';
+import {S3Api,S3Error} from './s3-api.mjs?v=2026.09.21-ui.9.10';
 import {SekkesPasskeys} from './passkeys.mjs';
 
 // SDK owns rotation, cross-tab locking and persistence; SEKKES owns admission.
