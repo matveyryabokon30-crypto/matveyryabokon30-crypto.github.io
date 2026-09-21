@@ -5,5 +5,5 @@ if(new URLSearchParams(location.search).get('ui')==='classic'){
  const fixture=new URLSearchParams(location.search).get('qa')==='fixture'?await import('./fixture.mjs'):null;
  const {initialize}=await import('./app.mjs');initialize(fixture?.options);
  if(fixture)fixture.install();
- else try{await import('../voice-s3-0.mjs?v=2026.09.21-ui.9.3')}catch{window.SekkesUI.status('Не удалось загрузить модуль разговора. Проверь сеть и обнови приложение.')}
+ else try{await import('../voice-s3-0.mjs?v=2026.09.21-ui.9.4')}catch{window.SekkesUI.status('Не удалось загрузить модуль разговора. Проверь сеть и обнови приложение.')}
 }

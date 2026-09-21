@@ -93,3 +93,10 @@ h1,h2,h3,.lead{max-width:100%;overflow-wrap:anywhere;hyphens:auto}
 #shell[data-route=home] .wallpaper{inset:0;width:100%;height:100%}
 /* Explicit reduced-transparency preference remains readable, without white panels. */
 [data-transparency=off] :is(.menu-trigger,.navigation-panel),[data-transparency=off] #shell[data-route=home] :is(.composer,.live-control,.home-conversation){background:#10283b;-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* UI9.4: paint the document canvas too, not just the clipped route host.
+   WebKit can expose the root canvas behind its translucent status area. */
+html{--scene-canvas:#071a35;--scene-image:url('../media/lake-night-1024.jpg');background:var(--scene-canvas) var(--scene-image) center 55% / cover no-repeat fixed}
+html[data-theme=light]{--scene-canvas:#317caf;--scene-image:url('../media/lake-day-1024.jpg')}
+body{background:transparent}
+#shell[data-route=home]{background:transparent;height:100%;min-height:100%}
