@@ -26,7 +26,7 @@ with sync_playwright() as pw:
  page.locator('#chatBack').click();check('back click retains live button',page.evaluate('backUsed===true'))
  for selector in ['#composeBox','.workspaceEditor','.botComposer']:
   if selector!='#composeBox':page.evaluate('(cls)=>{const n=document.createElement("div");n.className=cls+" r2Composer";document.body.append(n)}',selector[1:])
-  check(selector+' has glass background only',page.locator(selector).evaluate('(n)=>{const s=getComputedStyle(n,"::before");return s.content!=="none"&&s.backdropFilter.includes("blur(16px)")&&s.pointerEvents==="none"&&getComputedStyle(n).filter==="none"}'))
+  check(selector+' has glass background only',page.locator(selector).evaluate('(n)=>{const s=getComputedStyle(n,"::before");return (n.id==="composeBox"?s.content==="none"&&getComputedStyle(n).backgroundColor==="rgba(0, 0, 0, 0)":s.content!=="none"&&s.backdropFilter.includes("blur(16px)")&&s.pointerEvents==="none")&&getComputedStyle(n).filter==="none"}'))
   if selector!='#composeBox':page.locator(selector).evaluate('(n)=>n.remove()')
  check('menu initially collapsed and inert',page.locator('#chatActionsMenu').evaluate('(n)=>n.inert&&getComputedStyle(n).visibility==="hidden"'))
  page.locator('#chatActionsToggle').click();page.wait_for_timeout(260)

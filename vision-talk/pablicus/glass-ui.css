@@ -177,3 +177,12 @@
 :root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Fullscreen){background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 :root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):not(.r2Fullscreen)::before{content:''!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;border-radius:inherit!important;background:var(--ui-glass-input)!important;box-shadow:inset 0 1px 0 #ffffffa6,0 2px 8px #00000012!important;backdrop-filter:blur(16px) saturate(1.25)!important;-webkit-backdrop-filter:blur(16px) saturate(1.25)!important;pointer-events:none!important;z-index:0!important}
 @media(prefers-reduced-transparency:reduce){:root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer)::before{background:var(--surface)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+
+/* UI-AU2: no white input panel; keep geometry, controls and history boundary. */
+:root body #app:not(.composer-fullscreen) #composer #composeBox#composeBox.r2Composer:not(.r2Fullscreen){background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root body #app:not(.composer-fullscreen) #composer #composeBox#composeBox.r2Composer:not(.r2Fullscreen)::before,
+:root body #app:not(.composer-fullscreen) #composer #composeBox#composeBox.r2Composer:not(.r2Fullscreen)::after{content:none!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root body #app:not(.composer-fullscreen) #composer #composeBox.r2Composer :is(.r2Toolbar,.r2ComposerBody,.r2ComposerHeader){background:transparent!important;box-shadow:none!important}
+/* A draft attachment still has its own edge, not a shared white field. Inset
+   outline does not change the existing 48px card or the image dimensions. */
+:root body #app:not(.composer-fullscreen) #composer #editor.r2ComposerBody .richMedia{background:transparent!important;outline:1px solid var(--ui-glass-line);outline-offset:-1px}
