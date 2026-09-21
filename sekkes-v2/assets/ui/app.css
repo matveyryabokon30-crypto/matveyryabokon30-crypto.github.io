@@ -199,3 +199,6 @@ html,body,#shell,.home-screen,.home-conversation,.home-conversation .messages,.c
 #shell[data-route=home] .home-conversation{background:rgba(7,24,35,.70)}
 #shell .world-heading,#shell .world-panel{background:rgba(7,24,35,.78);color:#f2f6ff}
 [data-transparency=off] #shell :is(.home-conversation,.settings-row,.content-card,.profile-bottom,.world-heading,.world-panel,.live-control){background:#10283b;backdrop-filter:none;-webkit-backdrop-filter:none}
+
+/* The shared dark material also fills the iOS safe area in either UI theme. */
+html,html[data-theme=light],body{background:#002222;color-scheme:dark}
