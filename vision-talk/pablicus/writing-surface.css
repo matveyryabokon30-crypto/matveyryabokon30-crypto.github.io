@@ -1,23 +1,23 @@
 
-/* Focus surface 1.0 — active writing is opaque white; idle retains glass.
+/* Focus surface — workspace/fullscreen writing stays white; normal chat is transparent.
    Test the actual editable focus, not r2Open (which also means saved text/menu).
    Caret uses the exact token used by the movable send/action circle. */
 :root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer) .r2ComposerBody :is(textarea,[contenteditable="true"]){
  caret-color:var(--r2-accent,#3BA7F2)!important;
 }
-:root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):has(.r2ComposerBody :is(textarea,[contenteditable="true"]):focus){
+:root body :is(#app.composer-fullscreen #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):has(.r2ComposerBody :is(textarea,[contenteditable="true"]):focus){
  background:#FFFFFF!important;background-image:none!important;
  --r2-ink:#171717;--r2-secondary:#707070;--r2-toolbar-ink:#171717;
 }
 /* The owner requested white while writing, including in a dark shell.
    Give the white editor its own readable text; do not recolor the side dock. */
-:root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):has(.r2ComposerBody :is(textarea,[contenteditable="true"]):focus) .r2ComposerBody{
+:root body :is(#app.composer-fullscreen #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):has(.r2ComposerBody :is(textarea,[contenteditable="true"]):focus) .r2ComposerBody{
  color:#171717!important;
 }
-:root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):has(.r2ComposerBody :is(textarea,[contenteditable="true"]):focus) .r2ComposerBody :is(textarea,[contenteditable="true"]){
+:root body :is(#app.composer-fullscreen #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):has(.r2ComposerBody :is(textarea,[contenteditable="true"]):focus) .r2ComposerBody :is(textarea,[contenteditable="true"]){
  color:#171717!important;-webkit-text-fill-color:#171717!important;
 }
-:root body :is(#app #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):has(.r2ComposerBody :is(textarea,[contenteditable="true"]):focus) .r2ComposerBody textarea::placeholder{
+:root body :is(#app.composer-fullscreen #composer #composeBox#composeBox.r2Composer,.workspaceEditor.r2Composer,.botComposer.r2Composer):has(.r2ComposerBody :is(textarea,[contenteditable="true"]):focus) .r2ComposerBody textarea::placeholder{
  color:#707070!important;-webkit-text-fill-color:#707070!important;opacity:1;
 }
 /* No application-owned status overlay is added. The static HTML requests

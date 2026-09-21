@@ -12,6 +12,8 @@ assert 'window.PablicusInvite?.share' in app
 assert "text='Присоединяйся ко мне в Pablicus'" in invite
 assert "navigator.share" in invite and "navigator.clipboard.writeText" in invite
 assert "registration.update()" in auto and "updateViaCache:'none'" in auto
-assert '<span>Доступно обновление</span>' in html
+# Owner replaced manual update UI with automatic launch/foreground application.
+assert 'id="applyUpdate"' not in html and 'id="updateNotice"' not in html
 assert 'banner.hidden=true' in auto
-print('Pablicus functional F01 share/link/auto-update contract PASS')
+assert "'pageshow'" in auto and "'online'" in auto and "visibilitychange" in auto
+print('Pablicus functional F01 share/link/automatic-update contract PASS')
