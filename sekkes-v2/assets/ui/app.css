@@ -82,3 +82,14 @@ h1,h2,h3,.lead{max-width:100%;overflow-wrap:anywhere;hyphens:auto}
 @media(max-width:350px){.session-dock{padding-inline:8px}.composer{padding:6px;gap:0}.composer textarea{padding-inline:4px}.conversation-controls{gap:6px}}
 
 .live-control{touch-action:manipulation}.live-control svg{pointer-events:none}
+
+/* UI9.3: clear glass over the scene, identical in day and night themes.
+   Safe-area padding belongs to controls, never to the full-bleed wallpaper. */
+#shell[data-route=home]{--text:#f2f6ff;--text-muted:#e1ebf5;--focus:#a3ecff;--line:rgba(232,246,255,.42);--glass:rgba(10,32,48,.16);--surface:rgba(10,32,48,.16);--surface-raised:rgba(10,32,48,.22)}
+.menu-trigger,.navigation-panel{--nav-text:#f2f6ff;--nav-selected-text:#b4f3ff;background:rgba(10,32,48,.16);color:var(--nav-text);border:1px solid rgba(232,246,255,.42);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 6px 24px rgba(0,12,28,.18);-webkit-backdrop-filter:blur(12px) saturate(135%);backdrop-filter:blur(12px) saturate(135%)}
+#shell[data-route=home] :is(.composer,.live-control,.reopen-conversation,.home-conversation,.recording-panel,.dictation-status,#aiStateLabel,#voiceEnableAudio){background:rgba(10,32,48,.16);border:1px solid rgba(232,246,255,.42);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 6px 24px rgba(0,12,28,.18);-webkit-backdrop-filter:blur(12px) saturate(135%);backdrop-filter:blur(12px) saturate(135%)}
+#shell[data-route=home] :is(button,textarea){color:var(--text);text-shadow:0 1px 3px rgba(0,12,28,.5)}
+#shell[data-route=home] .composer .send{background:rgba(35,100,200,.22);box-shadow:inset 0 0 0 1px rgba(232,246,255,.35)}
+#shell[data-route=home] .wallpaper{inset:0;width:100%;height:100%}
+/* Explicit reduced-transparency preference remains readable, without white panels. */
+[data-transparency=off] :is(.menu-trigger,.navigation-panel),[data-transparency=off] #shell[data-route=home] :is(.composer,.live-control,.home-conversation){background:#10283b;-webkit-backdrop-filter:none;backdrop-filter:none}
