@@ -1,7 +1,7 @@
 name: Pablicus chat header verified release
 on:
   push:
-    branches: [fix/pablicus-chat-media-r2-20260920]
+    branches: [fix/pablicus-media-geometry-v3-20260921]
     paths: ['vision-talk/pablicus/**', 'tools/pablicus-r1/**', 'tools/pablicus-r2/**', 'tools/pablicus-r3/**', 'tools/pablicus-f03/**', 'tools/pablicus-f04/**', 'tools/pablicus-f05/**', 'tools/pablicus-f06/**', 'tools/pablicus-release/**', 'tools/pablicus-p01r2/**', 'tools/pablicus-f01/**', 'tools/pablicus-f02/**', 'tools/pablicus-p06/**', '.github/workflows/pablicus-release-header.yml']
 permissions:
   contents: read
@@ -29,12 +29,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Preserve exact F05 baseline and build candidate
+      - name: Preserve baselines and build exact geometry candidate
         run: |
           set -euo pipefail
-          mkdir -p baseline results
+          mkdir -p baseline geometry-baseline results
           git archive --output=baseline.tar a771db2d3d9d66c4d658aaac65c71394672a2fc4 vision-talk/pablicus
           tar -xf baseline.tar -C baseline
+          git archive --output=geometry-baseline.tar 97fb87abae88f8f120d5e541ee7e7e4a2adc3535 vision-talk/pablicus
+          tar -xf geometry-baseline.tar -C geometry-baseline
+          python tools/pablicus-release/apply_media_geometry.py
           node --check vision-talk/pablicus/push-notifications.js
           python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
           python tools/pablicus-release/test_release.py 2>&1 | tee results/unit.txt
@@ -59,6 +62,10 @@ jobs:
           python -m playwright install --with-deps ${{ matrix.engine }}
           python -m pip show playwright > results/toolchain.txt
           uname -a >> results/toolchain.txt
+      - name: Reproduce rejected UI-V2 overlap on the unchanged baseline
+        run: python tools/pablicus-release/test_media_geometry.py --root geometry-baseline/vision-talk/pablicus --engine ${{ matrix.engine }} --expect-regression
+      - name: Actual message list, decoded media, scrolling and real composer
+        run: python tools/pablicus-release/test_media_geometry.py --root vision-talk/pablicus --engine ${{ matrix.engine }} --full-app
       - name: Header geometry and separate profile/story actions
         run: python tools/pablicus-release/test_chat_header.py --engine ${{ matrix.engine }}
       - name: Diagnose native mock capture support
@@ -110,26 +117,34 @@ jobs:
         with:
           pattern: pablicus-header-*
           path: verified
-      - name: Rebuild identical tested artifacts and retain only verified runtime
+      - name: Retain only the exact independently tested geometry runtime
         run: |
           set -euo pipefail
-          node --check vision-talk/pablicus/push-notifications.js
+          python tools/pablicus-release/apply_media_geometry.py
+          node --check vision-talk/pablicus/chat.js
           python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
           python tools/pablicus-release/build_release.py --check
           python - <<'PY'
-          import json,pathlib
-          candidate=pathlib.Path('vision-talk/pablicus/release.json').read_bytes()
+          import hashlib,json,pathlib
+          root=pathlib.Path('vision-talk/pablicus')
+          candidate=(root/'release.json').read_bytes()
           for engine in ['chromium','webkit']:
               folder=pathlib.Path('verified')/('pablicus-header-'+engine)
               assert (folder/'release.json').read_bytes()==candidate,engine+' artifact mismatch'
               results=json.loads((folder/(engine+'-bounded.json')).read_text())
-              assert len(results)==3 and all(x['passed'] for x in results),engine+' incomplete evidence'
+              assert len(results)==3 and all(x['passed'] for x in results),engine+' incomplete retained evidence'
+              geometry=json.loads((folder/('media-geometry-'+engine+'.json')).read_text())
+              assert geometry['failed']==0 and geometry['passed']>=49,engine+' geometry or full-app regression failed'
+              for name,digest in geometry['source_sha256'].items():
+                  assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest,engine+' runtime source mismatch: '+name
+              baseline=json.loads((folder/('baseline-media-geometry-'+engine+'.json')).read_text())
+              assert baseline['failed']==0 and baseline['passed']==2,engine+' rejected baseline not reproduced'
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tools/pablicus-release/build_release.py tools/pablicus-release/test_browser_release.py vision-talk/pablicus/push-notifications.js vision-talk/pablicus/index.html vision-talk/pablicus/sw.js vision-talk/pablicus/release-info.js vision-talk/pablicus/release.json vision-talk/pablicus/release-p01r2.json
-          git commit -m 'build(pablicus): save verified F06 foundation immutable artifact'
-          git push origin HEAD:fix/pablicus-chat-media-r2-20260920
+          git add tools/pablicus-release/build_release.py tools/pablicus-release/test_browser_release.py vision-talk/pablicus/chat.js vision-talk/pablicus/public-ui-foundation.css vision-talk/pablicus/push-notifications.js vision-talk/pablicus/index.html vision-talk/pablicus/sw.js vision-talk/pablicus/release-info.js vision-talk/pablicus/release.json vision-talk/pablicus/release-p01r2.json
+          git commit -m 'build(pablicus): retain verified UI-V3 live-row geometry release'
+          git push origin HEAD:fix/pablicus-media-geometry-v3-20260921
           mkdir artifact
           git rev-parse HEAD > artifact/GENERATED_COMMIT.txt
           cp vision-talk/pablicus/release.json artifact/release.json
