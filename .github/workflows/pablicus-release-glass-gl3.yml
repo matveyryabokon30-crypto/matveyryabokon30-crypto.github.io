@@ -1,0 +1,136 @@
+name: Pablicus glass input without bottom white strip
+on:
+  push:
+    branches: [fix/pablicus-glass-footer-gl3-20260921]
+permissions:
+  contents: read
+concurrency:
+  group: pablicus-glass-footer-gl3
+  cancel-in-progress: true
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: chromium
+            os: ubuntu-24.04
+          - engine: webkit
+            os: macos-15
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build exact candidate and preserve released baselines
+        run: |
+          set -euo pipefail
+          mkdir -p baseline ring-baseline update-baseline results
+          git archive a771db2d3d9d66c4d658aaac65c71394672a2fc4 vision-talk/pablicus | tar -x -C baseline
+          git archive 887268f406e503101fa3a364ceda27a5aeaf4674 vision-talk/pablicus | tar -x -C ring-baseline
+          git archive ec27c41fd3304034af7d5554015c189c79c3425b vision-talk/pablicus | tar -x -C update-baseline
+          python tools/pablicus-release/prepare_glass_footer_gl3.py
+          python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
+          python tools/pablicus-release/test_release.py
+          for f in vision-talk/pablicus/*.js; do node --check "$f"; done
+          for f in tools/pablicus-r1/test_sw.mjs tools/pablicus-r2/test_client.mjs tools/pablicus-r3/test_client_health.mjs tools/pablicus-f03/test_client.mjs tools/pablicus-f04/test_client.mjs tools/pablicus-f05/test_client.mjs tools/pablicus-f05/test_sw.mjs tools/pablicus-f06/test_client.mjs tools/pablicus-f06/test_sw.mjs tools/pablicus-f06/test_update.mjs; do node "$f"; done
+          python tools/pablicus-f01/test.py
+          python tools/pablicus-f02/test.py
+          python tools/pablicus-p06/test.py
+          cp vision-talk/pablicus/release.json results/release.json
+      - name: Install supported pinned browser
+        run: |
+          python -m pip install playwright==1.63.0 pillow
+          python -m playwright install --with-deps ${{ matrix.engine }}
+      - name: Native pixels, actual history and input, no full-width white strip
+        run: python -u tools/pablicus-release/test_glass_footer.py --engine ${{ matrix.engine }}
+      - name: Automatic migration from published AU2 and next version
+        run: python -u tools/pablicus-release/test_auto_update_native.py --engine ${{ matrix.engine }}
+      - name: Retain rings, actual send queue and media
+        run: |
+          python tools/pablicus-release/test_avatar_rings.py --engine ${{ matrix.engine }}
+          python tools/pablicus-release/test_send_queue_v5.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+          python tools/pablicus-release/test_media_size_v5.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+      - name: Retain full application geometry, gestures and header
+        run: |
+          python tools/pablicus-release/test_media_geometry.py --root vision-talk/pablicus --engine ${{ matrix.engine }} --full-app
+          python tools/pablicus-release/test_media_presentation.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+          python tools/pablicus-release/test_chat_header.py --engine ${{ matrix.engine }}
+      - name: Retained feature and upgrade regression
+        run: |
+          python - <<'PY'
+          import subprocess,sys
+          for f in ['f06','f05','f04']:
+              subprocess.run([sys.executable,'-u','tools/pablicus-'+f+'/test_browser.py','--root','vision-talk/pablicus','--engine','${{ matrix.engine }}'],check=True,timeout=180)
+          PY
+          python tools/pablicus-release/run_bounded.py --engine ${{ matrix.engine }} --seconds 150
+          python tools/pablicus-r2/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+          python tools/pablicus-f03/test_browser.py --root vision-talk/pablicus --engine ${{ matrix.engine }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pablicus-gl3-${{ matrix.engine }}
+          path: results/
+          retention-days: 14
+          if-no-files-found: error
+  finalize:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pablicus-gl3-*
+          path: verified
+      - name: Preserve only exact tested runtime and unchanged delivery/update code
+        run: |
+          set -euo pipefail
+          python tools/pablicus-release/prepare_glass_footer_gl3.py
+          python tools/pablicus-release/build_release.py --source-sha "$GITHUB_SHA"
+          python tools/pablicus-release/build_release.py --check
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          r=pathlib.Path('vision-talk/pablicus')
+          for engine in ['chromium','webkit']:
+              f=pathlib.Path('verified')/('pablicus-gl3-'+engine)
+              assert (f/'release.json').read_bytes()==(r/'release.json').read_bytes()
+              for name,minimum in [('glass-footer-',44),('auto-native-',21),('rings-',43),('send-v5-',17),('media-v5-',23),('media-geometry-',52),('presentation-',71)]:
+                  e=json.loads((f/(name+engine+'.json')).read_text())
+                  assert e['failed']==0 and e['passed']>=minimum,(name,e['passed'],e['failed'])
+                  for n,d in e['source_sha256'].items():assert hashlib.sha256((r/n).read_bytes()).hexdigest()==d,n
+              bounded=json.loads((f/(engine+'-bounded.json')).read_text())
+              assert len(bounded)==3 and all(e['passed'] for e in bounded)
+              assert json.loads((f/('header-'+engine+'.json')).read_text())['passed']>=70
+          changes=subprocess.check_output(['git','diff','--name-only','ec27c41fd3304034af7d5554015c189c79c3425b','--','vision-talk/pablicus'],text=True).splitlines()
+          allowed={'glass-ui.css','public-ui-foundation.css','index.html','sw.js','release-info.js','release.json','release-p01r2.json'}
+          assert all(pathlib.Path(p).name in allowed for p in changes),changes
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vision-talk/pablicus tools/pablicus-release/build_release.py tools/pablicus-release/test_media_geometry.py tools/pablicus-release/test_chat_header.py
+          git commit -m 'build(pablicus): retain verified UI-GL3 glass capsule and uncut footer'
+          git push origin HEAD:fix/pablicus-glass-footer-gl3-20260921
+          mkdir artifact
+          git rev-parse HEAD > artifact/GENERATED_COMMIT.txt
+          cp vision-talk/pablicus/release.json artifact/release.json
+          tar -czf artifact/runtime.tar.gz vision-talk/pablicus
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pablicus-gl3-runtime
+          path: artifact/
+          retention-days: 14
+          if-no-files-found: error
