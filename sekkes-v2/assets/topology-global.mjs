@@ -1,4 +1,5 @@
 // Shared evolving scene: mounted once outside the route host; audio is read-only.
+import {applyTopologyChrome} from './topology-chrome.mjs';
 import {readLevels} from './lake-visual.mjs';
 const scenes=new WeakMap();
 const bounded=n=>Number.isFinite(n)?Math.min(1,Math.max(0,n)):0;
@@ -14,7 +15,11 @@ export function mountTopology(scene,doc=document){
   const motion=doc.documentElement.dataset.motion!=='reduced'&&!reduced.matches;
   try{frame.contentWindow?.postMessage({type:'sekkes-topology-state',active,motion,user:active?levels.user:0,agent:active?levels.agent:0},win.location.origin);}catch{/* Decoration never blocks input. */}
  }
- function message(e){if(e.source===frame.contentWindow&&e.origin===win.location.origin&&e.data?.type==='sekkes-topology-ready')refresh();}
+ function message(e){
+  if(e.source!==frame.contentWindow||e.origin!==win.location.origin)return;
+  if(e.data?.type==='sekkes-topology-ready')refresh();
+  if(e.data?.type==='sekkes-topology-palette')applyTopologyChrome(doc,e.data.rgb);
+ }
  const observer=new win.MutationObserver(refresh);
  observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion']});
 
