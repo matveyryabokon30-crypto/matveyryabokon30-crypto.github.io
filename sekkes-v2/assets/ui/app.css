@@ -182,7 +182,7 @@ html,body,#shell,.home-screen,.home-conversation,.home-conversation .messages,.c
 /* UI9.14: a single persistent full-viewport scene behind every route. */
 .global-topology{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;contain:strict;background:#002222}
 .topology-evolving{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none}
-.global-topology:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(var(--topology-chrome,#1e3c2c),transparent calc(env(safe-area-inset-top,0px) + 110px),transparent 75%,#00222255)}
+.global-topology:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(transparent 75%,#00222255)}
 #shell,#shell[data-route=home]{z-index:1;background:transparent;height:100%;min-height:100%;--text:#f2f6ff;--text-muted:#d5e2ed;--focus:#a3ecff;--line:rgba(221,240,248,.34);--surface:rgba(8,28,39,.80);--surface-raised:rgba(13,37,49,.88);--glass:rgba(9,30,40,.64);--selected:rgba(20,59,78,.86);color:var(--text)}
 #shell .profile-screen,#shell .world-screen{background:transparent}
 #shell .world-screen>.world-art{display:none}
@@ -202,3 +202,9 @@ html,body,#shell,.home-screen,.home-conversation,.home-conversation .messages,.c
 
 /* The shared dark material also fills the iOS safe area in either UI theme. */
 html,html[data-theme=light],body{background:var(--topology-chrome,#1e3c2c);color-scheme:dark}
+/* A real, short fixed edge is sampled live by WebKit. Full-height containers
+   may retain their first sampled colour. Twelve px also clears its thin-edge
+   exclusion. The separate feather joins that colour without a visible seam. */
+.topology-chrome-edge{position:fixed;z-index:60;left:0;right:0;top:0;height:max(12px,env(safe-area-inset-top,0px));pointer-events:none;background-color:var(--topology-chrome,#1e3c2c)}
+.topology-chrome-fog{position:fixed;z-index:0;left:0;right:0;top:max(12px,env(safe-area-inset-top,0px));height:110px;pointer-events:none;background:linear-gradient(var(--topology-chrome,#1e3c2c),transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent)}
+[data-transparency=off] .topology-chrome-fog{-webkit-backdrop-filter:none;backdrop-filter:none}

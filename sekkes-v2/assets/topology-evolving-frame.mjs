@@ -1,13 +1,13 @@
 import {ClothField} from './topology-cloth.mjs';
-import {SceneClock,FlowField,geometry,paletteAt} from './topology-evolving-core.mjs';
+import {SceneClock,FlowField,geometry,renderDensity,paletteAt} from './topology-evolving-core.mjs';
 // One persistent sketch for all routes. Audio only modulates presentation.
 export function installEvolving(win,doc){
  const clock=new SceneClock();let state={active:false,motion:true,user:0,agent:0},levels={user:0,agent:0};
- let sketch=null,ready=false,disposed=false,resizeTimer=0,field=null,particles=null,ages=null,cloth=null,trails=null,trailCx=null,cx,width=1,height=1,frame=0,lastChrome=-Infinity;
+ let sketch=null,ready=false,disposed=false,resizeTimer=0,field=null,particles=null,ages=null,cloth=null,trails=null,trailCx=null,cx,width=1,height=1,frame=0,density=1,lastChrome=-Infinity;
  const count=4500,vector=new Float32Array(2),temp=new Float32Array(2);
  function pause(){sketch?.noLoop();clock.pause();}
  function apply(){if(!ready)return;if(state.active&&state.motion&&!doc.hidden)sketch.loop();else pause();}
- function diagnostic(){const canvas=doc.querySelector('canvas');if(!canvas)return;canvas.dataset.elapsed=clock.seconds.toFixed(2);canvas.dataset.epoch=String(field?.epoch||0);canvas.dataset.palette=String(Math.floor(clock.seconds/100)%8);canvas.dataset.frame=String(frame);}
+ function diagnostic(){const canvas=doc.querySelector('canvas');if(!canvas)return;canvas.dataset.elapsed=clock.seconds.toFixed(2);canvas.dataset.epoch=String(field?.epoch||0);canvas.dataset.palette=String(Math.floor(clock.seconds/100)%8);canvas.dataset.frame=String(frame);canvas.dataset.angle=cloth.angle.toFixed(3);canvas.dataset.density=String(density);}
  function chrome(force=false){
   if(!force&&clock.seconds-lastChrome<.25)return;lastChrome=clock.seconds;
   win.parent.postMessage({type:'sekkes-topology-palette',rgb:paletteAt(clock.seconds)},win.location.origin);
@@ -33,21 +33,22 @@ export function installEvolving(win,doc){
   trailCx.strokeStyle=`rgba(255,255,255,${.13+gain*.07})`;trailCx.lineWidth=.75;trailCx.stroke();
   // Recolour the whole mask: old colours cannot accumulate into grey ghosts.
   trailCx.globalCompositeOperation='source-in';trailCx.fillStyle=`rgb(${rgb.join(',')})`;trailCx.fillRect(0,0,width,height);
-  cloth.update(field);cloth.draw(cx,color.map(Math.round));
-  cx.globalCompositeOperation='screen';cx.drawImage(trails,0,0);cx.globalCompositeOperation='source-over';frame++;
+  if(prime)return;
+  cloth.update(field,clock.seconds);cloth.draw(cx,color.map(Math.round));
+  cx.globalCompositeOperation='screen';cx.drawImage(trails,0,0,width,height);cx.globalCompositeOperation='source-over';frame++;
  }
  function start(){
   if(disposed)return;
   try{sketch=new win.p5(p=>{
    p.setup=()=>{
-    const size=geometry(win.innerWidth,win.innerHeight);width=size.width;height=size.height;p.pixelDensity(1);
+    const size=geometry(win.innerWidth,win.innerHeight);width=size.width;height=size.height;density=renderDensity(win.devicePixelRatio,width,height,win.innerWidth);p.pixelDensity(density);
     const renderer=p.createCanvas(width,height);renderer.parent(doc.querySelector('#topology'));cx=p.drawingContext;
     field=new FlowField((x,y,z)=>p.noise(x,y,z),width,height,clock.seconds);
-    cloth=new ClothField(width,height);trails=doc.createElement('canvas');trails.width=width;trails.height=height;trailCx=trails.getContext('2d');
+    cloth=new ClothField(width,height);trails=doc.createElement('canvas');trails.width=Math.round(width*density);trails.height=Math.round(height*density);trailCx=trails.getContext('2d');trailCx.setTransform(density,0,0,density,0,0);
     ages=new Float32Array(count);particles=new Float32Array(count*4);for(let i=0;i<count;i++){ages[i]=p.random(17);particles[i*4]=p.random(width+200);particles[i*4+1]=p.random(height+200);}
     cx.fillStyle='#002222';cx.fillRect(0,0,width,height);
     // A formed first still also serves Reduced Motion; no empty canvas flash.
-    for(let i=0;i<24;i++)step(1/60,true);
+    for(let i=0;i<23;i++)step(1/60,true);step(1/60);
     p.frameRate(30);p.noLoop();ready=true;diagnostic();
     win.parent.postMessage({type:'sekkes-topology-ready'},win.location.origin);chrome(true);
     // p5 setup can run inside the constructor before sketch is assigned.
@@ -63,13 +64,13 @@ export function installEvolving(win,doc){
   },doc.querySelector('#topology'));}catch{pause();}
  }
  function resize(){win.clearTimeout(resizeTimer);resizeTimer=win.setTimeout(()=>{
-  if(!ready||disposed)return;const size=geometry(win.innerWidth,win.innerHeight);if(size.width===width&&size.height===height)return;
+  if(!ready||disposed)return;const size=geometry(win.innerWidth,win.innerHeight),nextDensity=renderDensity(win.devicePixelRatio,size.width,size.height,win.innerWidth);if(size.width===width&&size.height===height&&nextDensity===density)return;
   // Keep the same sketch, seed, simulation time and normalized particle paths.
-  const old=doc.createElement('canvas');old.width=width;old.height=height;old.getContext('2d').drawImage(trails,0,0);
+  const old=doc.createElement('canvas');old.width=trails.width;old.height=trails.height;old.getContext('2d').drawImage(trails,0,0);
   const sx=(size.width+200)/(width+200),sy=(size.height+200)/(height+200);
   for(let i=0;i<count;i++){particles[i*4]*=sx;particles[i*4+1]*=sy;}
-  width=size.width;height=size.height;sketch.resizeCanvas(width,height,true);cx=sketch.drawingContext;
-  field.resize(width,height,clock.seconds);cloth.resize(width,height);trails.width=width;trails.height=height;trailCx=trails.getContext('2d');trailCx.drawImage(old,0,0,width,height);cloth.update(field);cloth.draw(cx,paletteAt(clock.seconds).map(Math.round));cx.globalCompositeOperation='screen';cx.drawImage(trails,0,0);cx.globalCompositeOperation='source-over';diagnostic();
+  width=size.width;height=size.height;density=nextDensity;sketch.pixelDensity(density);sketch.resizeCanvas(width,height,true);cx=sketch.drawingContext;
+  field.resize(width,height,clock.seconds);cloth.resize(width,height);trails.width=Math.round(width*density);trails.height=Math.round(height*density);trailCx=trails.getContext('2d');trailCx.setTransform(density,0,0,density,0,0);trailCx.drawImage(old,0,0,width,height);cloth.update(field,clock.seconds);cloth.draw(cx,paletteAt(clock.seconds).map(Math.round));cx.globalCompositeOperation='screen';cx.drawImage(trails,0,0,width,height);cx.globalCompositeOperation='source-over';diagnostic();
  },180);}
  function message(e){
   if(e.source!==win.parent||e.origin!==win.location.origin||e.data?.type!=='sekkes-topology-state')return;

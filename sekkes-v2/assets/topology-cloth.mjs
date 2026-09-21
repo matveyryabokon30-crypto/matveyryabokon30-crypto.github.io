@@ -1,39 +1,68 @@
-// Persistent material from the same field as the moving particles.
-// A bounded displacement lattice keeps neighbouring threads apart even at sinks.
-export const THREAD_GAP=1.5, CLOTH_MARGIN=150;
+// Persistent fibres share the particle field, but cannot drain into its sinks.
+// A rotating, overscanned material plane leaves no privileged screen direction.
+export const THREAD_GAP=1.7, CLOTH_MARGIN=150;
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const hash=n=>{const v=Math.sin(n*127.1+311.7)*43758.5453;return v-Math.floor(v)};
 export class ClothField{
  constructor(width,height){this.resize(width,height);}
- resize(width,height){this.width=width;this.height=height;this.cellX=36;this.cellY=28;this.cols=Math.ceil((width+2*CLOTH_MARGIN)/this.cellX)+1;this.rows=Math.ceil((height+2*CLOTH_MARGIN)/this.cellY)+1;this.values=new Float32Array(this.cols*this.rows);this.vector=new Float32Array(2);this.temp=new Float32Array(2);}
- update(field){
-  const {cols,rows,values,cellX,cellY}=this,limit=cellX*.55;
-  for(let row=0;row<rows;row++){
-   for(let col=0;col<cols;col++){
-    field.sample(col*cellX-CLOTH_MARGIN+100,row*cellY-CLOTH_MARGIN+100,this.vector,this.temp);
-    const [x,y]=this.vector;values[row*cols+col]=110*(x+.25*y)/(Math.hypot(x,y)+.035);
-   }
-   for(let col=1;col<cols;col++){const i=row*cols+col;values[i]=Math.max(values[i-1]-limit,Math.min(values[i-1]+limit,values[i]));}
-   for(let col=cols-2;col>=0;col--){const i=row*cols+col;values[i]=Math.max(values[i+1]-limit,Math.min(values[i+1]+limit,values[i]));}
+ resize(width,height){
+  this.width=width;this.height=height;this.extent=Math.hypot(width,height)/2+CLOTH_MARGIN;
+  this.cellX=48;this.cellY=38;
+  this.cols=Math.ceil(2*this.extent/this.cellX)+3;this.rows=Math.ceil(2*this.extent/this.cellY)+3;
+  this.values=new Float32Array(this.cols*this.rows);this.vector=new Float32Array(2);this.temp=new Float32Array(2);
+  this.angle=-.72;this.cos=Math.cos(this.angle);this.sin=Math.sin(this.angle);
+  this.strands=[];
+  // Fixed, gently irregular spacing breaks the screen-aligned interference grid.
+  for(let x=-this.extent,i=0;x<=this.extent+THREAD_GAP;i++){
+   const light=clamp(.45+.27*Math.sin(i*.039)+.2*Math.sin(i*.013+1.7)+.08*(hash(i+800)-.5),0,.999);
+   this.strands.push({x,band:Math.floor(light*12)});x+=THREAD_GAP*(.84+.32*hash(i));
   }
  }
- displacement(x,row){const t=(x+CLOTH_MARGIN)/this.cellX,col=Math.max(0,Math.min(this.cols-2,Math.floor(t))),mix=Math.max(0,Math.min(1,t-col)),i=row*this.cols+col;return this.values[i]*(1-mix)+this.values[i+1]*mix;}
+ update(field,seconds=0){
+  this.angle=-.72+seconds*.008+.32*Math.sin(seconds*.019);
+  this.cos=Math.cos(this.angle);this.sin=Math.sin(this.angle);
+  const {cols,rows,values,cellX,cellY,cos,sin,extent}=this,limit=cellX*.5;
+  for(let row=0;row<rows;row++){
+   const v=(row-1)*cellY-extent;
+   for(let col=0;col<cols;col++){
+    const u=(col-1)*cellX-extent;
+    field.sample(this.width/2+u*cos-v*sin+100,this.height/2+u*sin+v*cos+100,this.vector,this.temp);
+    const [x,y]=this.vector;
+    values[row*cols+col]=110*(x*cos+y*sin)/(Math.hypot(x,y)+.035);
+   }
+   // The derivative bound survives cubic B-spline interpolation. Threads stay
+   // distinct even where the shared particle field forms bright wandering knots.
+   for(let col=1;col<cols;col++){const i=row*cols+col;values[i]=clamp(values[i],values[i-1]-limit,values[i-1]+limit);}
+   for(let col=cols-2;col>=0;col--){const i=row*cols+col;values[i]=clamp(values[i],values[i+1]-limit,values[i+1]+limit);}
+  }
+ }
+ displacement(x,row){
+  const t=(x+this.extent)/this.cellX+1,col=Math.floor(t),f=t-col,a=1-f,base=clamp(row,0,this.rows-1)*this.cols;
+  const at=k=>this.values[base+clamp(k,0,this.cols-1)];
+  return (a*a*a*at(col-1)+(3*f*f*f-6*f*f+4)*at(col)+(-3*f*f*f+3*f*f+3*f+1)*at(col+1)+f*f*f*at(col+2))/6;
+ }
+ point(x,row,out){
+  const u=x+this.displacement(x,row),v=(row-1)*this.cellY-this.extent;
+  out[0]=this.width/2+u*this.cos-v*this.sin;out[1]=this.height/2+u*this.sin+v*this.cos;return out;
+ }
  draw(cx,color){
   cx.globalCompositeOperation='source-over';cx.globalAlpha=1;cx.fillStyle='#002222';cx.fillRect(0,0,this.width,this.height);
-  const count=Math.ceil((this.width+2*CLOTH_MARGIN)/THREAD_GAP);
-  // Stable brightness bands give the material fine fibres and broad ribbons.
-  for(let band=0;band<6;band++){
+  cx.save();cx.translate(this.width/2,this.height/2);cx.rotate(this.angle);cx.lineWidth=.8;
+  // Cubic B-spline in both axes: no corners in the flow or kinks between fibres.
+  const y=row=>(row-1)*this.cellY-this.extent;
+  for(let band=0;band<12;band++){
    cx.beginPath();
-   for(let strand=0;strand<count;strand++){
-    const luminance=(Math.sin(strand*.061)+Math.sin(strand*.019+1.7)+2)/4;
-    if(Math.min(5,Math.floor(luminance*6))!==band)continue;
-    const x=strand*THREAD_GAP-CLOTH_MARGIN;
-    let px=x+this.displacement(x,0),py=-CLOTH_MARGIN;cx.moveTo(px,py);
-    for(let row=1;row<this.rows;row++){
-     const nx=x+this.displacement(x,row),ny=row*this.cellY-CLOTH_MARGIN;
-     cx.quadraticCurveTo(px,py,(px+nx)*.5,(py+ny)*.5);px=nx;py=ny;
+   for(const strand of this.strands){
+    if(strand.band!==band)continue;
+    const x=strand.x;let a=x+this.displacement(x,0),b=x+this.displacement(x,1),c=x+this.displacement(x,2);
+    cx.moveTo((a+4*b+c)/6,y(1));
+    for(let row=1;row<this.rows-2;row++){
+     const d=x+this.displacement(x,row+2);
+     cx.bezierCurveTo((2*b+c)/3,y(row)+this.cellY/3,(b+2*c)/3,y(row)+2*this.cellY/3,(b+4*c+d)/6,y(row+1));a=b;b=c;c=d;
     }
-    cx.lineTo(px,py);
    }
-   cx.lineWidth=.82;cx.strokeStyle=`rgba(${color.join(',')},${.38+band*.055})`;cx.stroke();
+   cx.strokeStyle=`rgba(${color.join(',')},${.39+band*.027})`;cx.stroke();
   }
+  cx.restore();
  }
 }

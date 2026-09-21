@@ -1,5 +1,5 @@
 // Shared evolving scene: mounted once outside the route host; audio is read-only.
-import {applyTopologyChrome} from './topology-chrome.mjs';
+import {applyTopologyChrome,mountTopologyChrome} from './topology-chrome.mjs';
 import {readLevels} from './lake-visual.mjs';
 const scenes=new WeakMap();
 const bounded=n=>Number.isFinite(n)?Math.min(1,Math.max(0,n)):0;
@@ -7,6 +7,7 @@ export function mountTopology(scene,doc=document){
  const win=doc.defaultView,frame=doc.createElement('iframe');
  frame.className='topology-evolving';frame.title='Анимированный фон Topology';frame.setAttribute('aria-hidden','true');frame.tabIndex=-1;
  frame.src=new URL('./topology-evolving.html',import.meta.url).href;
+ const chrome=mountTopologyChrome(doc);
  let disposed=false,levels={user:0,agent:0};
  const reduced=win.matchMedia('(prefers-reduced-motion: reduce)');
  function refresh(){
@@ -26,7 +27,7 @@ export function mountTopology(scene,doc=document){
  win.addEventListener('message',message);doc.addEventListener('visibilitychange',refresh);reduced.addEventListener('change',refresh);
  frame.addEventListener('load',refresh);scene.append(frame);
  const controller={setLevels(value){levels={user:bounded(value.user),agent:bounded(value.agent)};refresh();},dispose(){
-  if(disposed)return;disposed=true;observer.disconnect();win.removeEventListener('message',message);doc.removeEventListener('visibilitychange',refresh);reduced.removeEventListener('change',refresh);frame.removeEventListener('load',refresh);frame.remove();scenes.delete(scene);
+  if(disposed)return;disposed=true;observer.disconnect();win.removeEventListener('message',message);doc.removeEventListener('visibilitychange',refresh);reduced.removeEventListener('change',refresh);frame.removeEventListener('load',refresh);frame.remove();chrome.dispose();scenes.delete(scene);
  }};
  scenes.set(scene,controller);refresh();return controller;
 }

@@ -14,13 +14,15 @@ export class SceneClock{
  pause(){this.previous=null;}
  tick(now){const dt=this.previous===null?0:Math.max(0,(now-this.previous)/1000);this.previous=now;this.seconds+=dt;return Math.min(.08,dt);}
 }
+// Keep a sharp backing store on Retina screens without unbounded canvas memory.
+export function renderDensity(dpr,width,height,cssWidth=width){return Math.max(1,Math.min(3,Math.max(2,(Number.isFinite(dpr)?dpr:1)*cssWidth/width),Math.sqrt(6000000/(width*height))));}
 export function geometry(width,height){const scale=Math.min(1,850/width,1200/height);return {width:Math.max(1,Math.round(width*scale)),height:Math.max(1,Math.round(height*scale))};}
 // Same minimum-to-maximum noise-gradient principle as the original, sampled
 // at eight directions on a coarser lattice and interpolated between epochs.
 export function makeField(noise,width,height,epoch){
  const cell=20,cols=Math.ceil((width+200)/cell)+1,rows=Math.ceil((height+200)/cell)+1;
  const values=new Float32Array(cols*rows*2),z=epoch*.43;
- const radius=.1,scale=.0012;
+ const radius=.1,scale=.00055;
  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
   let low=Infinity,high=-Infinity,lx=0,ly=0,hx=0,hy=0;
   for(let k=0;k<8;k++){
