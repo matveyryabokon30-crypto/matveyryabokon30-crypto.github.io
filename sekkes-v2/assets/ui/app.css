@@ -222,3 +222,5 @@ html,html[data-theme=light],body{background:var(--topology-chrome,#1e3c2c);color
 /* One-tap return to the newest message, inside the conversation. */
 .chat-bottom{position:absolute;right:16px;bottom:12px;z-index:3;width:46px;height:46px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(232,246,255,.55);background:rgba(15,38,60,.86);color:#f2f6ff;box-shadow:0 4px 18px #0005;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .chat-bottom[hidden]{display:none}.chat-bottom svg{width:24px;height:24px}.chat-bottom:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+.message-time{display:block;margin-top:8px;text-align:right;font-size:11px;line-height:1.4;font-weight:300;opacity:.66;font-variant-numeric:tabular-nums}

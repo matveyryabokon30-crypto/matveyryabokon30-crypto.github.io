@@ -1,3 +1,5 @@
+import {messageTime} from './message-time.mjs';
+import {autoUpdate} from './auto-update.mjs';
 import {messagePosition,compareMessages} from './message-order.mjs';
 import {mountLivingIcons} from './living-icons.mjs';
 import {mountTopology} from '../topology-global.mjs';
@@ -14,6 +16,8 @@ let mounted=false;
 export function initialize({recorderOptions={},dictationOptions={}}={}){
  if(mounted)return;mounted=true;
  const lifetime=new AbortController(),signal=lifetime.signal,cache=new Map(),pendingMessages=[],attachmentURLs=new Set();
+ const messageRecords=new Map(),resumeKey='sekkes:update-resume:'+location.pathname;
+ let resume=null;try{resume=JSON.parse(sessionStorage.getItem(resumeKey)||'null');sessionStorage.removeItem(resumeKey);if(!resume||Date.now()-resume.savedAt>900000)resume=null}catch{}
  let visual;const background=el('div','global-topology');background.id='appTopology';background.setAttribute('aria-hidden','true');document.body.prepend(background);try{visual=mountTopology(background)}catch{/* Decoration cannot block the application. */}
  let generation=0,current=null,voice='idle',swRegistration=null,recording,dictation,menu,textPending=false;
  const app=$('#shell'),host=$('#routeHost'),dialog=$('#dialog'),composer=$('#composer'),stop=$('#micTestLink'),status=$('#aiStateLabel'),nav=$('#menuItems'),recordButton=$('#micButton'),draft=$('#draft'),controls=$('#conversationControls');
@@ -27,7 +31,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   flushMessages(){if(!ctx.messages)return;for(const item of pendingMessages.splice(0))appendMessage(...item)},
   sendError,
   renderVoice(response){appendMessage('user',response.text);appendMessage('ai',response.reply)},
-  refresh(){if(ctx.runtime()?.busy||recording?.busy||dictation?.busy){notify('Сначала заверши разговор или дождись ответа.');return}if(ctx.runtime()?.dirty&&!confirm('Обновить приложение? Текущий текст на экране будет сброшен.'))return;if(swRegistration?.waiting){notify('Обновление готово. Закрой вкладки SEKKES Preview и открой приложение снова.');return}swRegistration?.update().catch(()=>{});location.reload()}
+  refresh(){/* Updates are applied automatically. */}
  };
  function notify(text){$('#toast').textContent=text;$('#toast').hidden=false;clearTimeout(notify.timer);notify.timer=setTimeout(()=>$('#toast').hidden=true,6500)}
  function showImage(url,alt){const img=el('img','viewer-image');img.src=url;img.alt=alt;$('#dialogContent').replaceChildren(el('h2','',alt),img);$('#dialogContent').firstChild.id='dialogTitle';dialog.showModal()}
@@ -36,7 +40,11 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   const list=ctx.messages,atEnd=list.scrollHeight-list.scrollTop-list.clientHeight<100;
   const previous=meta.id?[...list.children].find(n=>n.dataset.messageId===meta.id):null;
   const node=message(role,text,{showImage});if(meta.id)node.dataset.messageId=meta.id;node.dataset.at=messagePosition(previous?.dataset.at,meta.at);
-  if(meta.state)node.dataset.delivery=meta.state;if(previous)previous.replaceWith(node);else list.append(node);
+  const state=meta.state||((previous?.dataset.delivery==='failed'||previous?.dataset.delivery==='pending')&&meta.at?'sent':previous?.dataset.delivery)||'';
+  const stampAt=meta.stampAt||meta.at||(state==='sent'&&previous?.dataset.delivery!=='sent'?new Date().toISOString():previous?.dataset.stampAt)||node.dataset.at;
+  node.dataset.stampAt=stampAt;const stamp=messageTime(stampAt,state,role);if(stamp){const time=el('time','message-time',stamp.text);time.dateTime=stamp.iso;time.title=stamp.title;time.setAttribute('aria-label',stamp.title);node.append(time)}
+  if(meta.id)messageRecords.set(meta.id,{role,text,meta:{...meta,state,at:node.dataset.at,stampAt}});
+  if(state)node.dataset.delivery=state;if(previous)previous.replaceWith(node);else list.append(node);
   cache.get('home')?.messageAdded();if(atEnd)list.scrollTop=list.scrollHeight;
  }
  function sendError(code){
@@ -69,8 +77,8 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
    if(older)list.scrollTop=oldTop+list.scrollHeight-oldHeight;else if(oldHeight-oldTop-list.clientHeight<100||!oldIds.size)requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight});
   },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render(role,text,meta){ctx.showConversation();appendMessage(role,text,meta);requestAnimationFrame(()=>{if(ctx.messages)ctx.messages.scrollTop=ctx.messages.scrollHeight})},beforeText(){ctx.showConversation()},
   get captureBusy(){return Boolean(recording?.busy||dictation?.busy)},sendRecording(){recording?.send()},
-  textBusy(busy){textPending=busy;ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){ctx.account=user;ctx.profileUpdate?.()},
-  reset(){ctx.pauseMedia();dictation?.cancel();recording?.reset();for(const url of attachmentURLs)URL.revokeObjectURL(url);attachmentURLs.clear();pendingMessages.length=0;ctx.messages?.replaceChildren(el('p','empty-state','Диалог пуст.'));cache.get('home')?.reset();ctx.account=null;ctx.profileUpdate?.()},
+  textBusy(busy){textPending=busy;ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){ctx.account=user;ctx.profileUpdate?.();if(resume&&user?.id===resume.uid){const saved=resume;resume=null;draft.value=saved.draft||'';for(const row of saved.messages||[])appendMessage(row.role,row.text,row.meta);ctx.runtime()?.saveDraft?.();updateSend();if(saved.open)ctx.showConversation();requestAnimationFrame(()=>{if(ctx.messages)ctx.messages.scrollTop=saved.scrollTop||0})}},
+  reset(){resume=null;messageRecords.clear();try{sessionStorage.removeItem(resumeKey)}catch{}ctx.pauseMedia();dictation?.cancel();recording?.reset();for(const url of attachmentURLs)URL.revokeObjectURL(url);attachmentURLs.clear();pendingMessages.length=0;ctx.messages?.replaceChildren(el('p','empty-state','Диалог пуст.'));cache.get('home')?.reset();ctx.account=null;ctx.profileUpdate?.()},
   voiceEvent(event){if(event.type==='response.audio.delta'||event.type==='response.output_audio.delta')updateVoice('speaking');if(event.type==='response.audio.done'||event.type==='response.output_audio.done'||event.type==='input_audio_buffer.speech_started')updateVoice('listening')}
  };
  for(const s of sections){const a=el('a','rail-item');a.href=s.route;a.innerHTML=icon(s.icon);a.append(el('span','rail-label',s.title));a.dataset.route=s.id;a.title=s.title;nav.append(a)}
@@ -98,6 +106,9 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  document.addEventListener('visibilitychange',()=>app.classList.toggle('document-hidden',document.hidden),{signal});
  addEventListener('offline',()=>notify('Нет сети. Черновик сохранён на экране.'),{signal});
  watchPreferences(signal);let livingIcons;try{livingIcons=mountLivingIcons(document)}catch{/* Vector icons remain usable if the decorative renderer is unavailable. */}route();
- if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).then(reg=>{swRegistration=reg}).catch(()=>{});
- return {dispose(){livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
+ const stopUpdates='serviceWorker' in navigator?autoUpdate({
+  canReload:()=>Boolean(ctx.runtime()?.updateReady)&&!ctx.runtime().busy&&!textPending&&!recording?.busy&&!recording?.hasAudio&&!dictation?.busy&&!dialog.open,
+  preserve:()=>{ctx.runtime()?.saveDraft?.();sessionStorage.setItem(resumeKey,JSON.stringify({uid:ctx.account?.id,savedAt:Date.now(),draft:draft.value,messages:[...messageRecords.values()],open:Boolean(ctx.messages&&!ctx.messages.closest('[hidden]')),scrollTop:ctx.messages?.scrollTop||0}))}
+ }):()=>{};
+ return {dispose(){stopUpdates();livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
 }

@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {messageTime} from '../assets/ui/message-time.mjs';
+import {autoUpdate} from '../assets/ui/auto-update.mjs';
+assert.equal(messageTime('bad','','user'),null);
+assert.match(messageTime('2026-09-22T12:04:00Z','failed','user').text,/Не доставлено/);
+assert.match(messageTime('2026-09-22T12:04:00Z','pending','user').text,/Отправляется/);
+assert.match(messageTime('2026-09-22T12:04:00Z','sent','user').title,/Доставлено/);
+assert.match(messageTime('2026-09-22T12:04:00Z','','ai').title,/Получено/);
+let now=10000;const originalNow=Date.now;Date.now=()=>now;
+const sw=new EventTarget(),doc=new EventTarget(),events=new EventTarget();doc.hidden=false;sw.controller={};let updates=0,reloads=0,saves=0,busy=true,storageFails=false;
+sw.register=async()=>({update:async()=>{updates++}});
+const timers=[];const dispose=autoUpdate({sw,doc,events,canReload:()=>!busy,preserve:()=>{if(storageFails)throw Error('quota');saves++},reload:()=>reloads++,every:f=>(timers.push(f),timers.length),clear:()=>{}});
+await Promise.resolve();now+=5000;sw.dispatchEvent(new Event('controllerchange'));assert.equal(reloads,0);
+busy=false;doc.hidden=true;timers[1]();assert.equal(reloads,0);
+doc.hidden=false;doc.dispatchEvent(new Event('input'));timers[1]();assert.equal(reloads,0);
+now+=4000;storageFails=true;timers[1]();assert.equal(reloads,0);
+storageFails=false;timers[1]();assert.equal(reloads,1);assert.equal(saves,1);timers[1]();assert.equal(reloads,1);dispose();Date.now=originalNow;
+console.log('PASS timestamps, busy/hidden/typing guards, storage failure, one automatic reload');
+const source=fs.readFileSync(new URL('../sw.js',import.meta.url),'utf8');
+async function install(fail){let skipped=0,claimed=0,puts=0;const handlers={};const context={URL,Promise,self:{location:{href:'https://example.com/sekkes-v2/sw.js'},addEventListener:(type,fn)=>handlers[type]=fn,skipWaiting:async()=>skipped++,clients:{claim:async()=>claimed++}},caches:{open:async()=>({put:async()=>puts++})},fetch:async()=>({ok:!fail})};vm.runInNewContext(source,context);let completion;handlers.install({waitUntil:p=>completion=p});if(fail){await assert.rejects(completion);assert.equal(skipped,0);assert.equal(puts,0)}else{await completion;assert.equal(skipped,1);assert.ok(puts>40);handlers.activate({waitUntil:p=>completion=p});await completion;assert.equal(claimed,1)}}
+await install(true);await install(false);console.log('PASS incomplete shell rejected, complete shell activates');
