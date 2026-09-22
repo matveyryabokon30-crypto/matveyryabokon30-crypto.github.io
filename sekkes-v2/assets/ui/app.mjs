@@ -1,3 +1,4 @@
+import {messagePosition,compareMessages} from './message-order.mjs';
 import {mountLivingIcons} from './living-icons.mjs';
 import {mountTopology} from '../topology-global.mjs';
 import {sections,routeId} from './registry.mjs';
@@ -34,7 +35,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   if(!ctx.messages){pendingMessages.push([role,text,meta]);return;}
   const list=ctx.messages,atEnd=list.scrollHeight-list.scrollTop-list.clientHeight<100;
   const previous=meta.id?[...list.children].find(n=>n.dataset.messageId===meta.id):null;
-  const node=message(role,text,{showImage});if(meta.id)node.dataset.messageId=meta.id;if(meta.at)node.dataset.at=meta.at;
+  const node=message(role,text,{showImage});if(meta.id)node.dataset.messageId=meta.id;node.dataset.at=messagePosition(previous?.dataset.at,meta.at);
   if(meta.state)node.dataset.delivery=meta.state;if(previous)previous.replaceWith(node);else list.append(node);
   cache.get('home')?.messageAdded();if(atEnd)list.scrollTop=list.scrollHeight;
  }
@@ -42,7 +43,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   composer.dataset.error=code||'';
   const labels={BUDGET_STOP:'Достигнут лимит запросов',JOURNAL_SAVE_FAILED:'Не удалось сохранить сообщение',NotAllowedError:'Нет доступа к микрофону',MIC_DENIED:'Нет доступа к микрофону'};
   const label=code?(labels[code]||'Не удалось отправить. Повторить отправку'):'Отправить сообщение';
-  $('#sendButton').setAttribute('aria-label',label);$('#sendButton').title=label;
+  $('#sendButton').setAttribute('aria-label',label);$('#sendButton').title=label;if(code)notify(label);
  }
  function updateSend(){
   const hasText=draft.value.trim().length>0,hasAudio=Boolean(recording?.hasAudio);
@@ -63,8 +64,8 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  }
  window.SekkesUI={sendError,history(items,older=false){
    if(!ctx.messages){for(const row of items)pendingMessages.push([row.speaker==='user'?'user':'ai',row.text,{id:row.id,at:row.at}]);return;}const list=ctx.messages,oldHeight=list.scrollHeight,oldTop=list.scrollTop;const oldIds=new Set([...list.children].map(n=>n.dataset.messageId));
-   for(const row of items){appendMessage(row.speaker==='user'?'user':'ai',row.text,{id:row.id});const node=[...list.children].find(n=>n.dataset.messageId===row.id);if(node)node.dataset.at=row.at;}
-   [...list.children].sort((a,b)=>(a.dataset.at||'9999').localeCompare(b.dataset.at||'9999')||(a.dataset.messageId||'').localeCompare(b.dataset.messageId||'')).forEach(n=>list.append(n));
+   for(const row of items){appendMessage(row.speaker==='user'?'user':'ai',row.text,{id:row.id,at:row.at});const node=[...list.children].find(n=>n.dataset.messageId===row.id);if(node&&!node.dataset.at)node.dataset.at=row.at;}
+   [...list.children].sort((a,b)=>compareMessages(a.dataset,b.dataset)).forEach(n=>list.append(n));
    if(older)list.scrollTop=oldTop+list.scrollHeight-oldHeight;else if(oldHeight-oldTop-list.clientHeight<100||!oldIds.size)requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight});
   },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render(role,text,meta){ctx.showConversation();appendMessage(role,text,meta);requestAnimationFrame(()=>{if(ctx.messages)ctx.messages.scrollTop=ctx.messages.scrollHeight})},beforeText(){ctx.showConversation()},
   get captureBusy(){return Boolean(recording?.busy||dictation?.busy)},sendRecording(){recording?.send()},

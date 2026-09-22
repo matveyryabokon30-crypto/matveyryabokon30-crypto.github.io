@@ -218,3 +218,7 @@ html,html[data-theme=light],body{background:var(--topology-chrome,#1e3c2c);color
 .avatar{--icon-size:56px}.profile-avatar{--icon-size:84px}.profile-avatar-edit{--icon-size:20px}.profile-edit-link{--icon-size:18px}
 .profile-action,.profile-back{--icon-size:20px}.profile-filter{--icon-size:26px}.profile-type{--icon-size:16px}.profile-video-cover{--icon-size:34px}.profile-nav-item{--icon-size:28px}.profile-dialog-close{--icon-size:24px}
 .voice-icon-action{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+
+/* One-tap return to the newest message, inside the conversation. */
+.chat-bottom{position:absolute;right:16px;bottom:12px;z-index:3;width:46px;height:46px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(232,246,255,.55);background:rgba(15,38,60,.86);color:#f2f6ff;box-shadow:0 4px 18px #0005;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.chat-bottom[hidden]{display:none}.chat-bottom svg{width:24px;height:24px}.chat-bottom:focus-visible{outline:2px solid currentColor;outline-offset:3px}
