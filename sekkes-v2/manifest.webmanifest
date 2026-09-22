@@ -1,1 +1,1 @@
-{"name":"SEKKES","short_name":"SEKKES","id":"./","start_url":"./","scope":"./","display":"standalone","background_color":"#1e3c2c","lang":"ru","theme_color":"#1e3c2c"}
+{"name": "SEKKES", "short_name": "SEKKES", "id": "./", "start_url": "./", "scope": "./", "display": "standalone", "background_color": "#1e3c2c", "lang": "ru", "theme_color": "#1e3c2c", "icons": [{"src": "assets/brand/sekkes-approved-icon.jpeg", "sizes": "1254x1254", "type": "image/jpeg", "purpose": "any"}]}
