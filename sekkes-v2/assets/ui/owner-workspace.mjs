@@ -43,7 +43,7 @@ export function create(ctx){
  }
  function paintChat(){if(timeline){timelineState=timeline.snapshot();timeline.dispose();timeline=null;}content.querySelector('.owner-composer')?._resizeObserver?.disconnect();loader.discard(content);content.replaceChildren();
  const list=el('div','owner-messages');list.setAttribute('aria-label','Административный диалог');list.setAttribute('role','log');
- const down=glyph('send','В конец диалога',()=>timeline?.jump());down.classList.add('owner-down');
+ const down=glyph('send','В конец диалога',()=>{});down.classList.add('owner-down');
  const composer=el('form','owner-composer'),row=el('div','owner-composer-row'),pill=el('div','owner-composer-pill'),input=el('textarea','owner-input');input.rows=1;input.maxLength=6000;input.placeholder='Сообщение…';input.setAttribute('aria-label','Сообщение в админ-режиме');input.value=draft;
  const size=()=>{if(!input.isConnected)return;resizeComposer(input,pill,{attachments:selected.length>0});sendButton.hidden=!input.value.trim()&&!selected.length;requestAnimationFrame(()=>document.dispatchEvent(new Event('sekkes-composer-resize')));};const observer=new ResizeObserver(size);observer.observe(content);observer.observe(node);composer._resizeObserver=observer;
  input.addEventListener('input',()=>{draft=input.value;size()});input.addEventListener('focus',size);input.addEventListener('blur',size);input.enterKeyHint='enter';
@@ -79,4 +79,5 @@ export function create(ctx){
  function reset(){timeline?.dispose();timeline=null;timelineState=null;content.querySelector('.owner-composer')?._resizeObserver?.disconnect();epoch++;loader.reset();void live.stop();recorder.cancel();for(const u of urls.values())URL.revokeObjectURL(u);urls.clear();data=null;draft='';retry=null;selected=[];dirty=false;busy=false;editing=null;node.setAttribute('aria-busy','false');content.replaceChildren(hint('Войди в аккаунт владельца.'));tabs.replaceChildren()}
  return{node,refresh,reset,compose(text){if(!data||busy||recording||live.active){ctx.notify('Дождись завершения текущего действия.');return}draft=text+(draft?'\n'+draft:'');current='chat';paint();node.querySelector('textarea')?.focus({preventScroll:true});},beforeRoute(){void live.stop();if(recording)recorder.finish();node.querySelectorAll('audio,video').forEach(x=>x.pause());},get busy(){return busy||recording||live.active||Boolean(retry)},get dirty(){return isDirty()},dispose(){live.dispose();disposed=true;clearInterval(timer);recorder.dispose();reset()}};
 }
+
 
