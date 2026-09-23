@@ -5,7 +5,7 @@ export function create(ctx){
  const node=el('section','screen profile-screen');node.setAttribute('aria-label','Профиль');
  const body=el('div','profile-body'),nav=el('nav','profile-bottom');nav.setAttribute('aria-label','Разделы профиля');
  node.append(body,nav);
- const store=openProfileStore(),urls=new Set();let data=null,uid=null,epoch=0,view='profile',filter='all',disposed=false,busy=false,loaded=false;
+ const store=openProfileStore(),urls=new Set();let data=null,uid=null,epoch=0,view='profile',filter='all',disposed=false,busy=false,loaded=false,loading=false,accountSeen=false;
  const ownDialog=el('dialog','profile-dialog');ownDialog.setAttribute('aria-label','Редактирование профиля');node.append(ownDialog);
  const dialogUrls=new Set();
  const url=(blob,set=urls)=>{const u=URL.createObjectURL(blob);set.add(u);return u;};
@@ -78,7 +78,17 @@ export function create(ctx){
   const details=[data?.city,data?.interests].filter(Boolean).join(' · ');if(details)top.append(el('p','profile-details',details));body.append(top);grid();
  }
  for(const [id,label,symbol] of [['settings','Настройки профиля','settings'],['feed','Лента','feed'],['channels','Каналы','channels'],['community','Сообщество','community']]){const b=button(label,symbol,()=>setView(id),'profile-nav-item');b.dataset.view=id;nav.append(b);}
- async function update(){const token=++epoch;uid=ctx.account?.id||null;loaded=false;data=null;closeDialog();render();if(!uid)return;try{const result=await store.load(uid);if(token!==epoch||disposed)return;data=result;loaded=true;render();}catch(e){if(token===epoch&&!disposed){empty('Не удалось открыть профиль',errorText(e));}}}
+ async function update(){
+  if(disposed)return;const nextUid=ctx.account?.id||null;
+  // Auth refresh/route resume is not an account change. Keep the same DOM,
+  // media URLs, scroll position and open draft, including an in-flight load.
+  if(accountSeen&&nextUid===uid&&(loaded||loading||!uid))return;
+  const token=++epoch;accountSeen=true;uid=nextUid;loaded=false;loading=Boolean(uid);data=null;
+  closeDialog();render();if(!uid)return;
+  try{const result=await store.load(uid);if(token!==epoch||disposed)return;data=result;loaded=true;render();}
+  catch(e){if(token===epoch&&!disposed){empty('Не удалось открыть профиль',errorText(e));}}
+  finally{if(token===epoch)loading=false;}
+ }
  ctx.profileUpdate=update;update();
  return {node,dispose(){disposed=true;epoch++;closeDialog();release(urls);store.close();ctx.profileUpdate=null;}};
 }
