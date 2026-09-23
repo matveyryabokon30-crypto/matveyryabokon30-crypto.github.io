@@ -114,3 +114,12 @@ html[data-keyboard-open=true] #shell .owner-screen{padding-bottom:2px;}
 [data-action-message]{-webkit-user-select:none;user-select:none;}
 [data-action-message].message-text-selectable{-webkit-user-select:text;user-select:text;}
 .message-menu-overlay{top:var(--viewport-top,0px);bottom:auto;height:var(--app-height,100dvh);}
+
+/* messenger.17: normal-flow app, not a fixed surface following a stale visual pan. */
+html{overscroll-behavior:auto;}
+body{position:relative;inset:auto;height:100dvh;overscroll-behavior:auto;}
+.viewport-measure{position:absolute;top:0;left:0;width:0;height:100dvh;visibility:hidden;pointer-events:none;contain:strict;}
+body #shell,body #shell[data-route=home]{position:relative;inset:auto;top:0;height:var(--app-height,100dvh);min-height:0;}
+.navigation-layer{position:absolute;inset:0 0 auto;height:var(--app-height,100dvh);}
+.message-menu-overlay{position:absolute;top:0;}
+.pinned-messages{position:absolute;}
