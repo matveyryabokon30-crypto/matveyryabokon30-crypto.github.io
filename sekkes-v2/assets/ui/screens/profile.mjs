@@ -1,3 +1,4 @@
+import {profileEditor} from '../profile-editor.mjs';
 import {el,icon,row} from '../components.mjs';
 import {openProfileStore,validateMedia,mediaTypes} from '../profile-store.mjs';
 export function create(ctx){
@@ -9,7 +10,7 @@ export function create(ctx){
  const dialogUrls=new Set();
  const url=(blob,set=urls)=>{const u=URL.createObjectURL(blob);set.add(u);return u;};
  const release=set=>{for(const u of set)URL.revokeObjectURL(u);set.clear();};
- function closeDialog(){ownDialog.querySelectorAll('video').forEach(v=>v.pause());ownDialog.close();ownDialog.replaceChildren();release(dialogUrls);}
+ function closeDialog(){ownDialog.classList.remove('profile-editor');ownDialog.querySelectorAll('video').forEach(v=>v.pause());ownDialog.close();ownDialog.replaceChildren();release(dialogUrls);}
  ownDialog.addEventListener('close',()=>{if(ownDialog.open)return;ownDialog.querySelectorAll('video').forEach(v=>v.pause());release(dialogUrls);});
  function button(label,symbol,action,cls='profile-action'){const b=el('button',cls);b.type='button';b.setAttribute('aria-label',label);if(symbol)b.innerHTML=icon(symbol);b.append(el('span','',label));b.onclick=action;return b;}
  function header(title){const head=el('div','profile-page-heading');head.append(button('Профиль','back',()=>setView('profile'),'profile-back'),el('h1','',title));body.append(head);}
@@ -19,17 +20,11 @@ export function create(ctx){
  async function persist(next,owner,token){if(busy)return false;busy=true;try{await store.save(owner,next);if(token!==epoch||disposed)return false;data=next;return true;}finally{busy=false;}}
  function errorText(error){return error?.name==='QuotaExceededError'?'На устройстве недостаточно места. Удали ненужные материалы.':error.message||'Не удалось сохранить. Попробуй ещё раз.';}
  function edit(){
-  if(!requireAccount())return;const owner=uid,token=epoch;dialog('Редактировать профиль');
-  const form=el('form','profile-form'),fields={};
-  for(const [key,label,max] of [['name','Имя',60],['bio','О себе',280],['city','Город',80],['interests','Интересы',160]]){const wrap=el('label','',label),input=el(key==='bio'?'textarea':'input');input.value=data[key]|| (key==='name'?(ctx.account.user_metadata?.full_name||ctx.account.user_metadata?.name||''):'');input.maxLength=max;if(key==='name')input.required=true;wrap.append(input);fields[key]=input;form.append(wrap);}
-  const wrap=el('label','','Фото профиля'),file=el('input');file.type='file';file.accept='image/jpeg,image/png,image/webp,image/avif';wrap.append(file);form.append(wrap);
-  const notice=el('p','profile-note','Сохраняется в этом аккаунте на этом устройстве. Другие люди пока не видят профиль.');const error=el('p','profile-error');error.setAttribute('role','alert');
-  const save=button('Сохранить',null,null);save.type='submit';
-  form.append(notice,error,save);form.onsubmit=async e=>{e.preventDefault();save.disabled=true;error.textContent='';try{
-   let avatar=data.avatar;if(file.files.length){validateMedia('photo',[file.files[0]]);avatar=file.files[0];}
-   const next={...data,avatar};for(const key in fields)next[key]=fields[key].value.trim();if(!next.name)throw Error('Введи имя.');
-   if(await persist(next,owner,token)){closeDialog();render();}
-  }catch(e){error.textContent=errorText(e);}finally{save.disabled=false;}};ownDialog.append(form);
+  if(!requireAccount())return;const owner=uid,token=epoch;
+  closeDialog();ownDialog.setAttribute('aria-label','Редактировать профиль');
+  profileEditor({dialog:ownDialog,data,account:ctx.account,close:closeDialog,assetUrl:blob=>url(blob,dialogUrls),errorText,
+   save:async next=>{if(await persist(next,owner,token)){closeDialog();render();}}});
+  ownDialog.showModal();ownDialog.querySelector('.pe-bar button')?.focus({preventScroll:true});
  }
  function addMedia(){
   if(!requireAccount())return;const owner=uid,token=epoch;dialog('Добавить материал');const form=el('form','profile-form');
