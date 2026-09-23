@@ -58,7 +58,14 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   const label=code?(labels[code]||'Не удалось отправить. Повторить отправку'):'Отправить сообщение';
   $('#sendButton').setAttribute('aria-label',label);$('#sendButton').title=label;if(code)notify(label);
  }
+ function resizeDraft(){
+  if(composer.hidden||!draft.clientWidth)return;
+  const v=window.visualViewport,visible=v?.height||innerHeight;
+  const limit=Math.max(62,Math.floor(visible*.45));
+  draft.style.height='auto';draft.style.height=Math.min(limit,Math.max(40,draft.scrollHeight))+'px';
+ }
  function updateSend(){
+  resizeDraft();
   const hasText=draft.value.trim().length>0||files.hasFiles,hasAudio=Boolean(recording?.hasAudio);
   $('#sendButton').hidden=!hasText&&!hasAudio;
   files.lock(textPending||Boolean(recording?.busy)||Boolean(ctx.runtime()?.voiceActive));$('#sendButton').disabled=textPending||files.busy||(hasAudio?!recording.canSend:!hasText||Boolean(recording?.busy));
@@ -107,6 +114,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   }catch{notify('Не удалось загрузить раздел. Проверь подключение.')}
  }
  addEventListener('hashchange',route,{signal});lockViewport(signal);
+ const draftObserver=new ResizeObserver(resizeDraft);draftObserver.observe(app);window.visualViewport?.addEventListener('resize',resizeDraft,{signal});
  const dockObserver=new ResizeObserver(()=>app.style.setProperty('--dock-height',$('#sessionDock').getBoundingClientRect().height+'px'));dockObserver.observe($('#sessionDock'));
  document.addEventListener('visibilitychange',()=>app.classList.toggle('document-hidden',document.hidden),{signal});
  addEventListener('offline',()=>notify('Нет сети. Черновик сохранён на экране.'),{signal});
@@ -115,6 +123,6 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   canReload:()=>!files.hasFiles&&!files.busy&&!cache.get('admin')?.busy&&!cache.get('admin')?.dirty&&Boolean(ctx.runtime()?.updateReady)&&!ctx.runtime().busy&&!textPending&&!recording?.busy&&!recording?.hasAudio&&!dictation?.busy&&!dialog.open,
   preserve:()=>{ctx.runtime()?.saveDraft?.();sessionStorage.setItem(resumeKey,JSON.stringify({uid:ctx.account?.id,savedAt:Date.now(),draft:draft.value,messages:[...messageRecords.values()],open:Boolean(ctx.messages&&!ctx.messages.closest('[hidden]')),scrollTop:ctx.messages?.scrollTop||0}))}
  }):()=>{};
- return {dispose(){files.reset();modeSwitch.remove();stopUpdates();livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
+ return {dispose(){files.reset();modeSwitch.remove();stopUpdates();livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();draftObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
 }
 

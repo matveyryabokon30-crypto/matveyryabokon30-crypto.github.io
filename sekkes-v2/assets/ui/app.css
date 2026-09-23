@@ -224,3 +224,24 @@ html,html[data-theme=light],body{background:var(--topology-chrome,#1e3c2c);color
 .chat-bottom[hidden]{display:none}.chat-bottom svg{width:24px;height:24px}.chat-bottom:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
 .message-time{display:block;margin-top:8px;text-align:right;font-size:11px;line-height:1.4;font-weight:300;opacity:.66;font-variant-numeric:tabular-nums}
+
+
+/* messenger.5: ordinary and owner chats share a borderless reading surface and full-width drafting row. */
+#shell[data-route=home] .home-conversation{inset-inline:0;max-width:920px;bottom:calc(var(--dock-height,120px) + var(--home-bottom-inset,0px) + 4px);background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+#shell[data-route=home] .home-conversation .messages{max-width:none;padding:8px 20px 16px}
+#shell[data-route=home] .message{font-size:17px;line-height:1.6}
+#shell[data-route=home] .message.user{margin-left:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
+#shell[data-route=home] .message[data-state=failed]{border:0}
+#shell[data-route=home] .session-dock{max-width:920px;bottom:var(--home-bottom-inset,0px);padding:2px 12px 2px;gap:4px}
+@media(display-mode:standalone){#shell[data-route=home] .session-dock{padding-bottom:max(2px,env(safe-area-inset-bottom))}}
+#shell[data-route=home]:has(#draft:focus) .session-dock{padding-bottom:0}
+#shell[data-route=home] .composer{display:grid;grid-template-columns:1fr auto auto;gap:0;align-items:end;padding:7px 8px;border-radius:26px}
+#shell[data-route=home] #draft{grid-column:1/-1;grid-row:1;width:100%;padding:7px 6px;min-height:40px;max-height:none;field-sizing:fixed;line-height:22px;outline:none;box-shadow:none;overflow-y:auto}
+#shell[data-route=home] .composer>.icon-button{grid-row:2;width:38px;min-width:38px;height:40px;min-height:40px;padding:7px}
+#shell[data-route=home] .composer>.icon-button:first-child{grid-column:1;justify-self:start}
+#shell[data-route=home] #micButton{grid-column:2}
+#shell[data-route=home] #sendButton{grid-column:3}
+#shell[data-route=home] .mic-wave{grid-column:1/-1;grid-row:1}
+#shell[data-route=home] .live-control{flex-basis:52px;width:52px;height:52px}
+#shell[data-route=home] .reopen-conversation{bottom:calc(var(--dock-height,120px) + var(--home-bottom-inset,0px) + 4px)}
+@media(min-width:800px){#shell[data-route=home] .home-conversation .messages{padding-inline:30px}}
