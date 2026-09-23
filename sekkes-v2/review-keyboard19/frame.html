@@ -1,0 +1,18 @@
+<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/ui/app.css"><link rel="stylesheet" href="./composer.css"><div id="shell" data-route="home"><main id="routeHost"><section class="screen home-screen"><section class="home-conversation"><div class="messages" id="messages"></div></section></section></main><div class="session-dock" id="sessionDock"><form id="composer" class="composer"><textarea id="draft" placeholder="Сообщение…"></textarea><div class="composer-tools"><button type="button">Фото</button><button type="button" id="send">Отправить</button></div></form></div></div><script type="module">
+import {lockViewport} from './viewport.mjs';import {resizeComposer} from './composer-layout.mjs';
+const vv=new EventTarget();Object.assign(vv,{width:innerWidth,height:innerHeight,offsetTop:0,scale:1});Object.defineProperty(window,'visualViewport',{value:vv});
+const ac=new AbortController();const input=document.querySelector('#draft'),form=document.querySelector('#composer'),list=document.querySelector('#messages');
+list.innerHTML=Array.from({length:40},(_,i)=>'<article class="message">Сообщение '+i+'<p>История должна оставаться в области переписки.</p></article>').join('');
+const size=()=>resizeComposer(input,form,{});input.addEventListener('focus',size);input.addEventListener('input',size);document.addEventListener('sekkes-viewport-change',size);lockViewport(ac.signal);size();
+let clicks=0;document.querySelector('#send').onclick=()=>clicks++;
+const wait=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+addEventListener('message',async e=>{if(e.data!=='test')return;const checks=[];
+for(let i=0;i<5;i++){
+ input.focus({preventScroll:true});Object.assign(vv,{width:innerWidth,height:420,offsetTop:0});vv.dispatchEvent(new Event('resize'));await wait();
+ const a=form.getBoundingClientRect();checks.push(['keyboard '+i,a.bottom<=421&&a.top>=0&&document.body.clientHeight===420]);
+ vv.offsetTop=380;vv.dispatchEvent(new Event('scroll'));await wait();const b=form.getBoundingClientRect();checks.push(['late pan '+i,Math.abs(a.top-b.top)<1]);
+ input.value='Новый текст';input.dispatchEvent(new Event('input'));document.querySelector('#send').click();
+ input.blur();Object.assign(vv,{height:innerHeight,offsetTop:76});vv.dispatchEvent(new Event('resize'));await wait();checks.push(['close '+i,Math.abs(form.getBoundingClientRect().bottom-innerHeight)<10]);
+}
+checks.push(['clickable',clicks===5]);checks.push(['draft',input.value==='Новый текст']);parent.postMessage({checks},'*');});
+</script>
