@@ -74,3 +74,43 @@ body #shell,body #shell[data-route=home]{height:var(--app-height,100dvh);min-hei
 #shell :is(.message,.owner-message) button{background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
 #shell :is(.message,.owner-message){backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
 #shell :is(.messages,.owner-messages){-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y;scroll-behavior:auto;contain:paint;}
+
+/* messenger.16: one visual viewport, one keyboard adjustment, no fixed-body panning. */
+html,body{height:100%;min-height:0;overflow:hidden;touch-action:auto;}
+body{position:relative;inset:auto;}
+body #shell,body #shell[data-route=home]{position:fixed;top:var(--viewport-top,0px);bottom:auto;height:var(--app-height,100dvh);min-height:0;}
+.navigation-layer{top:var(--viewport-top,0px);bottom:auto;height:var(--app-height,100dvh);}
+#shell .owner-screen:has(textarea:focus){height:100%;}
+#shell .owner-screen,#shell .owner-screen:has(textarea:focus){padding-bottom:max(8px,env(safe-area-inset-bottom));}
+html[data-keyboard-open=true] #shell .owner-screen{padding-bottom:2px;}
+#shell .session-dock{bottom:0!important;}
+#shell .owner-screen>.owner-mode{bottom:calc(66px + max(8px,env(safe-area-inset-bottom)));}
+#shell .owner-mode,#shell .owner-tabs,#shell .conversation-controls,#shell .composer-tools button{touch-action:manipulation;}
+/* Message bubbles share a thin outline; only time and delivery appear below text. */
+#shell :is(.message,.owner-message),#shell[data-route=home] .message.user{width:fit-content;max-width:88%;padding:10px 13px 7px;margin-top:0;margin-bottom:10px;margin-left:0;margin-right:auto;border:.5px solid rgba(232,246,255,.3);border-radius:18px 18px 18px 4px;background:rgba(190,220,240,.045);box-shadow:none;font-size:17px;line-height:1.55;-webkit-touch-callout:none;}
+#shell[data-route=home] .message.user,#shell .owner-message.owner-user{margin-left:auto;margin-right:0;border-radius:18px 18px 4px 18px;background:rgba(190,220,240,.09);}
+#shell :is(.message,.owner-message) .rich-message p{margin:0 0 .55em;}
+#shell :is(.message,.owner-message) .rich-message p:last-child{margin-bottom:0;}
+#shell .owner-message>p{margin:0;}
+#shell :is(.message,.owner-message)>time{display:flex;gap:5px;align-items:center;justify-content:flex-end;margin-top:5px;text-align:right;font-size:10px;line-height:1.3;opacity:.65;}
+.delivery-mark{font-size:11px;line-height:1;}
+#shell :is(.message[data-delivery=failed],.owner-failed){border-color:#ffac9a;}
+#shell :is(.message,.owner-message).message-selected{outline:1px solid #d9f1ff;background:rgba(200,230,250,.2);}
+.message-pinned:before{content:'⌖';float:right;font-size:12px;opacity:.65;margin-left:7px;}
+.message-reaction{display:inline-block;margin-top:4px;font-size:14px;}
+.message-menu-overlay{position:fixed;inset:0;z-index:80;background:rgba(0,10,20,.3);display:flex;align-items:flex-end;justify-content:center;padding:12px 16px max(12px,env(safe-area-inset-bottom));}
+.message-menu{width:min(100%,360px);max-height:calc(var(--app-height,100dvh) - 24px);overflow:auto;padding:8px;border:.5px solid rgba(232,246,255,.35);border-radius:24px;background:rgba(28,45,54,.92);color:#f2f6ff;box-shadow:0 12px 40px #0003;}
+.message-menu-title{padding:6px 12px;font-size:12px;opacity:.6;}
+.message-menu-note{padding:8px 12px;font-size:13px;}
+.message-action{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:12px;padding:8px 12px;min-height:42px;font-size:16px;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
+.message-action:active{background:rgba(230,245,255,.12);}
+.message-reactions{display:flex;gap:2px;}
+.message-reactions .message-action{text-align:center;font-size:23px;padding:4px;}
+.message-selection{position:fixed;z-index:75;left:12px;right:12px;bottom:max(8px,env(safe-area-inset-bottom));padding:8px;display:flex;align-items:center;gap:6px;border-radius:22px;background:#263d49;}
+.message-selection .message-action{width:auto;flex:1;font-size:12px;padding:4px;}
+.pinned-messages{position:fixed;z-index:8;top:calc(var(--viewport-top,0px) + env(safe-area-inset-top) + 68px);left:16px;max-width:70%;min-height:28px;padding:3px 10px;border:.5px solid #e8f6ff50;border-radius:16px;background:#263d49d9;font-size:12px;}
+@media(orientation:landscape) and (max-height:600px){.message-menu-overlay{align-items:center;}.message-menu{max-height:calc(var(--app-height,100dvh) - 16px);}.pinned-messages{top:calc(var(--viewport-top,0px) + 50px);}}
+
+[data-action-message]{-webkit-user-select:none;user-select:none;}
+[data-action-message].message-text-selectable{-webkit-user-select:text;user-select:text;}
+.message-menu-overlay{top:var(--viewport-top,0px);bottom:auto;height:var(--app-height,100dvh);}

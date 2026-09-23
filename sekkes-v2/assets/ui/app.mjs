@@ -1,3 +1,4 @@
+import {messageActions,deliveryMark,messageKey} from './message-actions.mjs';
 import {interactionPriority} from './interaction-priority.mjs';
 import {resizeComposer} from './composer-layout.mjs';
 import {chatAttachments} from './chat-attachments.mjs';
@@ -22,13 +23,13 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  const messageRecords=new Map(),resumeKey='sekkes:update-resume:'+location.pathname;
  let resume=null;try{resume=JSON.parse(sessionStorage.getItem(resumeKey)||'null');sessionStorage.removeItem(resumeKey);if(!resume||Date.now()-resume.savedAt>900000)resume=null}catch{}
  let visual;const background=el('div','global-topology');background.id='appTopology';background.setAttribute('aria-hidden','true');document.body.prepend(background);try{visual=mountTopology(background)}catch{/* Decoration cannot block the application. */}
- let generation=0,current=null,voice='idle',swRegistration=null,recording,dictation,menu,textPending=false;
+ let actions,pendingCompose=null;let generation=0,current=null,voice='idle',swRegistration=null,recording,dictation,menu,textPending=false;
  const app=$('#shell'),host=$('#routeHost'),dialog=$('#dialog'),composer=$('#composer'),stop=$('#micTestLink'),status=$('#aiStateLabel'),nav=$('#menuItems'),recordButton=$('#micButton'),draft=$('#draft'),controls=$('#conversationControls');
  interactionPriority(document,signal);let ownerAllowed=false;const files=chatAttachments({composer,request:body=>ctx.runtime().chatMedia(body),changed:()=>updateSend(),notify});
  const modeSwitch=el('div','owner-mode');modeSwitch.hidden=true;app.append(modeSwitch);
  for(const [id,label]of [['home','Пользователь'],['admin','Админ']]){const b=el('button','owner-button');b.innerHTML=id==='admin'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>';b.setAttribute('aria-label',label);b.title=label;b.type='button';b.addEventListener('click',()=>ctx.navigate(id));modeSwitch.append(b)}
  async function probeOwner(){const uid=ctx.account?.id;ownerAllowed=false;modeSwitch.hidden=true;if(!uid){cache.get('admin')?.reset();return}try{const result=await ctx.runtime()?.ownerRequest?.('status');if(ctx.account?.id!==uid)return;ownerAllowed=result?.owner===true;modeSwitch.hidden=!ownerAllowed;requestAnimationFrame(positionChatControls);if(ownerAllowed&&location.hash==='#admin')route()}catch{/* Ordinary chat remains available if the admin service is unavailable. */}}
- const ctx={recordButton,account:null,messages:null,profileUpdate:null,runtime:()=>window.SekkesS2,
+ const ctx={bindMessage:(node,data)=>actions?.bind(node,data),recordButton,account:null,messages:null,profileUpdate:null,runtime:()=>window.SekkesS2,
   navigate(id){const target=routeId('#'+id);if(target!==current)location.hash=target},
   showConversation(){ctx.navigate('home');const home=cache.get('home');if(home)home.showConversation()},
   captureChanged(){updateSend();updateVoice(voice);},
@@ -49,7 +50,8 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   const node=message(role,text,{showImage});if(meta.id)node.dataset.messageId=meta.id;node.dataset.at=messagePosition(previous?.dataset.at,meta.at);
   const state=meta.state||((previous?.dataset.delivery==='failed'||previous?.dataset.delivery==='pending')&&meta.at?'sent':previous?.dataset.delivery)||'';
   const stampAt=meta.stampAt||meta.at||(state==='sent'&&previous?.dataset.delivery!=='sent'?new Date().toISOString():previous?.dataset.stampAt)||node.dataset.at;
-  node.dataset.stampAt=stampAt;const stamp=messageTime(stampAt,state,role);if(stamp){const time=el('time','message-time',stamp.text);time.dateTime=stamp.iso;time.title=stamp.title;time.setAttribute('aria-label',stamp.title);node.append(time)}
+  node.dataset.stampAt=stampAt;const stamp=messageTime(stampAt,state,role);if(stamp){const time=el('time','message-time',stamp.text);time.dateTime=stamp.iso;time.title=stamp.title;time.setAttribute('aria-label',stamp.title);if(role==='user')time.append(deliveryMark(state||'sent'));node.append(time)}
+  actions?.bind(node,{scope:'home',id:meta.id||messageKey('live',null,role+':'+node.dataset.at+':'+JSON.stringify(text)),text:typeof text==='string'?text:node.querySelector('.rich-message')?.textContent||''});
   if(meta.id)messageRecords.set(meta.id,{role,text,meta:{...meta,state,at:node.dataset.at,stampAt}});
   if(state)node.dataset.delivery=state;if(previous)previous.replaceWith(node);else list.append(node);
   cache.get('home')?.messageAdded();if(atEnd)list.scrollTop=list.scrollHeight;
@@ -108,12 +110,13 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   const id=routeId(location.hash);if(id==='admin'&&!ownerAllowed){notify('Админ-кабинет доступен после проверки аккаунта владельца.');if(ctx.account)void probeOwner();if(!current)history.replaceState(null,'','#home');if(!current)void route();return}if(id==='admin'&&(ctx.runtime()?.busy||recording?.busy||dictation?.busy)){notify('Сначала заверши текущий разговор.');return}const ticket=++generation,descriptor=sections.find(s=>s.id===id);if(id!=='home'){recording.beforeRoute();dictation.cancel()}menu.close({restoreFocus:false});if(/^#\/?chat$/.test(location.hash))history.replaceState(null,'','#home');if(id!==current){ctx.pauseMedia();if(current==='admin')cache.get('admin')?.beforeRoute?.();}
   try{if(!cache.has(id)){const module=await descriptor.loadModule();if(!cache.has(id))cache.set(id,module.create(ctx))}if(ticket!==generation)return;
    const previous=cache.get(current);if(previous)previous.scrollTop=previous.node.querySelector('.messages')?.scrollTop??previous.node.scrollTop;
-   current=id;const screen=cache.get(id);host.replaceChildren(screen.node);if(id==='admin')void screen.refresh();for(const [i,b]of [...modeSwitch.children].entries())b.setAttribute('aria-pressed',String((i===1)===(id==='admin')));const scroller=screen.node.querySelector('.messages')||screen.node;scroller.scrollTop=screen.scrollTop||0;
+   current=id;const screen=cache.get(id);host.replaceChildren(screen.node);if(id==='admin')await screen.refresh();for(const [i,b]of [...modeSwitch.children].entries())b.setAttribute('aria-pressed',String((i===1)===(id==='admin')));const scroller=screen.node.querySelector('.messages')||screen.node;scroller.scrollTop=screen.scrollTop||0;
    app.dataset.route=id;$('#headerTitle').textContent='sekkes';composer.hidden=id!=='home';
    for(const a of nav.children){a.hidden=a.dataset.route==='home'&&id==='home';if(a.dataset.route===id)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}
-   updateVoice(voice);updateSend();document.title=descriptor.title+' · SEKKES';host.focus({preventScroll:true});
+   updateVoice(voice);updateSend();document.title=descriptor.title+' · SEKKES';if(!document.activeElement?.matches('textarea,input'))host.focus({preventScroll:true});actions?.refresh();if(pendingCompose&&pendingCompose.scope===id){const item=pendingCompose;pendingCompose=null;writeDraft(item.scope,item.text);}
   }catch{notify('Не удалось загрузить раздел. Проверь подключение.')}
  }
+ document.addEventListener('sekkes-orientation-reset',()=>{menu.close({restoreFocus:false});actions?.refresh();},{signal});
  addEventListener('hashchange',route,{signal});document.addEventListener('sekkes-viewport-change',()=>{menu.close({restoreFocus:false});resizeDraft();requestAnimationFrame(positionChatControls)},{signal});lockViewport(signal);
  const draftObserver=new ResizeObserver(resizeDraft);draftObserver.observe(app);window.visualViewport?.addEventListener('resize',resizeDraft,{signal});
  function positionChatControls(){
@@ -141,9 +144,11 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  document.addEventListener('sekkes-composer-resize',positionChatControls,{signal});window.visualViewport?.addEventListener('resize',positionChatControls,{signal});
  document.addEventListener('visibilitychange',()=>app.classList.toggle('document-hidden',document.hidden),{signal});
  addEventListener('offline',()=>notify('Нет сети. Черновик сохранён на экране.'),{signal});
+ function writeDraft(scope,text){if(scope==='admin'){cache.get('admin')?.compose?.(text);return}cache.get('home')?.showConversation();draft.value=text+(draft.value?'\n'+draft.value:'');ctx.runtime()?.saveDraft?.();updateSend();draft.focus({preventScroll:true});}
+ actions=messageActions({signal,account:()=>ctx.account,notify,currentScope:()=>current==='home'||current==='admin'?current:null,ownerAllowed:()=>ownerAllowed,compose(scope,text){if(current===scope)writeDraft(scope,text);else{pendingCompose={scope,text};ctx.navigate(scope)}}});
  watchPreferences(signal);let livingIcons;try{livingIcons=mountLivingIcons(document)}catch{/* Vector icons remain usable if the decorative renderer is unavailable. */}route();
  const stopUpdates='serviceWorker' in navigator?autoUpdate({
-  canReload:()=>!files.hasFiles&&!files.busy&&!cache.get('admin')?.busy&&!cache.get('admin')?.dirty&&Boolean(ctx.runtime()?.updateReady)&&!ctx.runtime().busy&&!textPending&&!recording?.busy&&!recording?.hasAudio&&!dictation?.busy&&!dialog.open,
+  canReload:()=>!files.hasFiles&&!files.busy&&!cache.get('admin')?.busy&&!cache.get('admin')?.dirty&&Boolean(ctx.runtime()?.updateReady)&&!ctx.runtime().busy&&!textPending&&!recording?.busy&&!recording?.hasAudio&&!dictation?.busy&&!dialog.open&&!document.querySelector('.message-menu-overlay'),
   preserve:()=>{ctx.runtime()?.saveDraft?.();sessionStorage.setItem(resumeKey,JSON.stringify({uid:ctx.account?.id,savedAt:Date.now(),draft:draft.value,messages:[...messageRecords.values()],open:Boolean(ctx.messages&&!ctx.messages.closest('[hidden]')),scrollTop:ctx.messages?.scrollTop||0}))}
  }):()=>{};
  return {dispose(){files.reset();modeSwitch.remove();stopUpdates();livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();draftObserver.disconnect();layoutObserver.disconnect();cancelAnimationFrame(controlsFrame);clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
