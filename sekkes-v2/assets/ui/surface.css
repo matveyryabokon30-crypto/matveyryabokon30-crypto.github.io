@@ -110,3 +110,20 @@ body .profile-filter:is([aria-pressed=true],:focus-visible){opacity:1;}
 body .profile-type{padding:4px;border-radius:0;color:var(--ui-ink);pointer-events:none;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
 body .profile-type .living-icon{filter:drop-shadow(0 1px 2px #0009);}
 body :is(.profile-editor .pe-bar>.pe-button:first-child,.profile-back):focus-visible .living-icon-fallback{opacity:1;stroke-width:1.25;}
+
+/* grid.32: full-bleed media and five equal filter tracks. Only profile/feed
+   views containing the filter bar widen; settings and the editor keep their
+   existing geometry. The same profile-body remains the sole scroll owner. */
+body .profile-body:has(>.profile-filters){
+ --profile-grid-inset:20px;max-width:none;padding-inline:var(--profile-grid-inset);scrollbar-width:none;
+}
+body .profile-body:has(>.profile-filters)::-webkit-scrollbar{display:none;}
+body .profile-body>:is(.profile-filters,.profile-media-grid){
+ width:calc(100% + 2 * var(--profile-grid-inset));max-width:none;
+ margin-inline:calc(-1 * var(--profile-grid-inset));border-radius:0;
+}
+body .profile-body>.profile-filters{grid-template-columns:repeat(5,minmax(0,1fr));gap:0;padding-inline:0;}
+body .profile-body>.profile-media-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;}
+body .profile-media-grid>.profile-tile{min-width:0;width:100%;aspect-ratio:3/4;border-radius:0;}
+body .profile-media-grid>.profile-tile>:is(img,.profile-video-cover){border-radius:0;}
+@media(max-width:350px){body .profile-body:has(>.profile-filters){--profile-grid-inset:12px;}}
