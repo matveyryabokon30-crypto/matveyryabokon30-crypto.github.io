@@ -120,7 +120,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   modeSwitch.hidden=!ownerAllowed;
   if(!['home','admin'].includes(current)){const nav=host.querySelector('.profile-bottom');const r=nav?.getBoundingClientRect();modeSwitch.style.left=(r?r.right+30:innerWidth-30)+'px';modeSwitch.style.top=Math.max(80,(r?r.bottom:innerHeight-12)-80)+'px';return;}
   const admin=current==='admin',form=admin?host.querySelector('.owner-composer'):composer;
-  if(!form||form.hidden){modeSwitch.style.left=(innerWidth-30)+'px';modeSwitch.style.top=Math.max(80,innerHeight-100)+'px';return;}const pill=admin?form.querySelector('.owner-composer-pill'):form;
+  if(!form||form.hidden){const tabs=admin?host.querySelector('.owner-tabs'):null;const r=tabs?.getBoundingClientRect();modeSwitch.style.left=(r?r.right-26:innerWidth-30)+'px';modeSwitch.style.top=Math.max(80,(r?r.top:innerHeight-12)-88)+'px';return;}const pill=admin?form.querySelector('.owner-composer-pill'):form;
   const rect=pill.getBoundingClientRect(),down=host.querySelector(admin?'.owner-down':'.chat-bottom');
   if(down){down.style.setProperty('--jump-left',(rect.left+rect.width/2)+'px');down.style.setProperty('--jump-top',(rect.top-46)+'px')}
   const liveButton=admin?form.querySelector('.owner-live'):stop;const liveRect=liveButton.getBoundingClientRect();modeSwitch.style.top=Math.max(80,liveRect.top-88)+'px';modeSwitch.style.left=(liveRect.left+liveRect.width/2)+'px';modeSwitch.hidden=!ownerAllowed||!['home','admin'].includes(current);
