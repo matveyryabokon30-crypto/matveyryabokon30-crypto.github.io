@@ -1,0 +1,6 @@
+<!doctype html><html lang="ru" data-theme="dark"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="assets/ui/tokens.css"><link rel="stylesheet" href="assets/ui/app.css"><link rel="stylesheet" href="assets/ui/owner.css"><title>Тест кабинета</title><header class="app-header"><span class="brand">sekkes</span></header><main id="routeHost"></main><script type="module">
+import {create} from './assets/ui/owner-workspace.mjs';
+const data={turns:[],media:[],documents:[],costs:{input_tokens:0,output_tokens:0,reserved_usd:0},budget_cap_usd:10};
+const state={ownerRequest:async(path,b)=>{if(path==='status')return{active:true};if(path==='workspace')return structuredClone(data);if(path==='chat'){const t={id:b.id,user_text:b.text,attachments:b.attachments,status:'pending',created_at:new Date().toISOString()};data.turns.push(t);await new Promise(r=>setTimeout(r,1800));t.status='completed';t.reply='Тестовый ответ появился автоматически. Это проверка интерфейса, не ответ модели.';t.answered_at=new Date().toISOString();return t;}if(path==='document'){data.documents.push({...b,revision:b.revision+1,created_at:new Date().toISOString()});return b;}throw Error('QA_ONLY');}};
+const view=create({runtime:()=>state});document.querySelector('main').append(view.node);await view.refresh();
+</script></html>
