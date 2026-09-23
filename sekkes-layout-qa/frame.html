@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ru" data-build="2026.09.21-ui.9.20" data-theme="dark">
-<head><base href="/sekkes-v2/">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,13 +12,13 @@
 <meta name="referrer" content="no-referrer">
 <meta name="description" content="SEKKES — личное пространство для разговора">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="assets/ui/tokens.css">
-<link rel="stylesheet" href="assets/ui/app.css">
+<link rel="stylesheet" href="/sekkes-v2/assets/ui/tokens.css">
+<link rel="stylesheet" href="/sekkes-v2/assets/ui/app.css">
 <title>SEKKES</title>
-<link rel="stylesheet" href="./assets/ui/owner.css">
-<link rel="icon" type="image/jpeg" href="assets/brand/sekkes-approved-icon.jpeg">
-<link rel="apple-touch-icon" href="assets/brand/sekkes-approved-icon.jpeg">
-<link rel="stylesheet" href="assets/ui/composer.css?v=messenger12">
+<link rel="stylesheet" href="/sekkes-v2/assets/ui/owner.css">
+<link rel="icon" type="image/jpeg" href="/sekkes-v2/assets/brand/sekkes-approved-icon.jpeg">
+<link rel="apple-touch-icon" href="/sekkes-v2/assets/brand/sekkes-approved-icon.jpeg">
+<link rel="stylesheet" href="/sekkes-v2/assets/ui/composer.css?v=messenger13">
 </head>
 <body>
 <div id="shell" data-route="home" data-voice="idle">
@@ -31,10 +31,10 @@
 <div id="navigationLayer" class="navigation-layer" aria-label="Навигация SEKKES"><div id="menuBackdrop" class="menu-backdrop" hidden></div><button id="menuTrigger" class="menu-trigger" type="button" aria-label="Открыть меню" aria-controls="navigationPanel" aria-expanded="false"></button><nav id="navigationPanel" class="navigation-panel" aria-label="Разделы SEKKES" hidden inert><div id="menuItems"></div></nav></div>
 <dialog id="dialog" aria-labelledby="dialogTitle"><button id="dialogClose" class="icon-button dialog-close" aria-label="Закрыть окно"></button><div id="dialogContent"></div></dialog>
 <script type="module">
-import {initialize} from './assets/ui/app.mjs?v=messenger12';
-import {options,install} from './assets/ui/fixture.mjs';
+import {initialize} from '/sekkes-v2/assets/ui/app.mjs?v=messenger13';
+import {options,install} from '/sekkes-v2/assets/ui/fixture.mjs';
 initialize(options);install();
-window.SekkesS2.ownerRequest=async path=>path==='status'?{owner:true,active:true}:{turns:[],media:[],documents:[],costs:{}};
+window.SekkesS2.ownerRequest=async path=>path==='status'?{owner:true,active:true}:{turns:[],media:[],documents:[],costs:{input_tokens:0,output_tokens:0,reserved_usd:0},budget_cap_usd:10};
 window.SekkesUI.account({id:'qa-owner'});
 </script>
 </body></html>
