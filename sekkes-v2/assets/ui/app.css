@@ -245,3 +245,19 @@ html,html[data-theme=light],body{background:var(--topology-chrome,#1e3c2c);color
 #shell[data-route=home] .live-control{flex-basis:52px;width:52px;height:52px}
 #shell[data-route=home] .reopen-conversation{bottom:calc(var(--dock-height,120px) + var(--home-bottom-inset,0px) + 4px)}
 @media(min-width:800px){#shell[data-route=home] .home-conversation .messages{padding-inline:30px}}
+
+/* messenger.7: compact draft; the reading surface runs beneath floating controls. */
+#shell[data-route=home] .composer[data-expanded=false]{grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center}
+#shell[data-route=home] .composer[data-expanded=false] #draft{grid-row:1;grid-column:2;align-self:center}
+#shell[data-route=home] .composer[data-expanded=false]>.icon-button{grid-row:1}
+#shell[data-route=home] .composer[data-expanded=false] #micButton{grid-column:3}
+#shell[data-route=home] .composer[data-expanded=false] #sendButton{grid-column:4}
+#shell[data-route=home] #routeHost .home-conversation{inset:0;max-width:920px;overflow:visible}
+#shell[data-route=home] .home-conversation .messages{padding-top:calc(env(safe-area-inset-top) + 92px);padding-bottom:calc(var(--dock-height,100px) + var(--home-bottom-inset,0px) + 16px);scroll-padding-bottom:calc(var(--dock-height,100px) + var(--home-bottom-inset,0px) + 16px)}
+#shell[data-route=home] .app-header{background:transparent}
+#shell .chat-bottom,#shell .owner-down{position:fixed;left:var(--jump-left,45%);top:var(--jump-top,70%);right:auto;bottom:auto!important;transform:translateX(-50%);margin:0;width:36px;height:36px;min-width:36px;min-height:36px;z-index:6}
+#shell>.owner-mode{position:fixed;right:12px;top:70%;margin:0;z-index:7;display:flex;gap:0;padding:3px;border:1px solid #c4e1f055;border-radius:24px;background:#173c5570;backdrop-filter:blur(16px)}
+#shell>.owner-mode[hidden]{display:none}
+#shell>.owner-mode .owner-button{display:grid;place-items:center;width:36px;min-height:36px;height:36px;padding:6px;margin:0;border:0;background:transparent;border-radius:50%}
+#shell>.owner-mode .owner-button[aria-pressed=true]{background:#c4e1f03d}
+#shell>.owner-mode svg{width:22px;height:22px;stroke-width:1.25;fill:none}

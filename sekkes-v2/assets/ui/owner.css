@@ -40,3 +40,11 @@ html[data-keyboard-open=true] .owner-screen{padding-bottom:calc(var(--keyboard-i
 .owner-screen:has(textarea:focus){height:var(--owner-visible-height,100%);padding-bottom:0;gap:4px}
 .owner-screen:has(textarea:focus) .owner-tabs{margin-bottom:0}
 .owner-screen:has(textarea:focus) .owner-down{bottom:180px}
+
+/* Extend admin reading behind its floating header, composer and tabs. */
+.owner-screen:has(.owner-chat-content){position:relative;overflow:visible}
+.owner-chat-content{overflow:visible;justify-content:flex-end;pointer-events:none}
+.owner-chat-content .owner-messages{position:absolute;inset:0;padding-top:calc(env(safe-area-inset-top) + 100px);padding-bottom:var(--owner-reading-bottom,220px);scroll-padding-bottom:var(--owner-reading-bottom,220px);pointer-events:auto}
+.owner-chat-content .owner-composer{position:relative;z-index:2;pointer-events:auto}
+.owner-screen:has(.owner-chat-content)>.owner-tabs,.owner-screen:has(.owner-chat-content)>.owner-heading,.owner-screen:has(.owner-chat-content)>.owner-notice{position:relative;z-index:2}
+.owner-chat-content .owner-down{pointer-events:auto}
