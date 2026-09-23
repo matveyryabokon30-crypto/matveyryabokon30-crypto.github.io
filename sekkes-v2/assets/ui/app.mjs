@@ -135,6 +135,9 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
    if(modeSwitch.parentNode!==side)side.prepend(modeSwitch);
    const down=host.querySelector(admin?'.owner-down':'.chat-bottom')||form.querySelector(admin?'.owner-down':'.chat-bottom');
    if(down&&down.parentNode!==form)form.append(down);
+   // Insets belong to scrollable content, never to the viewport bounds.
+   const list=host.querySelector(admin?'.owner-messages':'.messages');
+   if(list?.clientHeight){const inset=Math.max(0,Math.ceil(list.getBoundingClientRect().bottom-form.getBoundingClientRect().top+8))+'px';if(list.style.getPropertyValue('--chat-bottom')!==inset)list.style.setProperty('--chat-bottom',inset);}
    
   }else{
    const target=admin?host.querySelector('.owner-screen'):app;
@@ -156,5 +159,6 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  }):()=>{};
  return {dispose(){files.reset();modeSwitch.remove();stopUpdates();livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();draftObserver.disconnect();layoutObserver.disconnect();cancelAnimationFrame(controlsFrame);clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
 }
+
 
 

@@ -158,24 +158,25 @@ body #shell,body #shell[data-route=home]{position:relative;inset:auto;top:0;heig
 html,body{height:var(--app-height,100dvh);min-height:0;overflow:hidden;overscroll-behavior:none;}
 body{height:var(--app-height,100dvh);}
 
-/* Conversation architecture: bounded history and composer are sibling rows.
-   Neither history nor its scroll extent includes the composer or navigation. */
+/* Full-screen history passes behind floating controls. Content insets keep
+   the first/last message reachable without clipping the scrolling surface. */
 body #shell[data-route=home] #routeHost{position:relative;inset:auto;height:100%;min-height:0;padding:0;overflow:hidden;}
-body #shell[data-route=home] .home-screen{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100%;min-height:0;padding:calc(env(safe-area-inset-top) + 76px) 0 0;overflow:hidden;}
-body #shell[data-route=home] #routeHost .home-conversation{position:relative;inset:auto;grid-row:1;width:100%;height:100%;min-height:0;overflow:hidden;margin:0 auto;}
-body #shell[data-route=home] .home-conversation .messages{height:100%;min-height:0;padding:8px 16px;scroll-padding:8px;overflow-anchor:none;}
+body #shell[data-route=home] .home-screen{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto;height:100%;min-height:0;padding:0;overflow:hidden;}
+body #shell[data-route=home] #routeHost .home-conversation{position:absolute;inset:0;width:100%;height:100%;min-height:0;overflow:hidden;margin:0 auto;}
+body #shell[data-route=home] .home-conversation .messages{height:100%;min-height:0;padding:calc(env(safe-area-inset-top) + 76px) 16px var(--chat-bottom,100px);scroll-padding:calc(env(safe-area-inset-top) + 76px) 0 var(--chat-bottom,100px);overflow-anchor:none;}
 body #shell[data-route=home] .home-screen>.session-dock{position:relative;inset:auto!important;grid-row:2;width:100%;min-height:0;max-height:65%;margin:0 auto;padding:4px 12px max(4px,env(safe-area-inset-bottom));}
 html[data-keyboard-open=true] body #shell[data-route=home] .home-screen>.session-dock{padding-bottom:2px;}
 body #shell .owner-screen:has(.owner-chat-content){height:100%;min-height:0;overflow:hidden;}
-body #shell .owner-chat-content{position:relative;display:flex;flex-direction:column;min-height:0;overflow:hidden;pointer-events:auto;}
-body #shell .owner-chat-content .owner-messages{position:relative;inset:auto;flex:1;min-height:0;padding:8px 10px;scroll-padding:8px;overflow-anchor:none;}
-body #shell .owner-chat-content .owner-composer{flex:none;max-height:65%;}
+body #shell .owner-chat-content{position:static;display:flex;flex-direction:column;justify-content:flex-end;min-height:0;overflow:visible;pointer-events:none;}
+body #shell .owner-chat-content .owner-messages{position:absolute;inset:0;width:100%;height:100%;min-height:0;padding:calc(env(safe-area-inset-top) + 100px) 22px var(--chat-bottom,180px);scroll-padding:calc(env(safe-area-inset-top) + 100px) 0 var(--chat-bottom,180px);overflow-anchor:none;pointer-events:auto;}
+body #shell .owner-chat-content .owner-composer{position:relative;z-index:2;flex:none;max-height:65%;pointer-events:auto;}
 body #shell :is(.messages,.owner-messages){scroll-behavior:auto;}
 body #shell :is(.chat-bottom,.owner-down){z-index:9;}
 body #shell .home-conversation[hidden]{display:none;}
-@media(orientation:landscape) and (max-height:600px){body #shell[data-route=home] .home-screen{padding-top:52px;}}
+@media(orientation:landscape) and (max-height:600px){body #shell[data-route=home] .home-conversation .messages{padding-top:52px;scroll-padding-top:52px;}body #shell .owner-chat-content .owner-messages{padding-top:72px;scroll-padding-top:72px;}}
 /* Visual rectangle follows the keyboard pan once; no second keyboard inset. */
 html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
 body{position:fixed;inset:0;height:100%;}
 body #shell,body #shell[data-route=home]{position:absolute;inset:var(--viewport-top,0px) 0 auto;height:var(--app-height,100dvh);}
 .navigation-layer,.message-menu-overlay{position:absolute;top:var(--viewport-top,0px);height:var(--app-height,100dvh);}
+
