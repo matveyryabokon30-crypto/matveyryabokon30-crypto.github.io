@@ -31,7 +31,7 @@
 <div id="navigationLayer" class="navigation-layer" aria-label="Навигация SEKKES"><div id="menuBackdrop" class="menu-backdrop" hidden></div><button id="menuTrigger" class="menu-trigger" type="button" aria-label="Открыть меню" aria-controls="navigationPanel" aria-expanded="false"></button><nav id="navigationPanel" class="navigation-panel" aria-label="Разделы SEKKES" hidden inert><div id="menuItems"></div></nav></div>
 <dialog id="dialog" aria-labelledby="dialogTitle"><button id="dialogClose" class="icon-button dialog-close" aria-label="Закрыть окно"></button><div id="dialogContent"></div></dialog>
 <script type="module">
-import {initialize} from './assets/ui/app.mjs';
+import {initialize} from './assets/ui/app.mjs?v=messenger10';
 import {options,install} from './assets/ui/fixture.mjs';
 initialize(options);install();
 window.SekkesS2.ownerRequest=async path=>path==='status'?{owner:true,active:true}:{turns:[],media:[],documents:[],costs:{}};
