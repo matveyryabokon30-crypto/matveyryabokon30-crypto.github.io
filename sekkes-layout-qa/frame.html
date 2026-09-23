@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="/sekkes-v2/assets/ui/owner.css">
 <link rel="icon" type="image/jpeg" href="/sekkes-v2/assets/brand/sekkes-approved-icon.jpeg">
 <link rel="apple-touch-icon" href="/sekkes-v2/assets/brand/sekkes-approved-icon.jpeg">
-<link rel="stylesheet" href="/sekkes-v2/assets/ui/composer.css?v=messenger13">
+<link rel="stylesheet" href="/sekkes-v2/assets/ui/composer.css?v=messenger14">
 </head>
 <body>
 <div id="shell" data-route="home" data-voice="idle">
@@ -30,8 +30,8 @@
 </div>
 <div id="navigationLayer" class="navigation-layer" aria-label="Навигация SEKKES"><div id="menuBackdrop" class="menu-backdrop" hidden></div><button id="menuTrigger" class="menu-trigger" type="button" aria-label="Открыть меню" aria-controls="navigationPanel" aria-expanded="false"></button><nav id="navigationPanel" class="navigation-panel" aria-label="Разделы SEKKES" hidden inert><div id="menuItems"></div></nav></div>
 <dialog id="dialog" aria-labelledby="dialogTitle"><button id="dialogClose" class="icon-button dialog-close" aria-label="Закрыть окно"></button><div id="dialogContent"></div></dialog>
-<script type="module">
-import {initialize} from '/sekkes-v2/assets/ui/app.mjs?v=messenger13';
+<script type="importmap">{"imports": {"/sekkes-v2/assets/ui/viewport.mjs": "/sekkes-v2/assets/ui/viewport.mjs?v=messenger14", "/sekkes-v2/assets/ui/living-icons.mjs": "/sekkes-v2/assets/ui/living-icons.mjs?v=messenger14", "/sekkes-v2/assets/ui/owner-workspace.mjs": "/sekkes-v2/assets/ui/owner-workspace.mjs?v=messenger14", "/sekkes-v2/assets/ui/app.mjs": "/sekkes-v2/assets/ui/app.mjs?v=messenger14"}}</script><script type="module">
+import {initialize} from '/sekkes-v2/assets/ui/app.mjs?v=messenger14';
 import {options,install} from '/sekkes-v2/assets/ui/fixture.mjs';
 initialize(options);install();
 window.SekkesS2.ownerRequest=async path=>path==='status'?{owner:true,active:true}:{turns:[],media:[],documents:[],costs:{input_tokens:0,output_tokens:0,reserved_usd:0},budget_cap_usd:10};

@@ -113,7 +113,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
    updateVoice(voice);updateSend();document.title=descriptor.title+' · SEKKES';host.focus({preventScroll:true});
   }catch{notify('Не удалось загрузить раздел. Проверь подключение.')}
  }
- addEventListener('hashchange',route,{signal});lockViewport(signal);
+ addEventListener('hashchange',route,{signal});document.addEventListener('sekkes-viewport-change',()=>{menu.close({restoreFocus:false});resizeDraft();requestAnimationFrame(positionChatControls)},{signal});lockViewport(signal);
  const draftObserver=new ResizeObserver(resizeDraft);draftObserver.observe(app);window.visualViewport?.addEventListener('resize',resizeDraft,{signal});
  function positionChatControls(){
   app.dataset.ownerAllowed=String(ownerAllowed);
