@@ -20,3 +20,11 @@
 .owner-screen[data-live=true] .owner-composer-pill{opacity:.5;pointer-events:none}
 @media(min-width:800px){.owner-screen{padding-inline:30px}.owner-message{font-size:18px}.owner-tabs{align-self:center;max-width:100%}}
 .conversation-controls{flex-wrap:wrap}.chat-attachment-tray{flex-basis:100%;display:flex;overflow:auto;gap:8px;max-height:110px}.chat-attachment-tray[hidden]{display:none}.chat-attachment-chip{display:flex;align-items:center;gap:6px;flex:0 0 auto;max-width:230px;border:1px solid #ffffff40;border-radius:15px;background:#173c55dd;padding:5px;font-size:12px}.chat-attachment-chip img{width:46px;height:46px;object-fit:cover;border-radius:10px}.chat-attachment-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-attachment-chip button{width:32px;min-width:32px;height:32px}.chat-file{display:block;margin:8px 0;border:1px solid #ffffff40;border-radius:14px;padding:10px;background:#173c5580;text-align:left;overflow-wrap:anywhere}.chat-file-preview img,.chat-file-preview video{display:block;max-width:100%;max-height:280px;border-radius:16px}.chat-file-preview audio{max-width:100%}.chat-file-preview a{font-size:13px}
+html:has([data-route=admin]),html:has(.chat-attachment-tray:not([hidden])){touch-action:pan-x pan-y}.owner-screen{touch-action:auto}.owner-content{touch-action:pan-y}.chat-attachment-tray{touch-action:pan-x}
+
+/* Keyboard uses its visible bottom edge; the home-indicator inset is only for a closed keyboard. */
+html[data-keyboard-open=true] .owner-screen{padding-bottom:calc(var(--keyboard-inset,0px) + 2px);gap:4px}
+.owner-composer{max-height:none;overflow:visible}
+.owner-composer .owner-input{max-height:none;outline:none;outline-offset:0;box-shadow:none;overflow-y:auto}
+.owner-composer .owner-input:focus,.owner-composer .owner-input:focus-visible{outline:none;box-shadow:none}
+.owner-messages{border:0;box-shadow:none;border-radius:0;background:transparent}
