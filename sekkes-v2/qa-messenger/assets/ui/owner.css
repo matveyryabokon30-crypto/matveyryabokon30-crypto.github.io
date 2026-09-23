@@ -28,3 +28,15 @@ html[data-keyboard-open=true] .owner-screen{padding-bottom:calc(var(--keyboard-i
 .owner-composer .owner-input{max-height:none;outline:none;outline-offset:0;box-shadow:none;overflow-y:auto}
 .owner-composer .owner-input:focus,.owner-composer .owner-input:focus-visible{outline:none;box-shadow:none}
 .owner-messages{border:0;box-shadow:none;border-radius:0;background:transparent}
+
+/* Full-width drafting row; actions do not reserve side columns alongside the text. */
+.owner-composer-pill{display:grid;grid-template-columns:1fr auto auto;gap:0;align-items:end;padding:7px 8px;border-radius:26px}
+.owner-composer .owner-input{grid-column:1/-1;grid-row:1;width:100%;padding:7px 6px;min-height:40px}
+.owner-composer-pill>.icon-button{grid-row:2}
+.owner-composer-pill>.icon-button:first-child{grid-column:1;justify-self:start}
+.owner-composer .owner-mic,.owner-composer .owner-record-stop{grid-column:2}
+.owner-composer .owner-send{grid-column:3}
+/* Direct visual-viewport geometry also covers iOS resizing innerHeight with its keyboard. */
+.owner-screen:has(textarea:focus){height:var(--owner-visible-height,100%);padding-bottom:0;gap:4px}
+.owner-screen:has(textarea:focus) .owner-tabs{margin-bottom:0}
+.owner-screen:has(textarea:focus) .owner-down{bottom:180px}
