@@ -48,3 +48,7 @@ html[data-keyboard-open=true] .owner-screen{padding-bottom:calc(var(--keyboard-i
 .owner-chat-content .owner-composer{position:relative;z-index:2;pointer-events:auto}
 .owner-screen:has(.owner-chat-content)>.owner-tabs,.owner-screen:has(.owner-chat-content)>.owner-heading,.owner-screen:has(.owner-chat-content)>.owner-notice{position:relative;z-index:2}
 .owner-chat-content .owner-down{pointer-events:auto}
+
+.owner-composer-pill>.owner-attachments{grid-column:1/-1;grid-row:1;max-height:110px;margin:0 0 6px}
+.owner-composer-pill:has(>.owner-attachments:not(:empty))>.owner-input{grid-row:2}
+.owner-composer-pill:has(>.owner-attachments:not(:empty))>.icon-button{grid-row:3}

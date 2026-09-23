@@ -50,7 +50,7 @@ export function create(ctx){
  const stop=glyph('stop','Закончить запись',()=>recorder.finish());stop.classList.add('owner-record-stop');stop.hidden=!recording;
  const sendButton=glyph('send','Отправить сообщение',()=>composer.requestSubmit());sendButton.classList.add('owner-send');
  const call=glyph(live.active?'stop':'record','Живой разговор с агентом',()=>{if(live.active)void live.stop();else if(!busy&&!recording&&!selected.length&&!retry)void live.start();else notice.textContent='Сначала отправь сообщение или заверши запись.'});call.classList.add('owner-live');call.setAttribute('aria-pressed',String(live.active));
- pill.append(attach,input,mic,stop,sendButton);row.append(pill,call);const recStatus=hint(recordDetail);recStatus.classList.add('owner-record-status');composer.append(attachments,row,picker,recStatus);composer.addEventListener('submit',e=>{e.preventDefault();if(!live.active)void run(send)});
+ pill.append(attach,input,mic,stop,sendButton);row.append(pill,call);const recStatus=hint(recordDetail);recStatus.classList.add('owner-record-status');pill.prepend(attachments);composer.append(row,picker,recStatus);composer.addEventListener('submit',e=>{e.preventDefault();if(!live.active)void run(send)});
  content.append(list,down,composer);renderMessages();if(position)list.scrollTop=position.end?list.scrollHeight:position.top;requestAnimationFrame(size);
  }
  async function send(){if(recording)return;const value=draft.trim();if(!value&&!selected.length)return;const ticket=epoch;

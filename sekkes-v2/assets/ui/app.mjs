@@ -23,6 +23,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  let generation=0,current=null,voice='idle',swRegistration=null,recording,dictation,menu,textPending=false;
  const app=$('#shell'),host=$('#routeHost'),dialog=$('#dialog'),composer=$('#composer'),stop=$('#micTestLink'),status=$('#aiStateLabel'),nav=$('#menuItems'),recordButton=$('#micButton'),draft=$('#draft'),controls=$('#conversationControls');
  let ownerAllowed=false;const files=chatAttachments({composer,request:body=>ctx.runtime().chatMedia(body),changed:()=>updateSend(),notify});
+ const composerTools=el('div','composer-tools');for(const b of [...composer.children].filter(n=>n.matches('button.icon-button')))composerTools.append(b);composer.append(composerTools);
  const modeSwitch=el('div','owner-mode');modeSwitch.hidden=true;app.append(modeSwitch);
  for(const [id,label]of [['home','Пользователь'],['admin','Админ']]){const b=el('button','owner-button');b.innerHTML=id==='admin'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>';b.setAttribute('aria-label',label);b.title=label;b.type='button';b.addEventListener('click',()=>ctx.navigate(id));modeSwitch.append(b)}
  async function probeOwner(){const uid=ctx.account?.id;ownerAllowed=false;modeSwitch.hidden=true;if(!uid){cache.get('admin')?.reset();return}try{const result=await ctx.runtime()?.ownerRequest?.('status');if(ctx.account?.id!==uid)return;ownerAllowed=result?.owner===true;modeSwitch.hidden=!ownerAllowed;if(ownerAllowed&&location.hash==='#admin')route()}catch{/* Ordinary chat remains available if the admin service is unavailable. */}}
@@ -62,7 +63,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   if(composer.hidden||!draft.clientWidth)return;
   const v=window.visualViewport,visible=v?.height||innerHeight;
   const limit=Math.max(62,Math.floor(visible*.45));
-  composer.dataset.expanded='false';draft.style.height='0px';const expanded=draft.value.length>0&&(draft.scrollHeight>40||draft.value.includes('\n'));composer.dataset.expanded=String(expanded);draft.style.height='0px';draft.style.height=(draft.value?Math.min(limit,Math.max(40,draft.scrollHeight)):40)+'px';requestAnimationFrame(positionChatControls);
+  const hasText=Boolean(draft.value.trim());composer.dataset.expanded=String(document.activeElement===draft||files.hasFiles);draft.style.height='0px';if(hasText&&draft.scrollHeight>36)composer.dataset.expanded='true';draft.style.height='0px';draft.style.height=(hasText?Math.min(limit,Math.max(32,draft.scrollHeight)):32)+'px';requestAnimationFrame(positionChatControls);
  }
  function updateSend(){
   resizeDraft();
@@ -96,9 +97,9 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  for(const s of sections.filter(s=>!s.ownerOnly)){const a=el('a','rail-item');a.href=s.route;a.innerHTML=icon(s.icon);a.append(el('span','rail-label',s.title));a.dataset.route=s.id;a.title=s.title;nav.append(a)}
  $('#dialogClose').innerHTML=icon('close');$('#dialogClose').addEventListener('click',()=>dialog.close(),{signal});dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()},{signal});
  composer.addEventListener('submit',async e=>{e.preventDefault();if(textPending)return;try{if(recording.hasAudio)await recording.send();else if((draft.value.trim()||files.hasFiles)&&!recording.busy&&!files.busy)await ctx.runtime()?.sendText();}finally{updateSend()}},{signal});
- draft.addEventListener('focus',()=>{if(!ctx.runtime()?.voiceActive)ctx.showConversation()},{signal});
+ draft.addEventListener('focus',()=>{if(!ctx.runtime()?.voiceActive)ctx.showConversation();resizeDraft()},{signal});
  draft.addEventListener('input',()=>{if(!ctx.runtime()?.voiceActive)ctx.showConversation();sendError('');ctx.runtime()?.saveDraft?.();updateSend();},{signal});
- draft.enterKeyHint='enter'; // Enter always inserts a newline; sending uses the arrow button.
+ draft.addEventListener('blur',resizeDraft,{signal});draft.enterKeyHint='enter'; // Enter always inserts a newline; sending uses the arrow button.
  recordButton.innerHTML=icon('record');$('#micButton').innerHTML=icon('mic');$('#sendButton').innerHTML=icon('send');bindLiveControl(stop,{signal,state:()=>ctx.runtime()?.voiceActive?'live':voice,start:()=>ctx.startVoice(),stop:()=>{const runtime=ctx.runtime();if(runtime?.stopVoice)runtime.stopVoice();else runtime?.toggleMic()}});
  recording=recordingControl(ctx,$('#recordingPanel'),recordButton,signal,recorderOptions);
  dictation={busy:false,cancel(){},dispose(){}};
@@ -120,7 +121,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   if(!form||form.hidden)return;const pill=admin?form.querySelector('.owner-composer-pill'):form;
   const rect=pill.getBoundingClientRect(),down=host.querySelector(admin?'.owner-down':'.chat-bottom');
   if(down){down.style.setProperty('--jump-left',(rect.left+rect.width/2)+'px');down.style.setProperty('--jump-top',(rect.top-46)+'px')}
-  modeSwitch.style.top=Math.max(80,rect.top-50)+'px';modeSwitch.hidden=!ownerAllowed||!['home','admin'].includes(current);
+  const liveButton=admin?form.querySelector('.owner-live'):stop;const liveRect=liveButton.getBoundingClientRect();modeSwitch.style.top=Math.max(80,liveRect.top-88)+'px';modeSwitch.style.left=(liveRect.left+liveRect.width/2)+'px';modeSwitch.hidden=!ownerAllowed||!['home','admin'].includes(current);
   if(admin){const screen=host.querySelector('.owner-screen');const top=screen.getBoundingClientRect().top;screen.style.setProperty('--owner-reading-bottom',Math.max(0,screen.clientHeight-(form.getBoundingClientRect().top-top)+12)+'px')}
  }
  const dockObserver=new ResizeObserver(()=>{app.style.setProperty('--dock-height',$('#sessionDock').getBoundingClientRect().height+'px');positionChatControls()});dockObserver.observe($('#sessionDock'));

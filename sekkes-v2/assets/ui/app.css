@@ -261,3 +261,22 @@ html,html[data-theme=light],body{background:var(--topology-chrome,#1e3c2c);color
 #shell>.owner-mode .owner-button{display:grid;place-items:center;width:36px;min-height:36px;height:36px;padding:6px;margin:0;border:0;background:transparent;border-radius:50%}
 #shell>.owner-mode .owner-button[aria-pressed=true]{background:#c4e1f03d}
 #shell>.owner-mode svg{width:22px;height:22px;stroke-width:1.25;fill:none}
+
+/* messenger.8: explicit composer flow avoids intrinsic grid rows on mobile Safari. */
+#shell[data-route=home] #composer{display:block;position:relative;padding:5px 8px;min-height:44px;height:auto;border-radius:26px}
+#shell[data-route=home] #composer #draft{display:block;box-sizing:border-box;width:100%;min-height:32px;height:32px;margin:0;padding:5px 40px 5px 36px;line-height:22px;border:0;resize:none;align-self:auto}
+#shell[data-route=home] #composer:has(#sendButton:not([hidden])) #draft{padding-right:76px}
+#shell[data-route=home] #composer .composer-tools{position:absolute;inset:5px 8px;display:flex;align-items:center;gap:0;pointer-events:none}
+#shell[data-route=home] #composer .composer-tools>.icon-button{pointer-events:auto;width:36px;min-width:36px;height:32px;min-height:32px;padding:2px;flex-shrink:0}
+#shell[data-route=home] #composer .composer-tools>.icon-button:first-child{margin-right:auto}
+#shell[data-route=home] #composer[data-expanded=true] #draft{padding:5px 6px}
+#shell[data-route=home] #composer[data-expanded=true] .composer-tools{position:relative;inset:auto;height:34px;margin-top:2px}
+#shell[data-route=home] #composer .chat-attachment-tray{width:100%;max-height:96px;margin:2px 0 6px;padding:0;flex-basis:auto}
+#shell[data-route=home] #composer .chat-attachment-chip{background:rgba(255,255,255,.04);max-width:100%}
+#shell .chat-bottom,#shell .owner-down{display:grid;place-items:center;padding:0;background:rgba(190,220,240,.07)!important;border:1px solid rgba(232,246,255,.35);box-shadow:inset 0 1px 0 #ffffff20;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text)}
+#shell .chat-bottom .living-icon,#shell .owner-down .living-icon{--icon-size:22px;transform:rotate(180deg);margin:0}
+#shell>.owner-mode{flex-direction:column;right:auto;transform:translateX(-50%);background:rgba(190,220,240,.07);border-color:rgba(232,246,255,.35);box-shadow:inset 0 1px 0 #ffffff20;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#shell>.owner-mode .owner-button[aria-pressed=true]{background:#ffffff18}
+
+#shell[data-route=home] #composer[data-wave=true] #draft{display:none}
+#shell[data-route=home] #composer[data-wave=true] .mic-wave{margin-inline:36px 76px}

@@ -1,9 +1,9 @@
-import {el} from '../components.mjs';
+import {el,icon} from '../components.mjs';
 export function create(ctx){
  const node=el('section','screen home-screen');node.setAttribute('aria-label','Главная');node.dataset.conversation='closed';
  const conversation=el('section','home-conversation');conversation.setAttribute('aria-label','Переписка с SEKKES');conversation.hidden=true;
  const messages=el('div','messages');messages.id='messages';messages.setAttribute('aria-label','Сообщения');conversation.append(messages);
- const bottom=el('button','chat-bottom');bottom.type='button';bottom.setAttribute('aria-label','К последнему сообщению');bottom.title='К последнему сообщению';bottom.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12 4v15m-6-6 6 6 6-6"/></svg>';bottom.hidden=true;conversation.append(bottom);
+ const bottom=el('button','chat-bottom');bottom.type='button';bottom.setAttribute('aria-label','К последнему сообщению');bottom.title='К последнему сообщению';bottom.innerHTML=icon('send');bottom.hidden=true;conversation.append(bottom);
  function updateBottom(){bottom.hidden=conversation.hidden||messages.scrollHeight-messages.clientHeight-messages.scrollTop<80;}
  bottom.addEventListener('click',()=>{messages.scrollTop=messages.scrollHeight;updateBottom()});
  const resize=new ResizeObserver(updateBottom);resize.observe(messages);
@@ -14,3 +14,4 @@ export function create(ctx){
  node.append(conversation);ctx.messages=messages;ctx.flushMessages();
  return {node,showConversation,hideConversation,messageAdded(){requestAnimationFrame(updateBottom)},reset(){hideConversation();messages.replaceChildren()},dispose(){resize.disconnect();content.disconnect();ctx.messages=null}};
 }
+
