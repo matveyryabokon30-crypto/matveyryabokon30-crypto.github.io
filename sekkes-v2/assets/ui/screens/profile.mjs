@@ -47,14 +47,14 @@ export function create(ctx){
   ownDialog.append(stage,bar,el('p','profile-caption',post.caption),del);show();
  }
  function grid(){
-  const toolbar=el('div','profile-grid-heading');toolbar.append(el('h2','','Материалы'),button('Добавить','plus',addMedia));body.append(toolbar);
+  const toolbar=el('div','profile-grid-heading');toolbar.append(button('Добавить','plus',addMedia));body.append(toolbar);
   const filters=el('div','profile-filters');filters.setAttribute('aria-label','Формат материалов');for(const [key,label,symbol] of [['all','Все','feed'],...Object.entries(mediaTypes).map(([k,v])=>[k,v,k])]){const b=button(label,symbol,()=>{filter=key;render();},'profile-filter');b.setAttribute('aria-pressed',String(filter===key));filters.append(b);}body.append(filters);
   if(!loaded){empty(ctx.account?'Загружаем профиль':'Твой профиль','Аватар, анкета и личные материалы.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
   const posts=(data?.posts||[]).filter(p=>filter==='all'||p.kind===filter);if(!posts.length){empty('Пока нет материалов','Добавь фото, видео, карусель или сторис.');return;}
   const list=el('div','profile-media-grid');
   for(const post of posts){const b=el('button','profile-tile');b.type='button';b.setAttribute('aria-label',mediaTypes[post.kind]+(post.caption?': '+post.caption:''));b.onclick=()=>openPost(post);
    const file=post.files[0];if(file.type.startsWith('image/')){const img=el('img');img.src=url(file);img.alt=post.caption||mediaTypes[post.kind];img.loading='lazy';b.append(img);}else{const cover=el('span','profile-video-cover');cover.innerHTML=icon('video');b.append(cover);}
-   const badge=el('span','profile-type');badge.innerHTML=icon(post.kind);badge.append(el('span','',post.kind==='carousel'?String(post.files.length):mediaTypes[post.kind]));b.append(badge);list.append(b);
+   const badge=el('span','profile-type');badge.innerHTML=icon(post.kind);badge.setAttribute('aria-hidden','true');b.append(badge);list.append(b);
   }body.append(list);
  }
  function settings(){header('Настройки профиля');const group=el('div','settings-group');

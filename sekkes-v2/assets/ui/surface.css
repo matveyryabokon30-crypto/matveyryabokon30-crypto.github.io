@@ -90,14 +90,23 @@ body button:disabled{opacity:.5;}
   background:transparent!important;border:0!important;outline:none!important;
   box-shadow:none!important;text-decoration:none!important;
  }
- body :is(.profile-editor .pe-bar>.pe-button:first-child,.profile-back,.owner-tabs>.owner-button):focus-visible{
-  color:var(--focus,#a3ecff)!important;
- }
+ body .owner-tabs>.owner-button:focus-visible{color:var(--focus,#a3ecff)!important;}
+ body :is(.profile-editor .pe-bar>.pe-button:first-child,.profile-back){color:var(--ui-ink)!important;}
+ body .profile-screen :is(.profile-filter,.profile-type){background:transparent!important;border:0!important;box-shadow:none!important;}
+ body .profile-screen .profile-filter{text-decoration:none!important;}
 }
 /* Keyboard focus remains visible in the glyph, without a frame or underline. */
 body :is(.profile-editor .pe-bar>.pe-button:first-child,.profile-back,.owner-tabs>.owner-button):focus-visible .living-icon-fallback{
  opacity:1;stroke-width:1.8;
 }
-/* Two consecutive owner requests of +10%: 1.1 x 1.1, relative to profile.27.
+/* Three consecutive owner requests of +10%: 1.1 x 1.1 x 1.1, relative to profile.27.
    Optical scaling leaves hit targets, row metrics, avatars and media intact. */
-body :is(.profile-screen,.profile-editor) .living-icon{scale:1.21;}
+body :is(.profile-screen,.profile-editor) .living-icon{scale:1.331;}
+
+/* ui.30: unframed media controls; captions stay in the viewer, not over photos. */
+body .profile-grid-heading{justify-content:flex-end;}
+body .profile-filter{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;opacity:.62;}
+body .profile-filter:is([aria-pressed=true],:focus-visible){opacity:1;}
+body .profile-type{padding:4px;border-radius:0;color:var(--ui-ink);pointer-events:none;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+body .profile-type .living-icon{filter:drop-shadow(0 1px 2px #0009);}
+body :is(.profile-editor .pe-bar>.pe-button:first-child,.profile-back):focus-visible .living-icon-fallback{opacity:1;stroke-width:1.25;}
