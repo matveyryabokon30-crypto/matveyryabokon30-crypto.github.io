@@ -22,3 +22,4 @@ body #shell :is(button,.composer,.owner-composer-pill,.owner-mode,.owner-tabs,.p
 body #shell :is(.composer-tools,.owner-mode,.owner-tabs,.profile-bottom) button{background:transparent!important;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
 body #shell :is(.owner-mode,.owner-tabs,.profile-bottom) button:is([aria-pressed=true],[aria-current=page]){box-shadow:inset 0 0 0 1px var(--control-line);}
 html[data-transparency=off] body #shell :is(button,.composer,.owner-composer-pill,.owner-mode,.owner-tabs,.profile-bottom),html[data-transparency=off] body :is(.menu-trigger,.navigation-panel){background:#10283b!important;backdrop-filter:none;-webkit-backdrop-filter:none;}
+body :is(dialog button,.profile-avatar-edit,.rail-item){background:var(--control-glass)!important;border-color:var(--control-line);box-shadow:var(--control-shadow);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);}
