@@ -1,0 +1,18 @@
+import {mediaView,mediaLoader,isMedia} from './attachment-view.mjs';
+import {el,icon} from '../assets/ui/components.mjs';
+import {ACCEPT,prepareFile,bundleBlob} from '../assets/ui/owner-media.mjs';
+export function chatAttachments({composer,request,changed,notify}){
+ let selected=[],preparing=false,locked=false,epoch=0;const loader=mediaLoader(),urls=new Map(),tray=el('div','chat-attachment-tray'),picker=el('input'),attach=el('button','icon-button');
+ tray.hidden=true;composer.prepend(tray);picker.type='file';picker.multiple=true;picker.accept=ACCEPT;picker.hidden=true;attach.type='button';attach.innerHTML=icon('paperclip');attach.setAttribute('aria-label','Прикрепить фото, видео или файл');composer.prepend(attach,picker);
+ const label=e=>({MEDIA_TOO_LARGE:'Файл должен быть до 10 МБ.',VIDEO_TOO_LONG:'Видео должно быть до 3 минут.',TOO_MANY_FILES:'Можно прикрепить до 4 файлов.',MEDIA_QUOTA:'Общий размер вложений — до 20 МБ.',UNSUPPORTED_FILE:'Этот формат пока не поддерживается.'}[e.code||e.message]||'Не удалось подготовить файл. Попробуй JPEG, MP4, PDF или документ.');
+ const url=m=>{if(!urls.has(m.id))urls.set(m.id,URL.createObjectURL(bundleBlob(m)));return urls.get(m.id)};
+ function paint(){tray.replaceChildren();tray.hidden=!selected.length;for(const m of selected){const card=el('div','chat-attachment-chip');if(isMedia(m)){card.classList.add('attachment-compact');card.append(mediaView(m,url(m),{compact:true}));}else card.append(el('span','',m.name));const remove=el('button','icon-button');remove.type='button';remove.innerHTML=icon('close');remove.setAttribute('aria-label','Убрать '+m.name);remove.onclick=()=>{if(locked)return;selected=selected.filter(x=>x.id!==m.id);paint()};card.append(remove);tray.append(card)}changed()}
+ attach.onclick=()=>{if(!locked&&!preparing)picker.click()};picker.onchange=async()=>{const files=[...picker.files];picker.value='';if(locked)return;preparing=true;const ticket=epoch;changed();try{if(files.length+selected.length>4)throw Error('TOO_MANY_FILES');for(const f of files){const m=await prepareFile(f);if(ticket!==epoch)return;if(selected.reduce((n,x)=>n+x.data.length,0)+m.data.length>Math.ceil(20*1024*1024/3)*4)throw Error('MEDIA_QUOTA');selected.push(m)}}catch(e){notify(label(e))}finally{if(ticket===epoch){preparing=false;paint()}}};
+ function decorate(list,items){for(const m of items||[]){const row=[...list?.children||[]].find(n=>n.dataset.messageId==='j:'+m.turn_id+':user');if(!row||row.querySelector('[data-file-id="'+m.id+'"]'))continue;
+ const ticket=epoch,getURL=async()=>{if(urls.has(m.id))return urls.get(m.id);const bundle=await request({action:'get',id:m.id});if(ticket!==epoch)return null;return url(bundle)};
+ let view;if(isMedia(m))view=loader.mount(m,getURL);else{view=el('button','chat-file',m.name||'Документ');view.type='button';view.onclick=async()=>{view.disabled=true;try{const u=await getURL();if(u){const next=mediaView(m,u);next.dataset.fileId=m.id;view.replaceWith(next)}}catch{notify('Не удалось открыть документ.');view.disabled=false}};}
+ view.dataset.fileId=m.id;row.insertBefore(view,row.querySelector(':scope > time'));const text=row.querySelector('.rich-message');if(text?.textContent.trim()==='Посмотри прикреплённые материалы.')text.hidden=true;
+ }}
+ return{get hasFiles(){return selected.length>0},get busy(){return preparing},lock(v){locked=v;attach.disabled=v||preparing},async upload(){for(const m of selected)if(!m.uploaded){await request(m);m.uploaded=true}return selected.map(x=>x.id)},clear(){selected=[];paint()},reset(){loader.reset();epoch++;selected=[];preparing=false;locked=false;for(const u of urls.values())URL.revokeObjectURL(u);urls.clear();paint()},decorate};
+}
+
