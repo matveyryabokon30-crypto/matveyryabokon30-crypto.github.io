@@ -81,3 +81,23 @@ html[data-transparency=off] body :is(dialog,.menu-trigger,.navigation-panel){bac
 @layer sekkes-borderless{body :is(button,input,textarea,select,dialog,.settings-row,.settings-group,.content-card,.practice-card,.voice-card,.voice-choice,.world-panel,.world-heading,.badge,.avatar,.profile-avatar-edit,.profile-bottom,.profile-tile,.profile-type,.profile-filters,.profile-empty,.pe-panel,.pe-field,.pe-pict,.pe-toggle,.pe-contact-link,.pe-bar,.navigation-panel,.composer,.owner-composer-pill,.owner-mode,.owner-tabs,.owner-card,.owner-panel,.owner-material,.message,.attachment-card,.chat-attachment-chip){border:0!important;box-shadow:none!important;}body :is(button,a,input,textarea,select,dialog):focus{outline:none!important;}}
 @layer sekkes-borderless{body :is(button,a,input,textarea,select):focus-visible{background:var(--ui-selected)!important;}body :is(.profile-filter,.profile-nav-item,.rail-item,.owner-button,.filter,.voice-choice):is([aria-pressed=true],[aria-current=page],[aria-selected=true],.selected){background:var(--ui-selected)!important;}}
 body button:disabled{opacity:.5;}
+
+/* ui.29: back actions and owner tabs are glyphs, not filled selection tiles.
+   Keep this exception in the existing important layer: legacy focus/selected
+   rules otherwise win over transparent child controls. */
+@layer sekkes-borderless{
+ body :is(.profile-editor .pe-bar>.pe-button:first-child,.profile-back,.owner-tabs>.owner-button){
+  background:transparent!important;border:0!important;outline:none!important;
+  box-shadow:none!important;text-decoration:none!important;
+ }
+ body :is(.profile-editor .pe-bar>.pe-button:first-child,.profile-back,.owner-tabs>.owner-button):focus-visible{
+  color:var(--focus,#a3ecff)!important;
+ }
+}
+/* Keyboard focus remains visible in the glyph, without a frame or underline. */
+body :is(.profile-editor .pe-bar>.pe-button:first-child,.profile-back,.owner-tabs>.owner-button):focus-visible .living-icon-fallback{
+ opacity:1;stroke-width:1.8;
+}
+/* Two consecutive owner requests of +10%: 1.1 x 1.1, relative to profile.27.
+   Optical scaling leaves hit targets, row metrics, avatars and media intact. */
+body :is(.profile-screen,.profile-editor) .living-icon{scale:1.21;}
