@@ -1,0 +1,83 @@
+/* SEKKES surface contract. This file is the single authority for materials,
+   decoration and editor layout; no route-specific framed-card variants. */
+:root,html[data-theme=light],html[data-theme=dark],body #shell,body #shell[data-route=home]{
+ --ui-pane:rgba(15,29,36,.42);--ui-sheet:rgba(15,29,36,.68);
+ --ui-selected:rgba(221,241,245,.12);--ui-ink:#eef5f7;--ui-muted:#bacdd3;
+ --surface:var(--ui-pane);--surface-raised:var(--ui-sheet);--glass:var(--ui-pane);
+ --selected:var(--ui-selected);--control-glass:var(--ui-pane);--control-line:transparent;
+ --line:transparent;--control-shadow:none;--text:var(--ui-ink);--text-muted:var(--ui-muted);
+}
+/* Remove decorative frames, including the old global button/focus boxes.
+   Keyboard focus remains visible by a material change, not a bounding box. */
+body :is(button,input,textarea,select,dialog,.settings-row,.settings-group,.content-card,.practice-card,.voice-card,.voice-choice,.world-panel,.world-heading,.badge,.avatar,.profile-avatar-edit,.profile-bottom,.profile-tile,.profile-type,.profile-filters,.profile-empty,.pe-panel,.pe-field,.pe-pict,.pe-toggle,.pe-contact-link,.pe-bar,.navigation-panel,.composer,.owner-composer-pill,.owner-mode,.owner-tabs,.owner-card,.owner-panel,.owner-material,.message,.attachment-card,.chat-attachment-chip){border:0!important;box-shadow:none!important;}
+body :is(button,a,input,textarea,select,dialog):focus{outline:none!important;}
+body :is(button,a,input,textarea,select):focus-visible{outline:none!important;background:var(--ui-selected)!important;text-decoration:underline;text-underline-offset:5px;}
+body :is(input,textarea,select):focus-visible{text-decoration:none;}
+body :is(button,a):active:not(:disabled){transform:none;}
+body #shell :is(button,.settings-row,.content-card,.practice-card,.voice-card,.voice-choice,.world-panel,.world-heading,.composer,.owner-composer-pill,.owner-mode,.owner-tabs,.profile-bottom),
+body :is(.menu-trigger,.navigation-panel,dialog){background:var(--ui-pane)!important;color:var(--ui-ink);}
+body #shell :is(.screen,.content-screen,.profile-screen,.world-screen){background:transparent!important;}
+body #shell :is(.settings-row,.content-card,.practice-card,.voice-card,.voice-choice,.world-heading){border-radius:16px;}
+/* Only the outer pane blurs the moving scene. Nested blur on every row was
+   expensive while the editor scrolled; child controls use the same material. */
+body #shell :is(.composer-tools,.owner-mode,.owner-tabs,.profile-bottom) button,
+body #shell .profile-editor :is(button,.pe-pict,.pe-panel,.pe-contact-link),
+body :is(.profile-editor button,.profile-editor .pe-pict,.profile-editor .pe-panel,.profile-editor .pe-contact-link){background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+body :is(.settings-row,.content-card,.practice-card,.voice-card,.voice-choice){backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+body :is(.profile-filter,.profile-nav-item,.rail-item,.owner-button,.filter,.voice-choice):is([aria-pressed=true],[aria-current=page],[aria-selected=true],.selected){background:var(--ui-selected)!important;color:var(--ui-ink)!important;}
+body :is(input,textarea,select){background:transparent;color:var(--ui-ink);}
+body input:-webkit-autofill{background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:var(--ui-ink);caret-color:var(--ui-ink);}
+body #shell .settings-row select{background:transparent!important;color:var(--ui-ink);}
+/* One fixed viewport rectangle, one scroll owner. The header is a grid row,
+   never a sticky child of the rubber-banding content. Shared viewport.mjs
+   remains the only keyboard/rotation geometry owner (chat code unchanged). */
+body .profile-dialog.profile-editor{
+ position:fixed;inset:auto;top:var(--viewport-top,0px);left:0;right:0;bottom:auto;
+ width:100%;max-width:none;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);
+ margin:0;padding:0;border-radius:0;overflow:hidden;overscroll-behavior:none;
+ background:var(--ui-sheet)!important;color:var(--ui-ink);
+ backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+body .profile-editor::backdrop{background:rgba(3,14,20,.16);}
+body .profile-editor .pe-form{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100%;min-height:0;margin:0;padding:0;overflow:hidden;}
+body .profile-editor .pe-bar{
+ position:relative;top:auto;flex-shrink:0;z-index:2;margin:0;
+ padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;
+ background:transparent;border-radius:0;overflow:hidden;
+}
+body .profile-editor .pe-content{
+ width:100%;max-width:680px;min-width:0;min-height:0;margin:0 auto;padding:0 20px max(30px,env(safe-area-inset-bottom,0px));
+ overflow-x:hidden;overflow-y:auto;overscroll-behavior:none;touch-action:pan-y;
+ overflow-anchor:none;scroll-behavior:auto;scroll-padding:18px;scrollbar-width:none;
+}
+body .profile-editor .pe-content::-webkit-scrollbar{display:none;}
+body .profile-editor .pe-section{margin:22px 0 28px;}
+body .profile-editor .pe-heading{margin:0 0 10px;color:var(--ui-muted);}
+body .profile-editor .pe-panel{overflow:visible;border-radius:0;background:transparent!important;}
+body .profile-editor .pe-field{margin:0;min-height:66px;padding:12px 0;}
+body .profile-editor .pe-row{padding:12px 0!important;min-height:68px;border-radius:0!important;}
+body .profile-editor .pe-pict{border-radius:0;flex-shrink:0;}
+body .profile-editor .pe-label,body .profile-editor :is(.pe-row-body small,.pe-note,.pe-toggle small){color:var(--ui-muted);}
+body .profile-editor .pe-field :is(input,textarea){border-radius:8px;padding:4px 0;min-height:32px;font-size:16px;line-height:1.5;}
+body .profile-editor .pe-field textarea{resize:none;}
+body .profile-editor .pe-field :is(input,textarea):focus{background:var(--ui-selected)!important;}
+body .profile-editor .pe-field input[type=date]{min-height:36px;text-align:left;}
+body .profile-editor input::-webkit-date-and-time-value{text-align:left;}
+body .profile-editor .pe-contact-actions{padding:8px 0;}
+body .profile-editor .pe-toggle{margin:0;}
+body .profile-editor .pe-toggle input{background:var(--ui-selected);}
+body .profile-editor .pe-toggle input:checked{background:rgba(83,169,157,.55);}
+body .profile-editor .pe-message{position:relative;inset:auto;transform:none;width:100%;max-width:680px;justify-self:center;margin:0;padding:10px 20px max(10px,env(safe-area-inset-bottom,0px));border-radius:0;background:var(--ui-pane);}
+body .profile-editor .pe-message:empty{display:none;}
+body .profile-editor .pe-avatar-badge{background:var(--ui-sheet);border:0;}
+/* The device safe-area edge is independent of scrollable content. */
+body .topology-chrome-edge{position:fixed;top:0;left:0;right:0;transform:none;}
+html[data-transparency=off]{--ui-pane:#13252e;--ui-sheet:#13252e;}
+html[data-transparency=off] body #shell{--ui-pane:#13252e;--ui-sheet:#13252e;}
+html[data-transparency=off] body :is(dialog,.menu-trigger,.navigation-panel){background:var(--ui-sheet)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+@media(max-width:350px){body .profile-editor .pe-content{padding-inline:14px;}body .profile-editor .pe-bar{padding-inline:10px;}}
+
+/* Decorative frames lose to no legacy rule; preserve semantic glyph strokes. */
+@layer sekkes-borderless{body :is(button,input,textarea,select,dialog,.settings-row,.settings-group,.content-card,.practice-card,.voice-card,.voice-choice,.world-panel,.world-heading,.badge,.avatar,.profile-avatar-edit,.profile-bottom,.profile-tile,.profile-type,.profile-filters,.profile-empty,.pe-panel,.pe-field,.pe-pict,.pe-toggle,.pe-contact-link,.pe-bar,.navigation-panel,.composer,.owner-composer-pill,.owner-mode,.owner-tabs,.owner-card,.owner-panel,.owner-material,.message,.attachment-card,.chat-attachment-chip){border:0!important;box-shadow:none!important;}body :is(button,a,input,textarea,select,dialog):focus{outline:none!important;}}
+@layer sekkes-borderless{body :is(button,a,input,textarea,select):focus-visible{background:var(--ui-selected)!important;}body :is(.profile-filter,.profile-nav-item,.rail-item,.owner-button,.filter,.voice-choice):is([aria-pressed=true],[aria-current=page],[aria-selected=true],.selected){background:var(--ui-selected)!important;}}
+body button:disabled{opacity:.5;}

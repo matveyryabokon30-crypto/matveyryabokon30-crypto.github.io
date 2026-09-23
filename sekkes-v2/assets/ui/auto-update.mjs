@@ -2,7 +2,7 @@
 export function autoUpdate({sw=navigator.serviceWorker,doc=document,events=window,canReload,preserve,reload=()=>location.reload(),every=setInterval,clear=clearInterval}){
  let registration,changed=false,reloading=false,controlled=Boolean(sw.controller),lastInput=Date.now();
  const interaction=()=>{lastInput=Date.now()};
- const apply=()=>{if(!changed||reloading||doc.hidden||Date.now()-lastInput<3000||!canReload())return;try{preserve()}catch{return}reloading=true;reload()};
+ const apply=()=>{if(!changed||reloading||doc.hidden||doc.querySelector('dialog[open]')||Date.now()-lastInput<3000||!canReload())return;try{preserve()}catch{return}reloading=true;reload()};
  const controller=()=>{if(controlled)changed=true;controlled=true;apply()};
  const check=()=>{if(!doc.hidden)registration?.update().catch(()=>{});apply()};
  sw.addEventListener('controllerchange',controller);
