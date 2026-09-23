@@ -1,7 +1,7 @@
 {
   "qa-media.html": "c70e0885a44f7e2c5882e6b7f6efb829373edfa530cdfd52c7c7448495a3d0db",
   "classic.html": "06a0c1293ae2bca1fb8826725897c6efd8eeae9cc10cde06af6cacce7d2dbf04",
-  "version.json": "88ce309a3af85903b7983335b28d0d4e0a9cbd2d448d9c52380f078682fab595",
+  "version.json": "dae8a1818ad702d3a989902a5a11b2e477041a21be6980ffa421bbbd7c7badde",
   "qa-media-v2.html": "4b25fabab63df373cd755407aab25e8f9886fa10618124584d04883649a58025",
   "qa-stop.html": "43361897d81f5b82e751dbfaf38bb0d63006071ce8227cbab7ce7933dbb5bee5",
   "qa.html": "c33076245ec58ca295088ab62f8ec88f4678f2057daf8878ac8adcd2de085d85",
@@ -10,7 +10,7 @@
   "manifest.webmanifest": "2a298c42246bc8f4386424c43c3dbf4c8eda02de07aa2c4c87f142cd3569d69c",
   "voices.json": "3e57e9705989076bd0cbc07d34f7513b59b759c0f4ba13dccdd8ba65919f8c8a",
   "index.html": "a3b42113c96a95a3c6fedce91c8905556af3f9c2bf8a61be1ede60c3deaea27b",
-  "sw.js": "4ebb31e79e3fdbeae0e7143ec6174066aeb0d02e416f194c5a47af051cabdb65",
+  "sw.js": "55a2e6f1b2a1ff65990a2ec797bbae5ea589b04cb99e8847db6a0ff70f05319a",
   "qa/chat-time-update.test.mjs": "276cb6fcd5c2653b39edd8a0f5c53604627f5298cd7bb8a64aa9646a2e36ac44",
   "assets/registry-foundation.mjs": "840e86e07736d52630bb115d3ddd52326ac0c8d76bad4d89c1b5fb0113f83bab",
   "assets/s2-api-3.mjs": "f736f9c7e625004df1cbc5e5e4caa6ae630f0303fd62f50bb80d040bc809bf24",
