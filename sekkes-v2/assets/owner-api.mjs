@@ -1,6 +1,6 @@
 import {parseProof} from './account-session.mjs';
 export async function ownerRequest(api,path,body){
- if(!['status','activate','workspace','document','chat','upload','content'].includes(path))throw Error('INVALID_ROUTE');
+ if(!['live','status','activate','workspace','document','chat','upload','content'].includes(path))throw Error('INVALID_ROUTE');
  await api.sessionController?.ensureFresh();const epoch=api.authEpoch;
  const r=await api.transport(api.config.projectUrl+'/functions/v1/sekkes-owner/'+path,{method:body?'POST':'GET',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(135000),headers:{...api.auth(),...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
  if(path==='content'&&r.ok){if(epoch!==api.authEpoch)throw Error('AUTH_REQUIRED');return r.blob();}

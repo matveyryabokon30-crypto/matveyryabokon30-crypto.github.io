@@ -24,6 +24,7 @@ async function syncHistory(older=false){
  if(!logged()||historyLoading)return;historyLoading=true;
  try{const data=await restoreConversation(api,older?historyCursor:null);if(!data)return;
   globalThis.window?.SekkesUI?.history(data.items,older);
+  try{const items=await api.request('media');globalThis.window?.SekkesUI?.attachments?.decorate(document.querySelector('#messages'),items)}catch{}
   if(older||!historyCursor){historyCursor=data.items[0]||historyCursor;hasMoreHistory=data.hasMore;}
  }finally{historyLoading=false;}
 }
@@ -68,21 +69,22 @@ async function sendMessage(turn){
  }finally{textBusy=false;globalThis.window?.SekkesUI?.textBusy(false);status('');}
 }
 async function sendText(){
- if(textBusy||!draft.value.trim())return;
+ const attachments=globalThis.window?.SekkesUI?.attachments;if(textBusy||(!draft.value.trim()&&!attachments?.hasFiles))return;
  if(!logged()&&!await ensure('text'))return;
- const text=draft.value.trim();if(!text||text.length>2000)return;
+ const entered=draft.value,text=entered.trim()||'Посмотри прикреплённые материалы.';if(text.length>2000)return;
  globalThis.window?.SekkesUI?.beforeText();
- if(!retryTurn||retryTurn.text!==text)retryTurn={text,id:crypto.randomUUID()};
- render('user',text,{id:'j:'+retryTurn.id+':user',state:'pending'});draft.value='';saveDraft();
+ let ids;try{globalThis.window?.SekkesUI?.textBusy(true);ids=await attachments?.upload()||[]}catch{note('Вложения не загрузились. Повтори отправку.');return}finally{globalThis.window?.SekkesUI?.textBusy(false)}
+ if(!retryTurn||retryTurn.text!==text||JSON.stringify(retryTurn.attachments)!==JSON.stringify(ids))retryTurn={text,id:crypto.randomUUID(),attachments:ids};
+ render('user',text,{id:'j:'+retryTurn.id+':user',state:'pending'});if(draft.value===entered)draft.value='';saveDraft();
  try{
   const r=await sendMessage({...retryTurn,kind:'text'});if(!r)return;
-  retryTurn=null;saveDraft();
+  retryTurn=null;attachments?.clear();saveDraft();
  }catch(e){render('user',text,{id:'j:'+retryTurn.id+':user',state:'failed'});if(!draft.value)draft.value=text;saveDraft();if(!['TURN_INTERRUPTED','SERVICE_UNAVAILABLE','DUPLICATE_TURN'].includes(e.code))retryTurn=null;/* Preserve visible text; a definitive failed response may be retried with a fresh ID. */}
 }
 async function sendVoice({id,audio}){
  if(textBusy)throw new S3Error('TURN_BUSY');
  if(!await ensure('voice-message'))return null;
- globalThis.window?.SekkesUI?.beforeText();return sendMessage({id,kind:'voice',audio});
+ globalThis.window?.SekkesUI?.beforeText();const files=globalThis.window?.SekkesUI?.attachments,attachments=await files?.upload()||[];const result=await sendMessage({id,kind:'voice',audio,attachments});if(result)files?.clear();return result;
 }
 function voicePicker(){
  if(live)return note('Сначала заверши голосовой разговор.');
@@ -283,7 +285,7 @@ async function toggleVoice(){
 function logout(){transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;accountPanel?.cancel();pending=null;retryTurn=null;globalThis.window?.SekkesUI?.reset();journalId=null;dialog.close();picker?.close();preferences?.reset();endLive(undefined,'logout');api?.logout();accepted=false;textHistory=[];draft.value='';$('#s3Transcript')?.remove();status('Войди в SEKKES')}
 function mount(){if(globalThis.window?.SekkesUI)return;const tools=document.createElement('div');tools.className='s3-tools';tools.innerHTML='<button id="s3LoginButton" class="s3-login">Войти в SEKKES</button>';$('#aiFull').append(tools);$('#s3LoginButton').onclick=()=>logged()?logout():login();}
 mount();
-window.SekkesS2={ownerRequest:(path,body)=>ownerRequest(api,path,body),ownerCode:code=>ownerCode(account,api,code),ownerPasskey:async()=>{const keys=account.passkeys(()=>{});try{if(!await keys.signIn())throw Error('RECENT_PROOF_REQUIRED');return await ownerRequest(api,'activate',{});}finally{keys.destroy();}},voiceFailed:id=>render('user','Не отправлено',{id:'j:'+id+':user',state:'failed'}),recordingStarted:()=>globalThis.window?.SekkesUI?.beforeText(),voicePending:id=>render('user','…',{id:'j:'+id+':user',state:'pending'}),saveDraft,loadEarlier:()=>hasMoreHistory?syncHistory(true):Promise.resolve(),get voiceActive(){return Boolean(restartPending||(starting&&!startup?.cancelled)||live||recovering||recoveryNeeded)},stopVoice:()=>recoveryNeeded&&!live&&!starting?recoverPrevious():endLive(),toggleMic:toggleVoice,sendText,sendVoice,interrupt:()=>endLive(undefined,'interrupt'),end:logout,login,faceIdSettings,voiceSettings:voicePicker,accountAction:()=>logged()?logout():login(),get updateReady(){return !accountRestore&&!loginBusy&&!historyLoading},get busy(){return Boolean(live||starting||closing||recovering||textBusy)},get dirty(){return Boolean(live||starting||closing||draft.value.trim()||textHistory.length||loginBusy||textBusy)}};
+window.SekkesS2={chatMedia:body=>api.request('media',body?{method:'POST',body}:{}),ownerRequest:(path,body)=>ownerRequest(api,path,body),ownerCode:code=>ownerCode(account,api,code),ownerPasskey:async()=>{const keys=account.passkeys(()=>{});try{if(!await keys.signIn())throw Error('RECENT_PROOF_REQUIRED');return await ownerRequest(api,'activate',{});}finally{keys.destroy();}},voiceFailed:id=>render('user','Не отправлено',{id:'j:'+id+':user',state:'failed'}),recordingStarted:()=>globalThis.window?.SekkesUI?.beforeText(),voicePending:id=>render('user','…',{id:'j:'+id+':user',state:'pending'}),saveDraft,loadEarlier:()=>hasMoreHistory?syncHistory(true):Promise.resolve(),get voiceActive(){return Boolean(restartPending||(starting&&!startup?.cancelled)||live||recovering||recoveryNeeded)},stopVoice:()=>recoveryNeeded&&!live&&!starting?recoverPrevious():endLive(),toggleMic:toggleVoice,sendText,sendVoice,interrupt:()=>endLive(undefined,'interrupt'),end:logout,login,faceIdSettings,voiceSettings:voicePicker,accountAction:()=>logged()?logout():login(),get updateReady(){return !accountRestore&&!loginBusy&&!historyLoading},get busy(){return Boolean(live||starting||closing||recovering||textBusy)},get dirty(){return Boolean(live||starting||closing||draft.value.trim()||textHistory.length||loginBusy||textBusy)}};
 addEventListener('sekkes:route',e=>{if(!globalThis.window?.SekkesUI&&!['ai','text'].includes(e.detail.route)&&live)endLive()});
 document.addEventListener('visibilitychange',()=>{if(!globalThis.window?.SekkesUI&&document.hidden&&live)endLive('Голосовой разговор остановлен при уходе из приложения.')});
 addEventListener('pagehide',()=>{endLive(undefined,'pagehide');accountPanel?.cancel();});
