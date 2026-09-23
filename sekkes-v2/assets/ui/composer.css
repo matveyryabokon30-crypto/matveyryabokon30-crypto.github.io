@@ -1,0 +1,24 @@
+/* Shared mobile composer: one measured text row directly above its actions. */
+#shell[data-route=home] #composer #draft,
+#shell .owner-composer-pill .owner-input{box-sizing:border-box;display:block;width:100%;min-width:0;min-height:32px;max-height:none;field-sizing:fixed;margin:0;border:0;border-radius:0;background:transparent;font-size:16px;line-height:22px;padding:5px 40px 5px 36px;resize:none;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
+#shell[data-route=home] #composer[data-expanded=true] #draft,
+#shell .owner-composer-pill[data-expanded=true] .owner-input{padding:5px 6px!important;}
+#shell .owner-composer-pill{display:block;position:relative;padding:5px 8px;min-height:44px;height:auto;border-radius:26px;}
+#shell .owner-composer-pill .composer-tools{position:absolute;inset:5px 8px;display:flex;align-items:center;gap:0;pointer-events:none;}
+#shell .owner-composer-pill .composer-tools>.icon-button{pointer-events:auto;width:36px;min-width:36px;height:32px;min-height:32px;padding:2px;flex-shrink:0;}
+#shell .owner-composer-pill .composer-tools>.icon-button:first-child{margin-right:auto;}
+#shell .owner-composer-pill[data-expanded=true] .composer-tools{position:relative;inset:auto;height:34px;margin-top:2px;}
+#shell .owner-composer-pill>.owner-attachments{max-height:96px;margin:2px 0 6px;}
+/* Icon-only profile navigation, with a reserved lane for the owner switch. */
+#shell .profile-bottom{bottom:max(2px,env(safe-area-inset-bottom));padding:4px;border-radius:28px;min-height:50px;}
+#shell[data-owner-allowed=true] .profile-bottom{right:64px;}
+#shell .profile-nav-item{min-height:40px;height:40px;padding:6px;gap:0;}
+#shell .profile-nav-item>span:not(.living-icon){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+#shell .profile-nav-item .living-icon{--icon-size:24px;margin:0;}
+/* One neutral glass material, without blue route-specific fills. */
+:root{--control-glass:rgba(190,220,240,.07);--control-line:rgba(232,246,255,.35);--control-shadow:inset 0 1px 0 #ffffff20;}
+body #shell :is(button,.composer,.owner-composer-pill,.owner-mode,.owner-tabs,.profile-bottom),body :is(.menu-trigger,.navigation-panel){background:var(--control-glass)!important;border-color:var(--control-line);box-shadow:var(--control-shadow);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);}
+/* Child controls share the parent pane, avoiding double-tinted glass. */
+body #shell :is(.composer-tools,.owner-mode,.owner-tabs,.profile-bottom) button{background:transparent!important;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
+body #shell :is(.owner-mode,.owner-tabs,.profile-bottom) button:is([aria-pressed=true],[aria-current=page]){box-shadow:inset 0 0 0 1px var(--control-line);}
+html[data-transparency=off] body #shell :is(button,.composer,.owner-composer-pill,.owner-mode,.owner-tabs,.profile-bottom),html[data-transparency=off] body :is(.menu-trigger,.navigation-panel){background:#10283b!important;backdrop-filter:none;-webkit-backdrop-filter:none;}

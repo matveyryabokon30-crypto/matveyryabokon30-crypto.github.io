@@ -1,3 +1,4 @@
+import {resizeComposer} from './composer-layout.mjs';
 import {markdown} from './rich-message.mjs';
 import {copyText} from './clipboard.mjs';
 import {OwnerLive} from './owner-live.mjs';
@@ -40,8 +41,8 @@ export function create(ctx){
  const list=el('div','owner-messages');list.setAttribute('aria-label','Административный диалог');list.setAttribute('role','log');
  const down=glyph('send','В конец диалога',()=>list.scrollTo({top:list.scrollHeight,behavior:'smooth'}));down.classList.add('owner-down');
  const composer=el('form','owner-composer'),row=el('div','owner-composer-row'),pill=el('div','owner-composer-pill'),input=el('textarea','owner-input');input.rows=1;input.maxLength=6000;input.placeholder='Сообщение…';input.setAttribute('aria-label','Сообщение в админ-режиме');input.value=draft;
- const size=()=>{if(!input.isConnected)return;const limit=Math.max(44,Math.floor(content.clientHeight*.6));input.style.height='0px';input.style.height=Math.max(40,Math.min(limit,input.scrollHeight))+'px';requestAnimationFrame(()=>document.dispatchEvent(new Event('sekkes-composer-resize')));};const observer=new ResizeObserver(size);observer.observe(content);composer._resizeObserver=observer;
- input.addEventListener('input',()=>{draft=input.value;size()});input.enterKeyHint='enter';
+ const size=()=>{if(!input.isConnected)return;resizeComposer(input,pill,{attachments:selected.length>0});sendButton.hidden=!input.value.trim()&&!selected.length;requestAnimationFrame(()=>document.dispatchEvent(new Event('sekkes-composer-resize')));};const observer=new ResizeObserver(size);observer.observe(content);composer._resizeObserver=observer;
+ input.addEventListener('input',()=>{draft=input.value;size()});input.addEventListener('focus',size);input.addEventListener('blur',size);input.enterKeyHint='enter';
  const attachments=el('div','owner-attachments');for(const m of selected){const card=el('div','owner-attachment');card.append(m.data?preview(m,bundleBlob(m)):hint(m.name));card.append(glyph('close','Убрать '+m.name,()=>{if(busy)return;selected=selected.filter(x=>x.id!==m.id);if(urls.has(m.id)){URL.revokeObjectURL(urls.get(m.id));urls.delete(m.id);}dirty=selected.length>0;paintChat();}));attachments.append(card);}
  const picker=el('input');picker.type='file';picker.accept=ACCEPT;picker.multiple=true;picker.hidden=true;picker.setAttribute('aria-label','Фото, видео и файлы');picker.addEventListener('change',()=>{const files=[...picker.files];picker.value='';void run(async()=>{if(files.length+selected.length>4)throw Error('TOO_MANY_FILES');const ticket=epoch;notice.textContent='Подготовка файлов…';try{for(const f of files){const item=await prepareFile(f);if(ticket!==epoch)return;selected.push(item);dirty=true;}}finally{if(ticket===epoch)paintChat();}notice.textContent='';});});
  const attach=glyph('paperclip','Прикрепить фото, видео или файл',()=>{if(!busy&&!recording&&!live.active)picker.click()});
@@ -50,7 +51,7 @@ export function create(ctx){
  const stop=glyph('stop','Закончить запись',()=>recorder.finish());stop.classList.add('owner-record-stop');stop.hidden=!recording;
  const sendButton=glyph('send','Отправить сообщение',()=>composer.requestSubmit());sendButton.classList.add('owner-send');
  const call=glyph(live.active?'stop':'record','Живой разговор с агентом',()=>{if(live.active)void live.stop();else if(!busy&&!recording&&!selected.length&&!retry)void live.start();else notice.textContent='Сначала отправь сообщение или заверши запись.'});call.classList.add('owner-live');call.setAttribute('aria-pressed',String(live.active));
- pill.append(attach,input,mic,stop,sendButton);row.append(pill,call);const recStatus=hint(recordDetail);recStatus.classList.add('owner-record-status');pill.prepend(attachments);composer.append(row,picker,recStatus);composer.addEventListener('submit',e=>{e.preventDefault();if(!live.active)void run(send)});
+ const tools=el('div','composer-tools');tools.append(attach,mic,stop,sendButton);pill.append(input,tools);row.append(pill,call);const recStatus=hint(recordDetail);recStatus.classList.add('owner-record-status');pill.prepend(attachments);composer.append(row,picker,recStatus);composer.addEventListener('submit',e=>{e.preventDefault();if(!live.active)void run(send)});
  content.append(list,down,composer);renderMessages();if(position)list.scrollTop=position.end?list.scrollHeight:position.top;requestAnimationFrame(size);
  }
  async function send(){if(recording)return;const value=draft.trim();if(!value&&!selected.length)return;const ticket=epoch;
@@ -74,3 +75,4 @@ export function create(ctx){
  function reset(){content.querySelector('.owner-composer')?._resizeObserver?.disconnect();epoch++;void live.stop();recorder.cancel();for(const u of urls.values())URL.revokeObjectURL(u);urls.clear();data=null;draft='';retry=null;selected=[];dirty=false;busy=false;editing=null;node.setAttribute('aria-busy','false');content.replaceChildren(hint('Войди в аккаунт владельца.'));tabs.replaceChildren()}
  return{node,refresh,reset,beforeRoute(){void live.stop();if(recording)recorder.finish();node.querySelectorAll('audio,video').forEach(x=>x.pause());},get busy(){return busy||recording||live.active||Boolean(retry)},get dirty(){return isDirty()},dispose(){live.dispose();disposed=true;clearInterval(timer);recorder.dispose();reset()}};
 }
+
