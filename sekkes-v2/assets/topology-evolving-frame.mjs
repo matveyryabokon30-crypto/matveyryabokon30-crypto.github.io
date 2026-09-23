@@ -17,7 +17,8 @@ export function installEvolving(win,doc){
  function step(dt,prime=false){
   if(!cx||!field)return;
   if(!prime)field.advance(clock.seconds);
-  const color=paletteAt(clock.seconds),gain=Math.max(levels.user,levels.agent),speed=dt*60*(1+gain*.3);
+  const time=clock.seconds,windX=.026*Math.cos(time*.17)+.018*Math.sin(time*.071),windY=.026*Math.sin(time*.139)-.018*Math.cos(time*.093);
+  const color=paletteAt(time),gain=Math.max(levels.user,levels.agent),speed=dt*60*(1+gain*.3);
   // Fade only the highlight mask. Never erase the material beneath it.
   trailCx.globalCompositeOperation='destination-out';trailCx.fillStyle=`rgba(0,0,0,${1-Math.exp(-dt*.48)})`;trailCx.fillRect(0,0,width,height);
   trailCx.globalCompositeOperation='source-over';trailCx.beginPath();
@@ -25,7 +26,9 @@ export function installEvolving(win,doc){
    const at=i*4;ages[i]+=dt;
    if(ages[i]>18){ages[i]=0;particles[at]=Math.random()*(width+200);particles[at+1]=Math.random()*(height+200);particles[at+2]=0;particles[at+3]=0;}
    const x=particles[at],y=particles[at+1];field.sample(x,y,vector,temp);
-   let vx=particles[at+2]+vector[0]*3*speed,vy=particles[at+3]+vector[1]*3*speed;
+   // Travelling curl and broad wind steer the upper veil independently of the cloth.
+   const curl=.55*Math.sin(x*.0035+y*.0023-time*.23),fx=vector[0]-vector[1]*curl+windX,fy=vector[1]+vector[0]*curl+windY;
+   let vx=particles[at+2]+fx*3*speed,vy=particles[at+3]+fy*3*speed;
    const length=Math.hypot(vx,vy)||1;vx=vx/length*2.2;vy=vy/length*2.2;
    const nx=x+vx*speed,ny=y+vy*speed;
    particles[at]=(nx+width+200)%(width+200);particles[at+1]=(ny+height+200)%(height+200);particles[at+2]=vx;particles[at+3]=vy;
@@ -87,3 +90,4 @@ export function installEvolving(win,doc){
  return {dispose};
 }
 if(typeof window!=='undefined')installEvolving(window,document);
+

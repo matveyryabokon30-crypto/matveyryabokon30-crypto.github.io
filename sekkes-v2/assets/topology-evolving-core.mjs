@@ -1,40 +1,70 @@
 // SEKKES evolving Topology. Derived from Vanta's particle/flow-field approach.
 // Attribution and MIT terms: topology-LICENSE.txt. Original effect: Kjetil Midtgarden Golid.
 // Original distributions and UI9.12/UI9.13 implementations remain unchanged.
-export const SHAPE_SECONDS=10, COLOR_SECONDS=100, COLOR_TRANSITION=10;
+export const SHAPE_SECONDS=8, COLOR_SECONDS=8, COLOR_TRANSITION=6;
 // Alternate colour families: no nine green/teal anchors before the first blue.
-// All thirty existing RGBs and the 100-second rhythm are preserved.
+// Thirty original anchors alternate with thirty new saturated accents.
 export const PALETTE=Object.freeze([
  [137,150,78],  // Olive gold — original
+ [52,121,236], // Sapphire — new
  [103,132,230], // Blue — original
+ [237,110,136], // Watermelon — new
  [220,101,164], // Rose — original
+ [43,186,165], // Lagoon — new
  [56,183,145],  // Emerald — original
+ [235,173,82], // Saffron — new
  [221,161,70],  // Amber
+ [149,115,242], // Ultraviolet — new
  [165,111,222], // Violet — original
+ [61,182,219], // Glacier — new
  [41,184,184],  // Turquoise
+ [216,85,109], // Garnet — new
  [212,110,88],  // Copper
+ [98,190,126], // Verdant — new
  [125,112,220], // Iris
+ [236,147,103], // Terracotta — new
  [46,170,118],  // Jade
+ [173,104,212], // Wisteria — new
  [228,138,91],  // Peach — original
+ [70,136,216], // Denim — new
  [218,81,181],  // Fuchsia
+ [195,183,87], // Antique gold — new
  [65,157,222],  // Azure
+ [223,101,191], // Bougainvillea — new
  [215,187,101], // Sand gold — original
+ [48,173,141], // Viridian — new
  [36,154,128],  // Malachite
+ [229,119,85], // Papaya — new
  [188,137,225], // Lilac
+ [107,130,239], // Periwinkle — new
  [190,71,98],   // Ruby
+ [78,191,187], // Aquamarine — new
  [84,192,172],  // Sea glass
+ [216,151,91], // Cognac — new
  [234,159,104], // Apricot
+ [160,108,233], // Heliotrope — new
  [79,116,211],  // Cobalt
+ [201,82,147], // Mulberry — new
  [176,183,71],  // Citron silk
+ [53,161,213], // Cerulean — new
  [202,106,207], // Orchid
+ [155,185,89], // Bamboo — new
  [88,157,99],   // Forest fern
+ [233,137,159], // Flamingo — new
  [230,104,117], // Living coral
+ [122,111,235], // Electric iris — new
  [55,172,205],  // Cyan — original
+ [210,163,103], // Honey — new
  [178,151,83],  // Bronze
+ [69,176,150], // Eucalyptus — new
  [143,94,202],  // Amethyst
+ [183,118,215], // Mauve — new
  [131,187,82],  // Chartreuse
+ [228,114,100], // Persimmon — new
  [211,78,126],  // Raspberry
+ [103,170,213], // Cornflower — new
  [224,203,141], // Champagne
+ [170,191,108], // Pistachio — new
 ].map(Object.freeze));
 export const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*t*(t*(t*6-15)+10)};
 function hsl(rgb){
@@ -103,3 +133,4 @@ export class FlowField{
  advance(seconds){const epoch=Math.floor(seconds/SHAPE_SECONDS);if(epoch!==this.epoch){this.a=epoch===this.epoch+1?this.b:makeField(this.noise,this.width,this.height,epoch);this.b=makeField(this.noise,this.width,this.height,epoch+1);this.epoch=epoch;}this.mix=smooth(seconds/SHAPE_SECONDS-epoch);}
  sample(x,y,out,temp){sampleField(this.a,x,y,out);sampleField(this.b,x,y,temp);out[0]+=(temp[0]-out[0])*this.mix;out[1]+=(temp[1]-out[1])*this.mix;return out;}
 }
+
