@@ -1,3 +1,4 @@
+import {createMessageStore} from './chat/model.mjs';
 import {messageActions,deliveryMark,messageKey} from './message-actions.mjs';
 import {interactionPriority} from './interaction-priority.mjs';
 import {resizeComposer} from './composer-layout.mjs';
@@ -20,10 +21,11 @@ let mounted=false;
 export function initialize({recorderOptions={},dictationOptions={}}={}){
  if(mounted)return;mounted=true;
  const lifetime=new AbortController(),signal=lifetime.signal,cache=new Map(),pendingMessages=[],attachmentURLs=new Set();
- const messageRecords=new Map(),resumeKey='sekkes:update-resume:'+location.pathname;
+ const messageRecords=createMessageStore('home'),resumeKey='sekkes:update-resume:'+location.pathname;
  let resume=null;try{resume=JSON.parse(sessionStorage.getItem(resumeKey)||'null');sessionStorage.removeItem(resumeKey);if(!resume||Date.now()-resume.savedAt>900000)resume=null}catch{}
  let visual;const background=el('div','global-topology');background.id='appTopology';background.setAttribute('aria-hidden','true');document.body.prepend(background);try{visual=mountTopology(background)}catch{/* Decoration cannot block the application. */}
  let actions,pendingCompose=null;let generation=0,current=null,voice='idle',swRegistration=null,recording,dictation,menu,textPending=false;
+ const dock=$('#sessionDock');
  const app=$('#shell'),host=$('#routeHost'),dialog=$('#dialog'),composer=$('#composer'),stop=$('#micTestLink'),status=$('#aiStateLabel'),nav=$('#menuItems'),recordButton=$('#micButton'),draft=$('#draft'),controls=$('#conversationControls');
  interactionPriority(document,signal);let ownerAllowed=false;const files=chatAttachments({composer,request:body=>ctx.runtime().chatMedia(body),changed:()=>updateSend(),notify});
  const modeSwitch=el('div','owner-mode');modeSwitch.hidden=true;app.append(modeSwitch);
@@ -45,16 +47,17 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  function showImage(url,alt){const img=el('img','viewer-image');img.src=url;img.alt=alt;$('#dialogContent').replaceChildren(el('h2','',alt),img);$('#dialogContent').firstChild.id='dialogTitle';dialog.showModal()}
  function appendMessage(role,text,meta={}){
   if(!ctx.messages){pendingMessages.push([role,text,meta]);return;}
-  const list=ctx.messages,atEnd=list.scrollHeight-list.scrollTop-list.clientHeight<100;
+  const list=ctx.messages;
   const previous=meta.id?[...list.children].find(n=>n.dataset.messageId===meta.id):null;
-  const node=message(role,text,{showImage});if(meta.id)node.dataset.messageId=meta.id;node.dataset.at=messagePosition(previous?.dataset.at,meta.at);
+  const fingerprint=JSON.stringify([role,text,meta.state||'',meta.at||'']);if(previous?.dataset.renderKey===fingerprint)return;
+  const node=message(role,text,{showImage});node.dataset.renderKey=fingerprint;if(meta.id)node.dataset.messageId=meta.id;node.dataset.at=messagePosition(previous?.dataset.at,meta.at);
   const state=meta.state||((previous?.dataset.delivery==='failed'||previous?.dataset.delivery==='pending')&&meta.at?'sent':previous?.dataset.delivery)||'';
   const stampAt=meta.stampAt||meta.at||(state==='sent'&&previous?.dataset.delivery!=='sent'?new Date().toISOString():previous?.dataset.stampAt)||node.dataset.at;
   node.dataset.stampAt=stampAt;const stamp=messageTime(stampAt,state,role);if(stamp){const time=el('time','message-time',stamp.text);time.dateTime=stamp.iso;time.title=stamp.title;time.setAttribute('aria-label',stamp.title);if(role==='user')time.append(deliveryMark(state||'sent'));node.append(time)}
   actions?.bind(node,{scope:'home',id:meta.id||messageKey('live',null,role+':'+node.dataset.at+':'+JSON.stringify(text)),text:typeof text==='string'?text:node.querySelector('.rich-message')?.textContent||''});
   if(meta.id)messageRecords.set(meta.id,{role,text,meta:{...meta,state,at:node.dataset.at,stampAt}});
   if(state)node.dataset.delivery=state;if(previous)previous.replaceWith(node);else list.append(node);
-  cache.get('home')?.messageAdded();if(atEnd)list.scrollTop=list.scrollHeight;
+  cache.get('home')?.messageAdded();
  }
  function sendError(code){
   composer.dataset.error=code||'';
@@ -85,13 +88,13 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   status.hidden=!status.textContent||(current!=='home'&&!busy);
  }
  window.SekkesUI={attachments:files,sendError,history(items,older=false){
-   if(!ctx.messages){for(const row of items)pendingMessages.push([row.speaker==='user'?'user':'ai',row.text,{id:row.id,at:row.at}]);return;}const list=ctx.messages,oldHeight=list.scrollHeight,oldTop=list.scrollTop;const oldIds=new Set([...list.children].map(n=>n.dataset.messageId));
+   if(!ctx.messages){for(const row of items)pendingMessages.push([row.speaker==='user'?'user':'ai',row.text,{id:row.id,at:row.at}]);return;}const list=ctx.messages;if(items.length&&!older)cache.get('home')?.showConversation();ctx.timeline?.change(()=>{
    for(const row of items){appendMessage(row.speaker==='user'?'user':'ai',row.text,{id:row.id,at:row.at});const node=[...list.children].find(n=>n.dataset.messageId===row.id);if(node&&!node.dataset.at)node.dataset.at=row.at;}
    [...list.children].sort((a,b)=>compareMessages(a.dataset,b.dataset)).forEach(n=>list.append(n));
-   if(older)list.scrollTop=oldTop+list.scrollHeight-oldHeight;else if(oldHeight-oldTop-list.clientHeight<100||!oldIds.size)requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight});
-  },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render(role,text,meta){ctx.showConversation();appendMessage(role,text,meta);requestAnimationFrame(()=>{if(ctx.messages)ctx.messages.scrollTop=ctx.messages.scrollHeight})},beforeText(){ctx.showConversation()},
+   });
+  },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render(role,text,meta){ctx.showConversation();appendMessage(role,text,meta);if(role==='user')ctx.timeline?.jump()},beforeText(){ctx.showConversation()},
   get captureBusy(){return Boolean(recording?.busy||dictation?.busy)},sendRecording(){recording?.send()},
-  textBusy(busy){textPending=busy;ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){const changed=ctx.account?.id!==user?.id;ctx.account=user;if(changed)files.reset();if(changed||!ownerAllowed)void probeOwner();ctx.profileUpdate?.();if(resume&&user?.id===resume.uid){const saved=resume;resume=null;draft.value=saved.draft||'';for(const row of saved.messages||[])appendMessage(row.role,row.text,row.meta);ctx.runtime()?.saveDraft?.();updateSend();if(saved.open)ctx.showConversation();requestAnimationFrame(()=>{if(ctx.messages)ctx.messages.scrollTop=saved.scrollTop||0})}},
+  textBusy(busy){textPending=busy;ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){const changed=ctx.account?.id!==user?.id;ctx.account=user;if(changed)files.reset();if(changed||!ownerAllowed)void probeOwner();ctx.profileUpdate?.();if(resume&&user?.id===resume.uid){const saved=resume;resume=null;draft.value=saved.draft||'';for(const row of saved.messages||[])appendMessage(row.role,row.text,row.meta);ctx.runtime()?.saveDraft?.();updateSend();if(saved.open)ctx.showConversation();ctx.timeline?.jump()}},
   reset(){files.reset();resume=null;messageRecords.clear();try{sessionStorage.removeItem(resumeKey)}catch{}ctx.pauseMedia();dictation?.cancel();recording?.reset();for(const url of attachmentURLs)URL.revokeObjectURL(url);attachmentURLs.clear();pendingMessages.length=0;ctx.messages?.replaceChildren(el('p','empty-state','Диалог пуст.'));cache.get('home')?.reset();ctx.account=null;void probeOwner();ctx.profileUpdate?.();if(current==='admin')ctx.navigate('home')},
   voiceEvent(event){if(event.type==='response.audio.delta'||event.type==='response.output_audio.delta')updateVoice('speaking');if(event.type==='response.audio.done'||event.type==='response.output_audio.done'||event.type==='input_audio_buffer.speech_started')updateVoice('listening')}
  };
@@ -110,7 +113,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   const id=routeId(location.hash);if(id==='admin'&&!ownerAllowed){notify('Админ-кабинет доступен после проверки аккаунта владельца.');if(ctx.account)void probeOwner();if(!current)history.replaceState(null,'','#home');if(!current)void route();return}if(id==='admin'&&(ctx.runtime()?.busy||recording?.busy||dictation?.busy)){notify('Сначала заверши текущий разговор.');return}const ticket=++generation,descriptor=sections.find(s=>s.id===id);if(id!=='home'){recording.beforeRoute();dictation.cancel()}menu.close({restoreFocus:false});if(/^#\/?chat$/.test(location.hash))history.replaceState(null,'','#home');if(id!==current){ctx.pauseMedia();if(current==='admin')cache.get('admin')?.beforeRoute?.();}
   try{if(!cache.has(id)){const module=await descriptor.loadModule();if(!cache.has(id))cache.set(id,module.create(ctx))}if(ticket!==generation)return;
    const previous=cache.get(current);if(previous)previous.scrollTop=previous.node.querySelector('.messages')?.scrollTop??previous.node.scrollTop;
-   current=id;const screen=cache.get(id);host.replaceChildren(screen.node);if(id==='admin')await screen.refresh();for(const [i,b]of [...modeSwitch.children].entries())b.setAttribute('aria-pressed',String((i===1)===(id==='admin')));const scroller=screen.node.querySelector('.messages')||screen.node;scroller.scrollTop=screen.scrollTop||0;
+   current=id;const screen=cache.get(id);host.replaceChildren(screen.node);if(id==='admin')await screen.refresh();for(const [i,b]of [...modeSwitch.children].entries())b.setAttribute('aria-pressed',String((i===1)===(id==='admin')));if(id==='home'){screen.node.append(dock);screen.timeline.layout();}else{app.append(dock);screen.node.scrollTop=screen.scrollTop||0;}
    app.dataset.route=id;$('#headerTitle').textContent='sekkes';composer.hidden=id!=='home';
    for(const a of nav.children){a.hidden=a.dataset.route==='home'&&id==='home';if(a.dataset.route===id)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}
    updateVoice(voice);updateSend();document.title=descriptor.title+' · SEKKES';if(!document.activeElement?.matches('textarea,input'))host.focus({preventScroll:true});actions?.refresh();if(pendingCompose&&pendingCompose.scope===id){const item=pendingCompose;pendingCompose=null;writeDraft(item.scope,item.text);}
@@ -132,14 +135,14 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
    if(modeSwitch.parentNode!==side)side.prepend(modeSwitch);
    const down=host.querySelector(admin?'.owner-down':'.chat-bottom')||form.querySelector(admin?'.owner-down':'.chat-bottom');
    if(down&&down.parentNode!==form)form.append(down);
-   if(admin){const screen=host.querySelector('.owner-screen'),value=(form.offsetHeight+90)+'px';if(screen.style.getPropertyValue('--owner-reading-bottom')!==value)screen.style.setProperty('--owner-reading-bottom',value);}
+   
   }else{
    const target=admin?host.querySelector('.owner-screen'):app;
    if(target&&modeSwitch.parentNode!==target)target.append(modeSwitch);
   }
  }
 
- const dockObserver=new ResizeObserver(()=>{app.style.setProperty('--dock-height',$('#sessionDock').getBoundingClientRect().height+'px');positionChatControls()});dockObserver.observe($('#sessionDock'));
+ const dockObserver=new ResizeObserver(()=>{ctx.timeline?.layout();positionChatControls()});dockObserver.observe($('#sessionDock'));
  let controlsFrame=0;const layoutObserver=new MutationObserver(()=>{if(!controlsFrame)controlsFrame=requestAnimationFrame(()=>{controlsFrame=0;positionChatControls()})});layoutObserver.observe(host,{childList:true,subtree:true});
  document.addEventListener('sekkes-composer-resize',positionChatControls,{signal});window.visualViewport?.addEventListener('resize',positionChatControls,{signal});
  document.addEventListener('visibilitychange',()=>app.classList.toggle('document-hidden',document.hidden),{signal});
