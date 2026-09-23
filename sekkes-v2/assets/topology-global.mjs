@@ -13,7 +13,7 @@ export function mountTopology(scene,doc=document){
  function refresh(){
   if(disposed)return;
   const active=!doc.hidden&&scene.isConnected;
-  const motion=doc.documentElement.dataset.motion!=='reduced'&&!reduced.matches;
+  const motion=doc.documentElement.dataset.motion!=='reduced'&&!reduced.matches&&doc.documentElement.dataset.interacting!=='true';
   try{frame.contentWindow?.postMessage({type:'sekkes-topology-state',active,motion,user:active?levels.user:0,agent:active?levels.agent:0},win.location.origin);}catch{/* Decoration never blocks input. */}
  }
  function message(e){
@@ -22,7 +22,7 @@ export function mountTopology(scene,doc=document){
   if(e.data?.type==='sekkes-topology-palette')applyTopologyChrome(doc,e.data.rgb);
  }
  const observer=new win.MutationObserver(refresh);
- observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion']});
+ observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion','data-interacting']});
 
  win.addEventListener('message',message);doc.addEventListener('visibilitychange',refresh);reduced.addEventListener('change',refresh);
  frame.addEventListener('load',refresh);scene.append(frame);
@@ -48,3 +48,4 @@ export function startTopologyAudio(pc,doc=document){
  const timer=win.setInterval(sample,100);sample();
  return {dispose(){if(disposed)return;disposed=true;epoch++;win.clearInterval(timer);previous.clear();clear();}};
 }
+

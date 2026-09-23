@@ -21,7 +21,7 @@ export function lockViewport(signal){
  const schedule=()=>{if(!frame&&!signal.aborted)frame=requestAnimationFrame(update)};
  const settleLayout=()=>{schedule();clearTimeout(settle);settle=setTimeout(schedule,250)};
  window.visualViewport?.addEventListener('resize',settleLayout,{signal});
- window.visualViewport?.addEventListener('scroll',schedule,{signal});
+ window.visualViewport?.addEventListener('scroll',()=>{if(document.activeElement?.matches('input,textarea,select'))schedule()},{signal});
  addEventListener('resize',settleLayout,{signal});addEventListener('orientationchange',settleLayout,{signal});
  screen.orientation?.addEventListener('change',settleLayout,{signal});
  addEventListener('pageshow',settleLayout,{signal});

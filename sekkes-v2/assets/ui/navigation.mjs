@@ -5,7 +5,7 @@ export function navigation({root,button,panel,backdrop,app,signal}){
  let open=false,closingTimer=null,openingTimer=null;
  const paint=()=>{button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');button.dataset.open=String(open);button.innerHTML=icon(open?'close':'menu')};
  function close({restoreFocus=true}={}){
-  if(!open)return;open=false;clearTimeout(openingTimer);root.classList.remove('is-opening');paint();app.inert=false;panel.inert=true;
+  if(!open){app.inert=false;panel.inert=true;backdrop.hidden=true;return;}open=false;clearTimeout(openingTimer);root.classList.remove('is-opening');paint();app.inert=false;panel.inert=true;
   root.removeAttribute('role');root.removeAttribute('aria-modal');root.classList.remove('is-open');root.classList.add('is-closing');backdrop.hidden=true;
   clearTimeout(closingTimer);closingTimer=setTimeout(()=>{panel.hidden=true;root.classList.remove('is-closing')},220);
   if(restoreFocus)button.focus({preventScroll:true});
@@ -29,3 +29,4 @@ export function navigation({root,button,panel,backdrop,app,signal}){
  paint();panel.hidden=true;panel.inert=true;
  return {close,dispose(){clearTimeout(closingTimer);clearTimeout(openingTimer);app.inert=false;panel.hidden=true;backdrop.hidden=true;root.classList.remove('is-open','is-closing','is-opening')}};
 }
+

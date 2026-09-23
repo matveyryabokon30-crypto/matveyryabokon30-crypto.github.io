@@ -5,7 +5,7 @@ const important=new Set(['stop','close','back','arrow','send','mic','menu','plus
 export function mountLivingIcons(doc=document){
  const win=doc.defaultView,records=new Map(),samples=new Map(),media=win.matchMedia('(prefers-reduced-motion: reduce)');
  let disposed=false,raf=0,previous=null,seconds=0,lastPaint=-Infinity,pending=false,syncFrame=0,serial=0;
- const reduced=()=>media.matches||doc.documentElement.dataset.motion==='reduced';
+ const reduced=()=>media.matches||doc.documentElement.dataset.motion==='reduced'||doc.documentElement.dataset.interacting==='true';
  function size(record){
   const rect=record.node.getBoundingClientRect(),dpr=Math.min(3,Math.max(2,win.devicePixelRatio||1));
   record.width=rect.width;record.height=rect.height;record.dpr=dpr;record.laidOut=record.node.getClientRects().length>0;
@@ -70,7 +70,7 @@ export function mountLivingIcons(doc=document){
  const resize=win.ResizeObserver?new win.ResizeObserver(entries=>{for(const entry of entries){const r=records.get(entry.target);if(r&&!r.failed){size(r);try{paint(r,reduced())}catch{r.node.classList.remove('is-live');r.canvas.hidden=true;r.failed=true;}}}schedule();}):null;
  const observer=new win.MutationObserver(changes=>{if(changes.some(x=>!x.target.matches?.('.living-icon-canvas')))queue();});
  observer.observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','disabled','aria-pressed','aria-expanded']});
- observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion','data-theme']});
+ observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion','data-theme','data-interacting']});
  function visibility(){if(doc.hidden)stop();else{previous=null;queue();}}
  function react(event){
   if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return;

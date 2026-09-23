@@ -1,3 +1,4 @@
+import {interactionPriority} from './interaction-priority.mjs';
 import {resizeComposer} from './composer-layout.mjs';
 import {chatAttachments} from './chat-attachments.mjs';
 import {messageTime} from './message-time.mjs';
@@ -23,7 +24,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  let visual;const background=el('div','global-topology');background.id='appTopology';background.setAttribute('aria-hidden','true');document.body.prepend(background);try{visual=mountTopology(background)}catch{/* Decoration cannot block the application. */}
  let generation=0,current=null,voice='idle',swRegistration=null,recording,dictation,menu,textPending=false;
  const app=$('#shell'),host=$('#routeHost'),dialog=$('#dialog'),composer=$('#composer'),stop=$('#micTestLink'),status=$('#aiStateLabel'),nav=$('#menuItems'),recordButton=$('#micButton'),draft=$('#draft'),controls=$('#conversationControls');
- let ownerAllowed=false;const files=chatAttachments({composer,request:body=>ctx.runtime().chatMedia(body),changed:()=>updateSend(),notify});
+ interactionPriority(document,signal);let ownerAllowed=false;const files=chatAttachments({composer,request:body=>ctx.runtime().chatMedia(body),changed:()=>updateSend(),notify});
  const modeSwitch=el('div','owner-mode');modeSwitch.hidden=true;app.append(modeSwitch);
  for(const [id,label]of [['home','Пользователь'],['admin','Админ']]){const b=el('button','owner-button');b.innerHTML=id==='admin'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>';b.setAttribute('aria-label',label);b.title=label;b.type='button';b.addEventListener('click',()=>ctx.navigate(id));modeSwitch.append(b)}
  async function probeOwner(){const uid=ctx.account?.id;ownerAllowed=false;modeSwitch.hidden=true;if(!uid){cache.get('admin')?.reset();return}try{const result=await ctx.runtime()?.ownerRequest?.('status');if(ctx.account?.id!==uid)return;ownerAllowed=result?.owner===true;modeSwitch.hidden=!ownerAllowed;requestAnimationFrame(positionChatControls);if(ownerAllowed&&location.hash==='#admin')route()}catch{/* Ordinary chat remains available if the admin service is unavailable. */}}
@@ -117,18 +118,27 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  const draftObserver=new ResizeObserver(resizeDraft);draftObserver.observe(app);window.visualViewport?.addEventListener('resize',resizeDraft,{signal});
  function positionChatControls(){
   app.dataset.ownerAllowed=String(ownerAllowed);
-  modeSwitch.hidden=!ownerAllowed;
-  if(!['home','admin'].includes(current)){const nav=host.querySelector('.profile-bottom');const r=nav?.getBoundingClientRect();modeSwitch.style.left=(r?r.right+30:innerWidth-30)+'px';modeSwitch.style.top=Math.max(80,(r?r.bottom:innerHeight-12)-80)+'px';return;}
+  if(modeSwitch.hidden===ownerAllowed)modeSwitch.hidden=!ownerAllowed;
   const admin=current==='admin',form=admin?host.querySelector('.owner-composer'):composer;
-  if(!form||form.hidden){const tabs=admin?host.querySelector('.owner-tabs'):null;const r=tabs?.getBoundingClientRect();modeSwitch.style.left=(r?r.right-26:innerWidth-30)+'px';modeSwitch.style.top=Math.max(80,(r?r.top:innerHeight-12)-88)+'px';return;}const pill=admin?form.querySelector('.owner-composer-pill'):form;
-  const rect=pill.getBoundingClientRect(),down=host.querySelector(admin?'.owner-down':'.chat-bottom');
-  if(down){down.style.setProperty('--jump-left',(rect.left+rect.width/2)+'px');down.style.setProperty('--jump-top',(rect.top-46)+'px')}
-  const liveButton=admin?form.querySelector('.owner-live'):stop;const liveRect=liveButton.getBoundingClientRect();modeSwitch.style.top=Math.max(80,liveRect.top-88)+'px';modeSwitch.style.left=(liveRect.left+liveRect.width/2)+'px';modeSwitch.hidden=!ownerAllowed||!['home','admin'].includes(current);
-  if(admin){const screen=host.querySelector('.owner-screen');const top=screen.getBoundingClientRect().top;screen.style.setProperty('--owner-reading-bottom',Math.max(0,screen.clientHeight-(form.getBoundingClientRect().top-top)+12)+'px')}
+  const chat=(current==='home'||admin)&&form&&!form.hidden;
+  if(chat){
+   const liveButton=admin?form.querySelector('.owner-live'):stop;
+   if(!liveButton)return;
+   let side=liveButton.closest('.conversation-side');
+   if(!side){side=el('div','conversation-side');liveButton.before(side);side.append(liveButton);}
+   if(modeSwitch.parentNode!==side)side.prepend(modeSwitch);
+   const down=host.querySelector(admin?'.owner-down':'.chat-bottom')||form.querySelector(admin?'.owner-down':'.chat-bottom');
+   if(down&&down.parentNode!==form)form.append(down);
+   if(admin){const screen=host.querySelector('.owner-screen'),value=(form.offsetHeight+90)+'px';if(screen.style.getPropertyValue('--owner-reading-bottom')!==value)screen.style.setProperty('--owner-reading-bottom',value);}
+  }else{
+   const target=admin?host.querySelector('.owner-screen'):app;
+   if(target&&modeSwitch.parentNode!==target)target.append(modeSwitch);
+  }
  }
+
  const dockObserver=new ResizeObserver(()=>{app.style.setProperty('--dock-height',$('#sessionDock').getBoundingClientRect().height+'px');positionChatControls()});dockObserver.observe($('#sessionDock'));
- const layoutObserver=new MutationObserver(()=>requestAnimationFrame(positionChatControls));layoutObserver.observe(host,{childList:true,subtree:true});
- document.addEventListener('sekkes-composer-resize',positionChatControls,{signal});window.visualViewport?.addEventListener('scroll',positionChatControls,{signal});window.visualViewport?.addEventListener('resize',positionChatControls,{signal});
+ let controlsFrame=0;const layoutObserver=new MutationObserver(()=>{if(!controlsFrame)controlsFrame=requestAnimationFrame(()=>{controlsFrame=0;positionChatControls()})});layoutObserver.observe(host,{childList:true,subtree:true});
+ document.addEventListener('sekkes-composer-resize',positionChatControls,{signal});window.visualViewport?.addEventListener('resize',positionChatControls,{signal});
  document.addEventListener('visibilitychange',()=>app.classList.toggle('document-hidden',document.hidden),{signal});
  addEventListener('offline',()=>notify('Нет сети. Черновик сохранён на экране.'),{signal});
  watchPreferences(signal);let livingIcons;try{livingIcons=mountLivingIcons(document)}catch{/* Vector icons remain usable if the decorative renderer is unavailable. */}route();
@@ -136,7 +146,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   canReload:()=>!files.hasFiles&&!files.busy&&!cache.get('admin')?.busy&&!cache.get('admin')?.dirty&&Boolean(ctx.runtime()?.updateReady)&&!ctx.runtime().busy&&!textPending&&!recording?.busy&&!recording?.hasAudio&&!dictation?.busy&&!dialog.open,
   preserve:()=>{ctx.runtime()?.saveDraft?.();sessionStorage.setItem(resumeKey,JSON.stringify({uid:ctx.account?.id,savedAt:Date.now(),draft:draft.value,messages:[...messageRecords.values()],open:Boolean(ctx.messages&&!ctx.messages.closest('[hidden]')),scrollTop:ctx.messages?.scrollTop||0}))}
  }):()=>{};
- return {dispose(){files.reset();modeSwitch.remove();stopUpdates();livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();draftObserver.disconnect();layoutObserver.disconnect();clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
+ return {dispose(){files.reset();modeSwitch.remove();stopUpdates();livingIcons?.dispose();visual?.dispose();background.remove();lifetime.abort();menu.dispose();dictation.dispose();recording.dispose();dockObserver.disconnect();draftObserver.disconnect();layoutObserver.disconnect();cancelAnimationFrame(controlsFrame);clearTimeout(notify.timer);for(const url of attachmentURLs)URL.revokeObjectURL(url);for(const screen of cache.values())screen.dispose();cache.clear();window.SekkesUI=null;mounted=false}};
 }
 
 
