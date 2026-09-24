@@ -395,3 +395,36 @@ body .se-trash{position:absolute;z-index:40;left:50%;bottom:max(28px,env(safe-ar
 body .se-trash[hidden]{display:none!important;}
 body .se-layer-dragging .se-trash{opacity:1;transform:translateX(-50%) scale(1);}
 body .se-layer-dragging .se-selection{display:none!important;}
+
+/* story.41 — iOS text mode keeps the 9:16 canvas at screen width.
+   The visual viewport may shrink for the keyboard; the story itself must not. */
+body .se-editor[data-panel=text] .se-workspace{
+  position:absolute!important;inset:0!important;width:100%!important;
+  height:var(--se-stage-height,100%)!important;container-type:inline-size!important;
+  overflow:hidden!important;place-items:start center!important;
+}
+body .se-editor[data-panel=text] .se-workspace>.story-frame{
+  width:100cqw!important;height:177.777778cqw!important;
+  max-width:none!important;max-height:none!important;flex:none!important;
+}
+body .se-editor[data-panel=text] .se-toolbox{
+  position:absolute!important;inset:0!important;width:100%!important;
+  height:var(--se-stage-height,100%)!important;max-height:none!important;
+  background:transparent!important;pointer-events:none!important;
+}
+body .se-editor[data-panel=text] .se-toolbox-head{pointer-events:auto!important;}
+body .se-editor[data-panel=text] .se-tool-body{
+  position:absolute!important;inset:0!important;height:100%!important;
+  padding:0!important;overflow:visible!important;pointer-events:none!important;
+}
+body .se-editor[data-panel=text] .se-text-stage{
+  position:absolute!important;inset:0!important;display:grid!important;
+  place-items:center!important;pointer-events:auto!important;
+}
+body .se-editor[data-panel=text] .se-text-options{
+  position:absolute!important;left:0!important;right:0!important;bottom:0!important;
+  padding:10px 14px max(10px,env(safe-area-inset-bottom))!important;
+  background:linear-gradient(transparent,rgba(7,16,24,.72) 22%,rgba(7,16,24,.9))!important;
+  pointer-events:auto!important;
+}
+body .se-editor[data-panel=text] .se-text-input::placeholder{color:transparent!important;opacity:0!important;}
