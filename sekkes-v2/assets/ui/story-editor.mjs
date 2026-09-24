@@ -138,7 +138,15 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
   function base(){
    const ps=[...pointers.values()];if(!ps.length)return;const mid=ps.length>1?{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}:ps[0],target=surface.state.layers.find(l=>l.id===selected)||surface.state.media;
    baseAngle=ps.length>1?Math.atan2(ps[1].y-ps[0].y,ps[1].x-ps[0].x):0;
-   gesture={rect:frame.getBoundingClientRect(),mid,dist:ps.length>1?Math.max(1,Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y)):0,target,x:target.x,y:target.y,scale:target.scale||target.size,rotation:target.rotation,unitWidth:selected?1:mediaGeometry(surface.size.width,surface.size.height,{...target,scale:1}).width,stroke:null};
+   gesture={rect:frame.getBoundingClientRect(),mid,dist:ps.length>1?Math.max(1,Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y)):0,target,x:target.x,y:target.y,scale:target.scale||target.size,rotation:target.rotation,unitWidth:selected?1:mediaGeometry(surface.size.width,surface.size.height,{...target,scale:1}).width,stroke:null,media:!selected};
+  }
+  function snapMedia(){
+   if(!surface||selected)return false;const m=surface.state.media,fill=clamp(mediaGeometry(surface.size.width,surface.size.height,{...m,scale:1}).fill,.2,128);
+   const nearCenter=Math.abs(m.x-.5)<.055&&Math.abs(m.y-.5)<.055,nearScale=Math.abs(Math.log(Math.max(.001,m.scale)/Math.max(.001,fill)))<.09;
+   if(!nearCenter&&!nearScale)return false;
+   if(nearCenter){m.x=.5;m.y=.5;}if(nearScale)m.scale=fill;
+   root.classList.remove('se-snapped');void root.offsetWidth;root.classList.add('se-snapped');setTimeout(()=>root.classList.remove('se-snapped'),180);
+   try{navigator.vibrate?.(8)}catch{}schedule();return true;
   }
   frame.addEventListener('pointerdown',e=>{
    if(!ready||pending||preview||toolKind==='text'||e.button>0||pointers.size>=2)return;e.preventDefault();error.textContent='';
@@ -148,7 +156,10 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
    document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:true}}));root.classList.add('se-adjusting');if(selected&&mode!=='draw'){trash.hidden=false;root.classList.add('se-layer-dragging');}schedule();
   },{signal:sig});
   frame.addEventListener('pointermove',e=>{
-   if(!pointers.has(e.pointerId)||!gesture||pending)return;e.preventDefault();pointers.set(e.pointerId,point(e));const ps=[...pointers.values()],g=gesture,r=g.rect;
+   if(!pointers.has(e.pointerId)||!gesture||pending)return;pointers.set(e.pointerId,point(e));const ps=[...pointers.values()],g=gesture,r=g.rect;
+   // Media itself is intentionally inert to one finger. One-finger drag is reserved for text/stickers.
+   if(g.media&&ps.length<2)return;
+   e.preventDefault();
    if(g.stroke&&ps.length===1){if(g.stroke.points.length<2000)g.stroke.points.push([clamp((e.clientX-r.left)/r.width,0,1),clamp((e.clientY-r.top)/r.height,0,1)]);schedule();return;}
    const mid=ps.length>1?{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}:ps[0];let ratio=1,angle=0;
    if(ps.length>1&&g.dist){
@@ -161,7 +172,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
    const vx=g.x*r.width-(g.mid.x-r.left),vy=g.y*r.height-(g.mid.y-r.top),c=Math.cos(angle),s=Math.sin(angle);
    g.target.x=clamp((mid.x-r.left+(vx*c-vy*s)*ratio)/r.width,selected?0:-3,selected?1:4);g.target.y=clamp((mid.y-r.top+(vx*s+vy*c)*ratio)/r.height,selected?0:-3,selected?1:4);schedule();
   },{signal:sig});
-  const end=e=>{if(!pointers.has(e.pointerId))return;const p={x:e.clientX,y:e.clientY};pointers.delete(e.pointerId);if(pointers.size){base();return;}const layer=selected&&surface.state.layers.find(l=>l.id===selected),tr=trash.getBoundingClientRect(),pad=36,drop=!trash.hidden&&p.x>=tr.left-pad&&p.x<=tr.right+pad&&p.y>=tr.top-pad&&p.y<=tr.bottom+pad;if(snapshot()!==before)remember(before);before='';root.classList.remove('se-layer-dragging');trash.hidden=true;finishGesture();if(drop&&layer){removeLayer(layer);return;}schedule();};
+  const end=e=>{if(!pointers.has(e.pointerId))return;const p={x:e.clientX,y:e.clientY};pointers.delete(e.pointerId);if(pointers.size){base();return;}const layer=selected&&surface.state.layers.find(l=>l.id===selected),tr=trash.getBoundingClientRect(),pad=36,drop=!trash.hidden&&p.x>=tr.left-pad&&p.x<=tr.right+pad&&p.y>=tr.top-pad&&p.y<=tr.bottom+pad;if(snapshot()!==before)remember(before);before='';root.classList.remove('se-layer-dragging');trash.hidden=true;const mediaGesture=gesture?.media;finishGesture();if(drop&&layer){removeLayer(layer);return;}if(mediaGesture)snapMedia();schedule();};
   for(const t of ['pointerup','pointercancel','lostpointercapture'])frame.addEventListener(t,end,{signal:sig});
   frame.addEventListener('dblclick',e=>{const l=surface.state.layers.find(l=>l.id===e.target.closest('[data-layer-id]')?.dataset.layerId);if(l?.kind==='text'){selected=l.id;openTools('text');}},{signal:sig});
   frame.addEventListener('wheel',e=>{if(!ready||pending||preview)return;e.preventDefault();remember();surface.state.media.scale=clamp(surface.state.media.scale*Math.exp(-e.deltaY*.002),.2,128);schedule();},{passive:false,signal:sig});
