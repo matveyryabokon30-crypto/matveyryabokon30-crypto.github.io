@@ -1,9 +1,10 @@
 // A single 900 × 1600 composition is used by the editor, saved stories and viewer.
 // Original media bytes stay immutable. Coordinates are independent of screen size.
 import {el} from './components.mjs';
+import {textPresets,textStyle,applyTextStyle} from './story-text-style.mjs';
 export const STORY_WIDTH=900, STORY_HEIGHT=1600;
 export const storyFilters=Object.freeze({none:['Оригинал','none'],warm:['Тепло','sepia(.22) saturate(1.16)'],cool:['Холод','saturate(.85) hue-rotate(12deg)'],mono:['Моно','grayscale(1)'],soft:['Мягко','contrast(.88) saturate(.9)'],vivid:['Насыщенно','saturate(1.4) contrast(1.06)']});
-export const storyFonts=Object.freeze({sans:'var(--font-ui), sans-serif',serif:'Georgia, serif',mono:'ui-monospace, monospace'});
+export const storyFonts=Object.freeze(Object.fromEntries(Object.entries(textPresets).map(([id,p])=>[id,p.family])));
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
 const num=(v,d,a,b)=>Number.isFinite(Number(v))?clamp(v,a,b):d;
 const color=(v,d='#ffffff')=>/^#[\da-f]{6}$/i.test(v||'')?v:d;
@@ -13,7 +14,7 @@ export function normalizeStory(value={}){
  return {version:1,format:'9:16',media:{x:num(m.x,.5,-4,5),y:num(m.y,.5,-4,5),scale:num(m.scale,1,.2,128),rotation:num(m.rotation,0,-3600,3600)},
   filter:Object.hasOwn(storyFilters,v.filter)?v.filter:'none',background:['blur','dark','light','sea'].includes(v.background)?v.background:'blur',muted:v.muted===true,duration:num(v.duration,5,3,15),
   trim:{start:num(v.trim?.start,0,0,86400),end:v.trim?.end==null?null:num(v.trim.end,null,0,86400)},
-  layers:(Array.isArray(v.layers)?v.layers:[]).slice(0,20).map((l,i)=>({id:String(l.id||`layer-${i}`).slice(0,80),kind:['text','emoji','link'].includes(l.kind)?l.kind:'text',text:String(l.text||'').slice(0,500),x:num(l.x,.5,0,1),y:num(l.y,.5,0,1),size:num(l.size,.08,.025,.32),rotation:num(l.rotation,0,-3600,3600),font:Object.hasOwn(storyFonts,l.font)?l.font:'sans',color:color(l.color),background:l.background===true,align:['left','center','right'].includes(l.align)?l.align:'center',url:storyLink(l.url)})),
+  layers:(Array.isArray(v.layers)?v.layers:[]).slice(0,20).map((l,i)=>({id:String(l.id||`layer-${i}`).slice(0,80),kind:['text','emoji','link'].includes(l.kind)?l.kind:'text',text:String(l.text||'').slice(0,5000),x:num(l.x,.5,0,1),y:num(l.y,.5,0,1),size:num(l.size,.08,.025,.32),rotation:num(l.rotation,0,-3600,3600),font:Object.hasOwn(storyFonts,l.font)?l.font:'sans',color:color(l.color),background:l.background===true,align:['left','center','right'].includes(l.align)?l.align:'center',url:storyLink(l.url),...textStyle(l)})),
   strokes:(Array.isArray(v.strokes)?v.strokes:[]).slice(0,100).map(s=>({color:color(s.color),width:num(s.width,.006,.002,.04),points:(Array.isArray(s.points)?s.points:[]).slice(0,2000).map(p=>[num(p[0],0,0,1),num(p[1],0,0,1)])}))};
 }
 export function mediaGeometry(width,height,media){
@@ -47,10 +48,27 @@ export function storySurface({media,composition,interactive=false,onReady=()=>{}
   const retained=new Set();
   for(const layer of state.layers){
    retained.add(layer.id);let item=layers.get(layer.id);
-   if(!item){item=el(interactive?'button':layer.kind==='link'&&layer.url?'a':'div','story-layer');if(interactive)item.type='button';item.dataset.layerId=layer.id;item.append(el('span','story-layer-text'));layerHost.append(item);layers.set(layer.id,item);}
-   item.firstChild.textContent=layer.text;item.setAttribute('aria-label',layer.kind==='emoji'?`Стикер ${layer.text}`:layer.text||'Текст');
-   item.style.left=`${layer.x*100}%`;item.style.top=`${layer.y*100}%`;item.style.setProperty('--layer-size',`${layer.size*100}cqw`);item.style.transform=`translate(-50%,-50%) rotate(${layer.rotation}deg)`;item.style.color=layer.color;item.style.fontFamily=storyFonts[layer.font];item.style.textAlign=layer.align;item.dataset.background=String(layer.background);item.dataset.kind=layer.kind;
+   if(!item){
+    item=el(interactive?'button':layer.kind==='link'&&layer.url?'a':'div','story-layer');if(interactive)item.type='button';item.dataset.layerId=layer.id;
+    const motion=el('span','story-text-motion'),effect=el('span','story-text-effect'),ink=el('span','story-layer-text');effect.append(ink);motion.append(effect);item.append(motion);layerHost.append(item);layers.set(layer.id,item);
+   }
+   const ink=item.querySelector('.story-layer-text');ink.textContent=layer.text;
+   item.setAttribute('aria-label',layer.kind==='emoji'?`Стикер ${layer.text}`:layer.text||'Текст');
+   item.style.left=`${layer.x*100}%`;item.style.top=`${layer.y*100}%`;item.style.setProperty('--layer-size',`${layer.size*100}cqw`);item.style.setProperty('--text-chars',Math.max(1,[...layer.text].length));
+   item.style.transform=`translate(-50%,-50%) rotate(${layer.rotation}deg)`;applyTextStyle(item,layer);item.dataset.background=String(layer.background);item.dataset.kind=layer.kind;
    if(item.tagName==='A'){item.href=layer.url;item.target='_blank';item.rel='noopener noreferrer';}
+   let pix=item.querySelector('.story-pixels');
+   if(layer.effect==='pixel'){
+    if(!pix){pix=el('canvas','story-pixels');pix.setAttribute('aria-hidden','true');item.querySelector('.story-text-effect').append(pix);}
+    const canvas=pix;
+    requestAnimationFrame(()=>{
+     if(disposed||!item.isConnected||item.dataset.effect!=='pixel')return;
+     const cs=getComputedStyle(ink),w=ink.offsetWidth,h=ink.offsetHeight,fs=parseFloat(cs.fontSize),scale=.24;
+     if(!w||!h)return;canvas.width=Math.ceil(w*scale);canvas.height=Math.ceil(h*scale);const cx=canvas.getContext('2d');cx.scale(scale,scale);cx.font=`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;cx.fillStyle=layer.color;cx.textBaseline='top';cx.textAlign=layer.align;let y=fs*.12;
+     const limit=Math.max(1,w-fs*.4),x=layer.align==='left'?fs*.2:layer.align==='right'?w-fs*.2:w/2;
+     for(const paragraph of layer.text.split('\n')){let line='';for(const char of paragraph){if(cx.measureText(line+char).width>limit&&line){cx.fillText(line,x,y);y+=fs*1.22;line='';}line+=char;}cx.fillText(line,x,y);y+=fs*1.22;}
+    });
+   }else pix?.remove();
   }
   for(const [id,item] of layers)if(!retained.has(id)){item.remove();layers.delete(id);}
  }

@@ -1,3 +1,4 @@
+import {storyTextTools} from './story-text-tools.mjs';
 import {el,icon} from './components.mjs';
 import {validateMedia} from './profile-store.mjs';
 import {storySurface,normalizeStory,mediaGeometry,storyWindow,storyFilters,clamp,storyLink} from './story-composition.mjs';
@@ -29,7 +30,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
  const more=control('Ещё инструменты','arrow',()=>{const expanded=root.classList.toggle('se-expanded');more.setAttribute('aria-expanded',String(expanded));});more.classList.add('se-more');more.setAttribute('aria-expanded','false');
  for(const b of [clip,undo,sound,playback])b.classList.add('se-extra');toolbar.append(text,stickers,draw,filters,more,move,sound,playback,clip,undo);
  const selection=el('div','se-selection');selection.hidden=true;selection.append(control('Удалить выбранное','trash',()=>{const l=surface?.state.layers.find(x=>x.id===selected);if(l)removeLayer(l);}),control('Повернуть выбранное','rotate',()=>{const l=surface?.state.layers.find(x=>x.id===selected);if(l){remember();l.rotation+=15;schedule();}}));
- const trash=el('div','se-trash');trash.setAttribute('aria-hidden','true');trash.innerHTML=icon('trash');trash.hidden=true;work.append(trash);
+ const trash=el('div','se-trash');trash.setAttribute('aria-hidden','true');trash.innerHTML=icon('trash');trash.hidden=true;root.append(trash);
  work.append(pick,toolbar,selection);footer.append(change,peek,publish);root.append(input,work,toolbox,error,footer);host.replaceChildren(root);toolbox.hidden=true;toolbar.hidden=true;footer.hidden=true;root.dataset.ready='false';
  const snapshot=()=>surface?JSON.stringify(surface.export()):'';
  function remember(value=snapshot()){if(!value)return;if(history.at(-1)!==value)history.push(value);if(history.length>30)history.shift();updateButtons();}
@@ -41,17 +42,16 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
  // the other tools share a bottom sheet with a stationary header and scroll body.
  let toolKind='',toolAnimation=null,toolGesture=null;
  function finishGesture(){
-  pointers.clear();gesture=null;root.classList.remove('se-adjusting');
+  pointers.clear();gesture=null;root.classList.remove('se-adjusting','se-layer-dragging');trash.hidden=true;delete trash.dataset.active;
   document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));
  }
  function closeTools(){
   if(toolbox.contains(document.activeElement))document.activeElement.blur();
-  root.style.removeProperty('--se-stage-height');
   toolAnimation?.cancel();toolAnimation=null;toolLife?.abort();toolLife=null;toolGesture=null;
   toolbox.hidden=true;toolbox.replaceChildren();toolbox.style.transform='';toolKind='';
-  root.classList.remove('se-tool-open','se-text-docked');delete root.dataset.panel;mode='move';
+  root.classList.remove('se-tool-open');delete root.dataset.panel;mode='move';
   if(surface){surface.node.querySelectorAll('[data-editing]').forEach(n=>n.removeAttribute('data-editing'));surface.state.layers=surface.state.layers.filter(l=>l.id!==selected||l.text.trim());if(!surface.state.layers.some(l=>l.id===selected))clearSelection();surface.paintLayers();}
-  finishGesture();updateButtons();
+  finishGesture();updateButtons();document.dispatchEvent(new Event('sekkes-story-input-state'));
  }
  function label(text,node){const wrap=el('label','se-field');wrap.append(el('span','',text),node);return wrap;}
  function range(name,value,min,max,step,fn){
@@ -85,7 +85,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
   toolLife=new AbortController();toolKind=kind;root.dataset.panel=kind;root.classList.add('se-tool-open');toolbox.dataset.kind=kind;toolbox.hidden=false;mode=kind==='draw'?'draw':'move';if(mode==='draw')clearSelection();updateButtons();
   const titles={crop:'Оформление',text:'Текст',stickers:'Стикеры',link:'Ссылка',draw:'Рисование',filters:'Фильтры',duration:'Длительность'};
   const top=el('header','se-toolbox-head'),grip=el('div','se-toolbox-grip'),body=el('div','se-tool-body');grip.setAttribute('aria-hidden','true');
-  top.append(grip,el('h3','',titles[kind]),control('Готово','check',closeTools,'se-tool-done'));toolbox.append(top,body);sheetGesture(top);
+  top.append(grip,el('h3','',titles[kind]),control('Готово','check',closeTools,'se-tool-done'));toolbox.append(top,body);if(kind!=='text')sheetGesture(top);document.dispatchEvent(new Event('sekkes-story-input-state'));
   if(kind!=='text'&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&toolbox.animate){document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:true}}));toolAnimation=toolbox.animate([{transform:'translateY(100%)'},{transform:'translateY(0)'}],{duration:160,easing:'cubic-bezier(.2,.7,.2,1)'});const currentAnimation=toolAnimation;currentAnimation.finished.then(()=>{if(toolAnimation===currentAnimation&&!pointers.size&&!toolGesture)document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));}).catch(()=>{});}
   const action=(name,symbol,fn)=>{const b=control(name,symbol,fn,'se-action');b.append(el('span','',name));return b;};
   if(kind==='crop'){
@@ -93,19 +93,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
    const colors=el('div','se-backgrounds');for(const [id,name] of [['blur','Автофон'],['dark','Тёмный'],['light','Светлый'],['sea','Глубокий']]){const b=choice(name,()=>{remember();surface.state.background=id;for(const x of colors.children)x.setAttribute('aria-pressed',String(x===b));schedule();});b.dataset.background=id;b.setAttribute('aria-pressed',String(surface.state.background===id));colors.append(b);}body.append(colors);
   }else if(kind==='text'){
    let layer=surface.state.layers.find(l=>l.id===selected&&l.kind==='text');if(!layer)layer=newLayer();if(!layer){closeTools();return;}
-   const area=el('textarea','se-text-input');area.rows=1;area.maxLength=500;area.value=layer.text;area.setAttribute('aria-label','Текст на сторис');area.setAttribute('placeholder','');area.removeAttribute('placeholder');
-   const fonts=el('div','se-fonts'),format=el('div','se-text-format'),options=el('div','se-text-options');
-   function style(){area.style.fontFamily=layer.font==='serif'?'Georgia,serif':layer.font==='mono'?'ui-monospace,monospace':'var(--font-ui),sans-serif';area.style.color=layer.color;area.style.textAlign=layer.align;area.dataset.background=String(layer.background);for(const b of fonts.children)b.setAttribute('aria-pressed',String(b.dataset.font===layer.font));surface.node.querySelector(`[data-layer-id="${layer.id}"]`)?.setAttribute('data-editing','true');}
-   remember();area.addEventListener('input',()=>{layer.text=area.value;schedule();},{signal:toolLife.signal});
-   for(const [id,name] of [['sans','Modern'],['serif','Classic'],['mono','Mono']]){const b=choice(name,()=>{remember();layer.font=id;style();schedule();});b.dataset.font=id;fonts.append(b);}
-   format.append(action('Подложка','text',()=>{remember();layer.background=!layer.background;style();schedule();}),action('Выравнивание','menu',()=>{remember();layer.align=layer.align==='center'?'left':layer.align==='left'?'right':'center';style();schedule();}),action('Удалить','trash',()=>removeLayer(layer)));
-   options.append(fonts,palette(c=>{remember();layer.color=c;style();schedule();},layer.color),format);
-   const stage=el('div','se-text-stage');stage.append(area);body.append(stage,options);
-   const finishText=e=>{if(e.target===stage||e.target===body){e.preventDefault();document.activeElement?.blur();root.classList.add('se-text-docked');schedule();}};
-   stage.addEventListener('pointerdown',finishText,{signal:toolLife.signal});
-   body.addEventListener('pointerdown',finishText,{signal:toolLife.signal});
-   root.style.setProperty('--se-stage-height',`${Math.round(root.getBoundingClientRect().height)}px`);
-   style();area.focus({preventScroll:true});
+   storyTextTools({host:body,layer,surface,remember,change:schedule,done:closeTools,signal:toolLife.signal});
   }else if(kind==='stickers'){
    body.append(action('Ссылка','link',()=>openTools('link')));
    const emojis=el('div','se-stickers');for(const value of ['❤️','✨','🌙','🔥','🌿','☀️','💬','⭐','😊','🫶','🎬','💡']){const b=choice(value,()=>{newLayer('emoji',value);closeTools();schedule();});b.setAttribute('aria-label',`Стикер ${value}`);emojis.append(b);}body.append(emojis);
@@ -133,7 +121,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
  function releaseMedia(){mediaLife?.abort();mediaLife=null;if(surface){const m=surface.media;if(m.tagName==='VIDEO'){m.pause();m.removeAttribute('src');m.load();}surface.dispose();surface.node.remove();surface=null;}if(url){URL.revokeObjectURL(url);url=null;}}
  function bindGestures(){
   const frame=surface.node,sig=mediaLife.signal;frame.tabIndex=0;frame.setAttribute('aria-label','Полотно сторис. Перемещение одним пальцем, масштаб и поворот двумя. Клавиши стрелок перемещают, плюс и минус меняют размер.');
-  let before='',baseAngle=0;
+  let before='',baseAngle=0,tapLayer=null,startedAt=null,moved=0,multi=false,suppressClickUntil=0;
   const point=e=>({x:e.clientX,y:e.clientY});
   function base(){
    const ps=[...pointers.values()];if(!ps.length)return;const mid=ps.length>1?{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}:ps[0],target=surface.state.layers.find(l=>l.id===selected)||surface.state.media;
@@ -150,7 +138,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
   }
   frame.addEventListener('pointerdown',e=>{
    if(!ready||pending||preview||toolKind==='text'||e.button>0||pointers.size>=2)return;e.preventDefault();error.textContent='';
-   if(!pointers.size){before=snapshot();const layer=e.target.closest('[data-layer-id]');clearSelection();if(mode!=='draw'&&layer)selected=layer.dataset.layerId;}
+   if(!pointers.size){before=snapshot();const layer=e.target.closest('[data-layer-id]');clearSelection();if(mode!=='draw'&&layer)selected=layer.dataset.layerId;tapLayer=selected;startedAt=point(e);moved=0;multi=false;}else multi=true;
    pointers.set(e.pointerId,point(e));try{frame.setPointerCapture(e.pointerId);}catch{}base();
    if(mode==='draw'&&pointers.size===1&&surface.state.strokes.length<100){const r=gesture.rect;gesture.stroke={color:drawColor,width:drawWidth,points:[[clamp((e.clientX-r.left)/r.width,0,1),clamp((e.clientY-r.top)/r.height,0,1)]]};surface.state.strokes.push(gesture.stroke);}
    document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:true}}));root.classList.add('se-adjusting');if(selected&&mode!=='draw'){trash.hidden=false;root.classList.add('se-layer-dragging');}schedule();
@@ -158,7 +146,8 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
   frame.addEventListener('pointermove',e=>{
    if(!pointers.has(e.pointerId)||!gesture||pending)return;pointers.set(e.pointerId,point(e));const ps=[...pointers.values()],g=gesture,r=g.rect;
    // Media itself is intentionally inert to one finger. One-finger drag is reserved for text/stickers.
-   if(g.media&&ps.length<2)return;
+   moved=Math.max(moved,startedAt?Math.hypot(e.clientX-startedAt.x,e.clientY-startedAt.y):0);
+   if(g.media&&ps.length<2&&!g.stroke)return;
    e.preventDefault();
    if(g.stroke&&ps.length===1){if(g.stroke.points.length<2000)g.stroke.points.push([clamp((e.clientX-r.left)/r.width,0,1),clamp((e.clientY-r.top)/r.height,0,1)]);schedule();return;}
    const mid=ps.length>1?{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}:ps[0];let ratio=1,angle=0;
@@ -170,12 +159,19 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
    }
    // Rotate the vector in screen pixels, not normalized 9:16 coordinates.
    const vx=g.x*r.width-(g.mid.x-r.left),vy=g.y*r.height-(g.mid.y-r.top),c=Math.cos(angle),s=Math.sin(angle);
-   g.target.x=clamp((mid.x-r.left+(vx*c-vy*s)*ratio)/r.width,selected?0:-3,selected?1:4);g.target.y=clamp((mid.y-r.top+(vx*s+vy*c)*ratio)/r.height,selected?0:-3,selected?1:4);schedule();
+   g.target.x=clamp((mid.x-r.left+(vx*c-vy*s)*ratio)/r.width,selected?0:-3,selected?1:4);g.target.y=clamp((mid.y-r.top+(vx*s+vy*c)*ratio)/r.height,selected?0:-3,selected?1:4);
+   if(selected){const tr=trash.getBoundingClientRect();trash.dataset.active=String(mid.x>=tr.left-36&&mid.x<=tr.right+36&&mid.y>=tr.top-36&&mid.y<=tr.bottom+36);}
+   schedule();
   },{signal:sig});
-  const end=e=>{if(!pointers.has(e.pointerId))return;const p={x:e.clientX,y:e.clientY};pointers.delete(e.pointerId);if(pointers.size){base();return;}const layer=selected&&surface.state.layers.find(l=>l.id===selected),tr=trash.getBoundingClientRect(),pad=36,drop=!trash.hidden&&p.x>=tr.left-pad&&p.x<=tr.right+pad&&p.y>=tr.top-pad&&p.y<=tr.bottom+pad;if(snapshot()!==before)remember(before);before='';root.classList.remove('se-layer-dragging');trash.hidden=true;const mediaGesture=gesture?.media;finishGesture();if(drop&&layer){removeLayer(layer);return;}if(mediaGesture)snapMedia();schedule();};
+  const end=e=>{
+   if(!pointers.has(e.pointerId))return;const cancelled=e.type!=='pointerup',pt={x:e.clientX,y:e.clientY};pointers.delete(e.pointerId);if(pointers.size&&!cancelled){base();return;}
+   const layer=selected&&surface.state.layers.find(l=>l.id===selected),tr=trash.getBoundingClientRect(),drop=!cancelled&&moved>6&&!trash.hidden&&pt.x>=tr.left-36&&pt.x<=tr.right+36&&pt.y>=tr.top-36&&pt.y<=tr.bottom+36;
+   const tap=!cancelled&&!multi&&moved<6&&layer?.kind==='text'&&tapLayer===layer.id;
+   const mediaGesture=gesture?.media&&multi&&!cancelled;finishGesture();if(mediaGesture)snapMedia();if(snapshot()!==before)remember(before);before='';suppressClickUntil=performance.now()+500;
+   if(drop&&layer){removeLayer(layer);return;}if(tap){selected=layer.id;openTools('text');return;}schedule();
+  };
   for(const t of ['pointerup','pointercancel','lostpointercapture'])frame.addEventListener(t,end,{signal:sig});
-  frame.addEventListener('click',e=>{const l=surface.state.layers.find(l=>l.id===e.target.closest('[data-layer-id]')?.dataset.layerId);if(l?.kind==='text'&&!pointers.size&&!root.classList.contains('se-layer-dragging')){selected=l.id;openTools('text');}},{signal:sig});
-  frame.addEventListener('dblclick',e=>{const l=surface.state.layers.find(l=>l.id===e.target.closest('[data-layer-id]')?.dataset.layerId);if(l?.kind==='text'){selected=l.id;openTools('text');}},{signal:sig});
+  frame.addEventListener('click',e=>{if(performance.now()<suppressClickUntil){e.preventDefault();return;}const l=surface.state.layers.find(l=>l.id===e.target.closest('[data-layer-id]')?.dataset.layerId);if(l?.kind==='text'){selected=l.id;openTools('text');}},{signal:sig});
   frame.addEventListener('wheel',e=>{if(!ready||pending||preview)return;e.preventDefault();remember();surface.state.media.scale=clamp(surface.state.media.scale*Math.exp(-e.deltaY*.002),.2,128);schedule();},{passive:false,signal:sig});
   frame.addEventListener('dragstart',e=>e.preventDefault(),{signal:sig});frame.addEventListener('contextmenu',e=>e.preventDefault(),{signal:sig});
   frame.addEventListener('keydown',e=>{if(e.target.matches('input,textarea')||pending)return;const target=surface.state.layers.find(l=>l.id===selected)||surface.state.media;
