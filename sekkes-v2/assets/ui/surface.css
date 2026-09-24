@@ -189,3 +189,8 @@ body .pm-sequence-count{text-align:center;font-size:.75rem;}
  body .pm-control:focus-visible .living-icon-fallback{opacity:1;stroke-width:1.8;}
  body .pm-control:disabled{opacity:.25;}
 }
+
+/* home.34: back uses the existing menu control geometry, icon and glass.
+   Both controls share the viewport owner; the chat never scrolls the header. */
+body #shell .chat-back{left:calc(var(--nav-edge) + env(safe-area-inset-left));right:auto;}
+body #shell[data-conversation=closed] .chat-bottom{display:none!important;}
