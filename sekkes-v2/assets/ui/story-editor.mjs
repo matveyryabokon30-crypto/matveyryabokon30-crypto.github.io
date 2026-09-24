@@ -49,7 +49,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
   root.style.removeProperty('--se-stage-height');
   toolAnimation?.cancel();toolAnimation=null;toolLife?.abort();toolLife=null;toolGesture=null;
   toolbox.hidden=true;toolbox.replaceChildren();toolbox.style.transform='';toolKind='';
-  root.classList.remove('se-tool-open');delete root.dataset.panel;mode='move';
+  root.classList.remove('se-tool-open','se-text-docked');delete root.dataset.panel;mode='move';
   if(surface){surface.node.querySelectorAll('[data-editing]').forEach(n=>n.removeAttribute('data-editing'));surface.state.layers=surface.state.layers.filter(l=>l.id!==selected||l.text.trim());if(!surface.state.layers.some(l=>l.id===selected))clearSelection();surface.paintLayers();}
   finishGesture();updateButtons();
  }
@@ -101,7 +101,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
    format.append(action('Подложка','text',()=>{remember();layer.background=!layer.background;style();schedule();}),action('Выравнивание','menu',()=>{remember();layer.align=layer.align==='center'?'left':layer.align==='left'?'right':'center';style();schedule();}),action('Удалить','trash',()=>removeLayer(layer)));
    options.append(fonts,palette(c=>{remember();layer.color=c;style();schedule();},layer.color),format);
    const stage=el('div','se-text-stage');stage.append(area);body.append(stage,options);
-   const finishText=e=>{if(e.target===stage||e.target===body){e.preventDefault();document.activeElement?.blur();closeTools();}};
+   const finishText=e=>{if(e.target===stage||e.target===body){e.preventDefault();document.activeElement?.blur();root.classList.add('se-text-docked');schedule();}};
    stage.addEventListener('pointerdown',finishText,{signal:toolLife.signal});
    body.addEventListener('pointerdown',finishText,{signal:toolLife.signal});
    root.style.setProperty('--se-stage-height',`${Math.round(root.getBoundingClientRect().height)}px`);
@@ -174,6 +174,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
   },{signal:sig});
   const end=e=>{if(!pointers.has(e.pointerId))return;const p={x:e.clientX,y:e.clientY};pointers.delete(e.pointerId);if(pointers.size){base();return;}const layer=selected&&surface.state.layers.find(l=>l.id===selected),tr=trash.getBoundingClientRect(),pad=36,drop=!trash.hidden&&p.x>=tr.left-pad&&p.x<=tr.right+pad&&p.y>=tr.top-pad&&p.y<=tr.bottom+pad;if(snapshot()!==before)remember(before);before='';root.classList.remove('se-layer-dragging');trash.hidden=true;const mediaGesture=gesture?.media;finishGesture();if(drop&&layer){removeLayer(layer);return;}if(mediaGesture)snapMedia();schedule();};
   for(const t of ['pointerup','pointercancel','lostpointercapture'])frame.addEventListener(t,end,{signal:sig});
+  frame.addEventListener('click',e=>{const l=surface.state.layers.find(l=>l.id===e.target.closest('[data-layer-id]')?.dataset.layerId);if(l?.kind==='text'&&!pointers.size&&!root.classList.contains('se-layer-dragging')){selected=l.id;openTools('text');}},{signal:sig});
   frame.addEventListener('dblclick',e=>{const l=surface.state.layers.find(l=>l.id===e.target.closest('[data-layer-id]')?.dataset.layerId);if(l?.kind==='text'){selected=l.id;openTools('text');}},{signal:sig});
   frame.addEventListener('wheel',e=>{if(!ready||pending||preview)return;e.preventDefault();remember();surface.state.media.scale=clamp(surface.state.media.scale*Math.exp(-e.deltaY*.002),.2,128);schedule();},{passive:false,signal:sig});
   frame.addEventListener('dragstart',e=>e.preventDefault(),{signal:sig});frame.addEventListener('contextmenu',e=>e.preventDefault(),{signal:sig});
