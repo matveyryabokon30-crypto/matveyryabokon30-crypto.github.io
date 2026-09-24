@@ -481,3 +481,23 @@ body .pc-story-editor .se-toolbox[data-kind=text] .se-text-options{
 }
 body .pc-story-editor .se-text-input{background:transparent!important;}
 body .pc-story-editor .se-text-input::placeholder{display:none!important;color:transparent!important;opacity:0!important;}
+
+/* story.44 final text-editor geometry after forced release activation. */
+body .profile-create.pc-story-editor,
+body .profile-create.pc-story-editor .pc-panel,
+body .profile-create.pc-story-editor .pc-content,
+body .profile-create.pc-story-editor .se-editor,
+body .profile-create.pc-story-editor .se-workspace{
+  width:100vw!important;min-width:100vw!important;max-width:100vw!important;
+}
+body .profile-create.pc-story-editor .se-workspace>.story-frame{
+  width:100vw!important;min-width:100vw!important;max-width:100vw!important;
+  height:177.777778vw!important;max-height:none!important;
+}
+body .profile-create.pc-story-editor .se-toolbox[data-kind=text] .se-text-input{
+  width:min(90vw,680px)!important;background:transparent!important;
+}
+body .profile-create.pc-story-editor .se-toolbox[data-kind=text] .se-text-input::placeholder{
+  color:transparent!important;opacity:0!important;
+}
+body .profile-create.pc-story-editor .story-layer{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;}
