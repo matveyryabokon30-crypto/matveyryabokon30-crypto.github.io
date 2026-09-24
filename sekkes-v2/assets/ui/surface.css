@@ -525,3 +525,5 @@ body .pc-story-editor .se-layer-dragging .se-trash{
 }
 body .pc-story-editor .se-layer-dragging .se-trash .living-icon{--icon-size:28px;}
 body .pc-story-editor .se-layer-dragging .se-trash span:not(.living-icon){display:none!important;}
+
+body .profile-create.pc-story-editor .se-footer{position:fixed!important;z-index:55!important;left:0!important;right:0!important;bottom:0!important;display:grid!important;grid-template-columns:48px 48px minmax(0,1fr)!important;gap:10px!important;align-items:center!important;padding:10px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))!important;background:linear-gradient(transparent,rgba(7,16,24,.68) 30%,rgba(7,16,24,.92))!important;pointer-events:auto!important}body .profile-create.pc-story-editor .se-tool-open .se-footer{visibility:hidden!important;pointer-events:none!important}body .profile-create.pc-story-editor .se-publish{min-height:52px!important;border-radius:28px!important;background:rgba(49,66,77,.78)!important;backdrop-filter:blur(18px) saturate(135%)!important;-webkit-backdrop-filter:blur(18px) saturate(135%)!important}
