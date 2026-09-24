@@ -122,7 +122,7 @@ body .profile-body>:is(.profile-filters,.profile-media-grid){
  width:calc(100% + 2 * var(--profile-grid-inset));max-width:none;
  margin-inline:calc(-1 * var(--profile-grid-inset));border-radius:0;
 }
-body .profile-body>.profile-filters{grid-template-columns:repeat(5,minmax(0,1fr));gap:0;padding-inline:0;}
+body .profile-body>.profile-filters{grid-template-columns:repeat(6,minmax(0,1fr));gap:0;padding-inline:0;}
 body .profile-body>.profile-media-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;}
 body .profile-media-grid>.profile-tile{min-width:0;width:100%;aspect-ratio:3/4;border-radius:0;}
 body .profile-media-grid>.profile-tile>:is(img,.profile-video-cover){border-radius:0;}
@@ -195,25 +195,38 @@ body .pm-sequence-count{text-align:center;font-size:.75rem;}
 body #shell .chat-back{left:calc(var(--nav-edge) + env(safe-area-inset-left));right:auto;}
 body #shell[data-conversation=closed] .chat-bottom{display:none!important;}
 
-/* create.35: one readable bottom sheet, then the chosen format's add step.
+/* create.36: one readable bottom sheet, then the chosen format's add step.
    Dense neutral glass is shared material, not a framed/tinted nested card. */
 :root,body #shell{--ui-sheet-dense:rgba(29,43,51,.96);}
 body .profile-dialog.profile-create{
  position:fixed;inset:auto;top:var(--viewport-top,0px);left:0;right:0;bottom:auto;
  width:100%;max-width:none;height:var(--app-height,100dvh);max-height:var(--app-height,100dvh);
- margin:0;padding:0;border-radius:0;overflow:hidden;overscroll-behavior:none;
+ margin:0;padding:0;border-radius:0;overflow:clip;overscroll-behavior:none;
  background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
 }
-body .profile-create[open]{display:flex;align-items:flex-end;justify-content:center;}
+body .profile-create[open]{display:block;}
 body .profile-create::backdrop{background:rgba(3,14,20,.38);}
 body .profile-create .pc-panel{
+ position:absolute;bottom:0;left:0;right:0;margin:0 auto;
  width:100%;max-width:680px;max-height:calc(100% - max(12px,env(safe-area-inset-top)));
  display:flex;flex-direction:column;min-height:0;overflow:hidden;border-radius:28px 28px 0 0;
  color:var(--ui-ink);background:linear-gradient(145deg,rgba(226,244,250,.04),transparent 70%),var(--ui-sheet-dense);
  backdrop-filter:blur(28px) saturate(120%);-webkit-backdrop-filter:blur(28px) saturate(120%);
- animation:pc-enter 220ms cubic-bezier(.2,.8,.2,1);
+ transform:translate3d(0,0,0);
 }
-body .pc-grip{flex-shrink:0;width:38px;height:4px;background:var(--ui-muted);opacity:.5;border-radius:8px;margin:12px auto 4px;}
+body .profile-create .pc-grip{display:grid;place-items:center;flex-shrink:0;width:100%;height:24px;min-height:24px;padding:0;margin:0;border-radius:0;touch-action:none;}
+body .pc-grip>span{width:38px;height:4px;background:var(--ui-muted);opacity:.5;border-radius:8px;}
+body .pc-grip:focus-visible>span{opacity:1;}
+body .profile-create .pc-moving{will-change:transform;}
+body .profile-create .pc-closing{pointer-events:none;}
+body .pc-bar{touch-action:none;}
+body .pc-options{touch-action:pan-y;}
+body .profile-create .pc-content{overflow-anchor:none;scroll-behavior:auto;}
+body .profile-create .profile-error:empty{display:none;}
+body .profile-create[data-create-kind=post] textarea{resize:none;}
+body .profile-text-tile{padding:18px 12px;text-align:left;vertical-align:top;}
+body .profile-post-excerpt{display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;white-space:pre-wrap;font:400 .8rem/1.5 var(--font-ui);color:var(--ui-ink);}
+body .pm-post[data-kind=post] .pm-caption{margin-block:12px 18px;font-size:1rem;}
 body .pc-bar{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;flex-shrink:0;padding:0 16px 4px;gap:8px;}
 body .profile-create .pc-title{font:500 1.125rem/1.4 var(--font-ui);text-align:center;padding:0;margin:0;}
 body .pc-content{width:100%;max-width:none;margin:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:none;padding:4px max(22px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left));}
@@ -233,13 +246,12 @@ body .pc-preview-item{flex:0 0 auto;max-width:100%;height:140px;scroll-snap-alig
 body .pc-preview-item :is(img,video){display:block;height:100%;max-width:100%;object-fit:contain;border-radius:0;}
 body .pc-preview-unavailable{display:flex;align-items:center;height:100%;padding:12px;color:var(--ui-muted);font-size:.875rem;}
 @layer sekkes-borderless{
- body #shell .profile-create :is(.pc-option,.pc-control){background:transparent!important;color:var(--ui-ink)!important;text-decoration:none!important;}
+ body #shell .profile-create :is(.pc-option,.pc-control,.pc-grip){background:transparent!important;color:var(--ui-ink)!important;text-decoration:none!important;}
  body #shell .profile-create :is(.pc-picker,.pc-submit,.pc-caption textarea){background:var(--ui-selected)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-decoration:none!important;}
  body .profile-create :is(.pc-option,.pc-control):focus-visible .living-icon-fallback{opacity:1;stroke-width:1.8;}
  body .profile-create .pc-option:focus-visible{font-weight:600;}
  body .profile-create :is(.pc-picker,.pc-submit):focus-visible{font-weight:600;}
 }
 html[data-transparency=off] body .profile-create .pc-panel{background:#1d2b33;backdrop-filter:none;-webkit-backdrop-filter:none;}
-@keyframes pc-enter{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@media(prefers-reduced-motion:reduce){body .profile-create .pc-panel{animation:none;}}
-html[data-motion=reduced] body .profile-create .pc-panel{animation:none;}
+
+

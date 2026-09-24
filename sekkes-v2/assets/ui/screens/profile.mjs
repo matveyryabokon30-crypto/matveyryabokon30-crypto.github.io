@@ -2,7 +2,7 @@ import {createPostFeed,createSequence,feedPosts} from '../profile-media.mjs';
 import {profileEditor} from '../profile-editor.mjs';
 import {profileCreate} from '../profile-create.mjs';
 import {el,icon,row} from '../components.mjs';
-import {openProfileStore,mediaTypes} from '../profile-store.mjs';
+import {openProfileStore,mediaTypes,validatePostText} from '../profile-store.mjs';
 export function create(ctx){
  const node=el('section','screen profile-screen');node.setAttribute('aria-label','Профиль');
  const body=el('div','profile-body'),nav=el('nav','profile-bottom');nav.setAttribute('aria-label','Разделы профиля');
@@ -16,7 +16,7 @@ export function create(ctx){
  const url=(blob,set=urls)=>{const u=URL.createObjectURL(blob);set.add(u);return u;};
  const release=set=>{for(const u of set)URL.revokeObjectURL(u);set.clear();};
  function closeDialog(){const old=viewer;viewer=null;old?.dispose();ownDialog.classList.remove('profile-editor','profile-media-dialog');ownDialog.querySelectorAll('video').forEach(v=>v.pause());ownDialog.close();ownDialog.replaceChildren();release(dialogUrls);inlineFeed?.setActive(node.isConnected);}
- ownDialog.addEventListener('cancel',e=>{e.preventDefault();closeDialog();});
+ ownDialog.addEventListener('cancel',e=>{e.preventDefault();if(viewer?.requestClose)viewer.requestClose();else closeDialog();});
  ownDialog.addEventListener('close',()=>{if(!ownDialog.open)closeDialog();});
  function button(label,symbol,action,cls='profile-action'){const b=el('button',cls);b.type='button';b.setAttribute('aria-label',label);if(symbol)b.innerHTML=icon(symbol);b.append(el('span','',label));b.onclick=action;return b;}
  function header(title){const head=el('div','profile-page-heading');head.append(button('Профиль','back',()=>setView('profile'),'profile-back'),el('h1','',title));body.append(head);}
@@ -39,6 +39,7 @@ export function create(ctx){
   const creator=profileCreate({dialog:ownDialog,close:closeDialog,current,errorText,
    save:async ({kind,files,caption})=>{
     if(!current())return false;
+    if(kind==='post')validatePostText(caption);
     if(data.posts.length>=60)throw Error('В медиатеке уже 60 материалов. Удали ненужные, чтобы добавить новые.');
     const post={id:crypto.randomUUID(),kind,caption,at:new Date().toISOString(),files};
     if(!await persist({...data,posts:[post,...data.posts]},owner,token))return false;
@@ -71,17 +72,17 @@ export function create(ctx){
  function feed(){
   const bar=el('header','pm-feed-bar');bar.append(button('Профиль','back',()=>setView('profile'),'profile-back'),el('h1','','Лента'),button('Добавить','plus',addMedia,'pm-control'));
   body.append(bar);
-  if(!loaded){empty(ctx.account?'Загружаем публикации':'Твоя лента','Фото, видео и карусели из твоего профиля.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
+  if(!loaded){empty(ctx.account?'Загружаем публикации':'Твоя лента','Посты, фото, видео и карусели из твоего профиля.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
   inlineFeed=createPostFeed({posts:feedPosts(data.posts),profile:data,account:ctx.account,scrollRoot:body,onVideo:openPost,onRemove:removePost});body.append(inlineFeed.node);
  }
  function grid(){
   const toolbar=el('div','profile-grid-heading');toolbar.append(button('Добавить','plus',addMedia));body.append(toolbar);
   const filters=el('div','profile-filters');filters.setAttribute('aria-label','Формат материалов');for(const [key,label,symbol] of [['all','Все','feed'],...Object.entries(mediaTypes).map(([k,v])=>[k,v,k])]){const b=button(label,symbol,()=>{filter=key;render();},'profile-filter');b.setAttribute('aria-pressed',String(filter===key));filters.append(b);}body.append(filters);
   if(!loaded){empty(ctx.account?'Загружаем профиль':'Твой профиль','Аватар, анкета и личные материалы.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
-  const posts=(data?.posts||[]).filter(p=>filter==='all'||p.kind===filter);if(!posts.length){empty('Пока нет материалов','Добавь фото, видео, карусель или сторис.');return;}
+  const posts=(data?.posts||[]).filter(p=>filter==='all'||p.kind===filter);if(!posts.length){empty('Пока нет материалов','Добавь пост, фото, видео, карусель или сторис.');return;}
   const list=el('div','profile-media-grid');
   for(const post of posts){const b=el('button','profile-tile');b.type='button';b.setAttribute('aria-label',mediaTypes[post.kind]+(post.caption?': '+post.caption:''));b.onclick=()=>openPost(post);
-   const file=post.files[0];if(file.type.startsWith('image/')){const img=el('img');img.src=url(file);img.alt=post.caption||mediaTypes[post.kind];img.loading='lazy';b.append(img);}else{const cover=el('span','profile-video-cover');cover.innerHTML=icon('video');b.append(cover);}
+   const file=post.files[0];if(post.kind==='post'){b.classList.add('profile-text-tile');b.append(el('span','profile-post-excerpt',post.caption));}else if(file?.type.startsWith('image/')){const img=el('img');img.src=url(file);img.alt=post.caption||mediaTypes[post.kind];img.loading='lazy';b.append(img);}else{const cover=el('span','profile-video-cover');cover.innerHTML=icon('video');b.append(cover);}
    const badge=el('span','profile-type');badge.innerHTML=icon(post.kind);badge.setAttribute('aria-hidden','true');b.append(badge);list.append(b);
   }body.append(list);
  }

@@ -1,6 +1,12 @@
 // Private, account-scoped device library. No social publishing or AI context upload.
-export const mediaTypes = Object.freeze({photo:'Фото',video:'Видео',carousel:'Карусель',story:'Сторис'});
+export const mediaTypes = Object.freeze({post:'Пост',photo:'Фото',video:'Видео',carousel:'Карусель',story:'Сторис'});
+export function validatePostText(text){
+ if(typeof text!=='string'||!text.trim())throw Error('Напиши текст поста.');
+ if(text.length>5000)throw Error('Текст поста должен быть не длиннее 5000 символов.');
+ return true;
+}
 export function validateMedia(kind,files){
+ if(kind==='post')throw Error('Для поста нужен текст, а не файл.');
  if(!Object.hasOwn(mediaTypes,kind))throw Error('Выбери формат.');
  if(!files.length||files.length>(kind==='carousel'?10:1))throw Error(kind==='carousel'?'Выбери от 2 до 10 фотографий.':'Выбери один файл.');
  if(kind==='carousel'&&files.length<2)throw Error('Для карусели нужно минимум 2 фотографии.');

@@ -1,6 +1,6 @@
 // Account-local media presentation only. Storage and social publishing are not owned here.
 import {el,icon} from './components.mjs';
-export const feedPosts=posts=>(posts||[]).filter(p=>['photo','video','carousel'].includes(p.kind));
+export const feedPosts=posts=>(posts||[]).filter(p=>['post','photo','video','carousel'].includes(p.kind));
 export const storyPosts=posts=>(posts||[]).filter(p=>p.kind==='story');
 const videoFile=file=>file?.type?.startsWith('video/');
 const dateLabel=at=>{const d=new Date(at);return Number.isNaN(d.valueOf())?'':d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});};
@@ -54,12 +54,12 @@ export function createPostFeed({posts,profile,account,scrollRoot,onVideo,onRemov
    const sync=()=>{index=Math.max(0,Math.min(post.files.length-1,Math.round(gallery.scrollLeft/Math.max(1,gallery.clientWidth))));count.textContent=`${index+1} / ${post.files.length}`;prev.disabled=index===0;next.disabled=index===post.files.length-1;[...dots.children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));};
    gallery.addEventListener('scroll',sync,{passive:true,signal});gallery.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();select(Math.max(0,Math.min(post.files.length-1,index+(e.key==='ArrowRight'?1:-1))));}},{signal});
    frame.append(prev,next,count);article.append(head,frame,dots);sync();
-  }else article.append(head,frame);
+  }else {article.append(head);if(post.files.length)article.append(frame);}
   if(post.caption)article.append(el('p','pm-caption',post.caption));
   const label=dateLabel(post.at);if(label){const time=el('time','pm-date',label);time.dateTime=post.at;article.append(time);}
   node.append(article);records.push(r);visibility.observe(article);nearby.observe(article);
  }
- if(!items.length)node.append(el('p','pm-empty','Здесь появятся твои фото, видео и карусели. Сторис остаются в сетке профиля.'));
+ if(!items.length)node.append(el('p','pm-empty','Здесь появятся твои посты, фото, видео и карусели. Сторис остаются в сетке профиля.'));
  document.addEventListener('visibilitychange',chooseVideo,{signal});
  return {node,setActive(value){active=value;chooseVideo();},jump(id){const r=records.find(r=>r.article.dataset.postId===id);if(!r)return;r.load();const top=r.article.getBoundingClientRect().top-scrollRoot.getBoundingClientRect().top+scrollRoot.scrollTop;scrollRoot.scrollTo({top,behavior:'instant'});},dispose(){if(disposed)return;disposed=true;active=false;pause();life.abort();visibility.disconnect();nearby.disconnect();for(const r of records)r.article.querySelectorAll('video').forEach(v=>{v.removeAttribute('src');v.load();});pool.dispose();}};
 }
