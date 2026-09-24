@@ -440,3 +440,44 @@ html[data-keyboard-open=true] body .pc-story-editor .pc-content{
  inset:env(safe-area-inset-top) 0 0!important;height:calc(100dvh - env(safe-area-inset-top))!important;
 }
 body .se-editor[data-panel=text] .se-text-input::placeholder{content:''!important;color:transparent!important;opacity:0!important;}
+
+/* story.43 — fixed story stage is independent of the keyboard-sized visual viewport. */
+body .profile-dialog.profile-create.pc-story-editor{
+ position:fixed!important;inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
+ width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;
+ transform:none!important;
+}
+body .profile-create.pc-story-editor .pc-panel{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+ max-width:none!important;max-height:none!important;transform:none!important;
+}
+body .pc-story-editor .pc-content{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+ padding:0!important;overflow:hidden!important;
+}
+body .pc-story-editor .se-editor{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+ min-width:100vw!important;min-height:100dvh!important;max-width:none!important;max-height:none!important;
+ container-type:inline-size!important;
+}
+body .pc-story-editor .se-workspace{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+ min-width:100vw!important;min-height:100dvh!important;container-type:inline-size!important;
+ place-items:start center!important;overflow:hidden!important;
+}
+body .pc-story-editor .se-workspace>.story-frame{
+ width:100vw!important;height:177.777778vw!important;min-width:100vw!important;
+ max-width:none!important;max-height:none!important;flex:none!important;
+}
+body .pc-story-editor .se-toolbox[data-kind=text]{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+ max-width:none!important;max-height:none!important;
+}
+body .pc-story-editor .se-toolbox[data-kind=text] .se-text-stage{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+}
+body .pc-story-editor .se-toolbox[data-kind=text] .se-text-options{
+ position:fixed!important;left:0!important;right:0!important;bottom:0!important;
+}
+body .pc-story-editor .se-text-input{background:transparent!important;}
+body .pc-story-editor .se-text-input::placeholder{display:none!important;color:transparent!important;opacity:0!important;}
