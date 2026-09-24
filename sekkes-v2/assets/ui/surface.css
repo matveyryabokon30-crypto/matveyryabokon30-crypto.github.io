@@ -428,3 +428,15 @@ body .se-editor[data-panel=text] .se-text-options{
   pointer-events:auto!important;
 }
 body .se-editor[data-panel=text] .se-text-input::placeholder{color:transparent!important;opacity:0!important;}
+
+/* story.42 — the story modal keeps the layout viewport while iOS keyboard overlays it. */
+html[data-keyboard-open=true] body .profile-dialog.profile-create.pc-story-editor{
+ top:0!important;height:100dvh!important;max-height:100dvh!important;
+}
+html[data-keyboard-open=true] body .profile-create.pc-story-editor .pc-panel{
+ height:100dvh!important;max-height:100dvh!important;
+}
+html[data-keyboard-open=true] body .pc-story-editor .pc-content{
+ inset:env(safe-area-inset-top) 0 0!important;height:calc(100dvh - env(safe-area-inset-top))!important;
+}
+body .se-editor[data-panel=text] .se-text-input::placeholder{content:''!important;color:transparent!important;opacity:0!important;}
