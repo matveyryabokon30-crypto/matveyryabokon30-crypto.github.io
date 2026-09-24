@@ -86,7 +86,7 @@ export function create(ctx){
   ownDialog.querySelector('.profile-dialog-close')?.focus({preventScroll:true});
  }
  function feed(){
-  const bar=el('header','pm-feed-bar');bar.append(button('Профиль','back',()=>setView('profile'),'profile-back'),el('h1','',feedSaved?'Сохранённое':'Лента'));const saved=button('Сохранённые публикации','bookmark',()=>{feedSaved=!feedSaved;body.scrollTop=0;render();},'pm-control');saved.setAttribute('aria-pressed',String(feedSaved));bar.append(saved,button('Добавить','plus',addMedia,'pm-control'));
+  const bar=el('header','pm-feed-bar');bar.append(button('Добавить','plus',addMedia,'pm-control pm-feed-add'),el('h1','',feedSaved?'Сохранённое':'Лента'));
   body.append(bar);
   if(!loaded){empty(ctx.account?'Загружаем публикации':'Твоя лента','Посты, фото, видео и карусели из твоего профиля.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
   const strip=el('nav','profile-story-strip');strip.setAttribute('aria-label','Сторис');
@@ -109,10 +109,11 @@ export function create(ctx){
   group.append(row({title:'Мой прогресс',description:'Личный путь',iconName:'progress',action:()=>setView('progress')}),row({title:'Сохранённые разговоры',description:'Твоя переписка с SEKKES',iconName:'chat',action:()=>ctx.showConversation()}),row({title:'Любимые пространства',iconName:'heart',action:()=>setView('favorites')}),row({title:'Достижения',iconName:'spark',action:()=>setView('achievements')}),row({title:'Личные настройки',description:'Анкета, вход и голос помощника',iconName:'profile',action:()=>setView('personal')}));body.append(group);
  }
  function personal(){header('Личные настройки');const group=el('div','settings-group');group.append(row({title:'Редактировать анкету и аватар',iconName:'edit',action:edit}),row({title:'Face ID / ключ доступа',iconName:'shield',action:()=>ctx.runtime()?.faceIdSettings()}),row({title:'Голос помощника',iconName:'sound',action:()=>ctx.runtime()?.voiceSettings()}),row({title:'Оформление приложения',iconName:'settings',action:()=>ctx.navigate('settings')}),row({title:ctx.account?'Выйти из аккаунта':'Войти в SEKKES',iconName:'profile',action:()=>ctx.runtime()?.accountAction()}));body.append(group);}
- function setView(next){closeDialog();view=next;body.scrollTop=0;render();}
+ function setView(next){if(next==='feed'&&view==='feed'&&!feedSaved){body.scrollTo({top:0,behavior:'instant'});return;}closeDialog();if(next==='feed')feedSaved=false;view=next;body.scrollTop=0;render();}
  function render(){
   if(disposed)return;inlineFeed?.dispose();inlineFeed=null;body.dataset.profileView=view;body.querySelectorAll('video').forEach(v=>v.pause());release(urls);body.replaceChildren();
-  for(const b of nav.children){const current=b.dataset.view===view||(b.dataset.view==='settings'&&['personal','progress','favorites','achievements'].includes(view));if(current)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
+  const profileTab=nav.querySelector('[data-view=profile]');if(profileTab){const pict=el('span','profile-nav-avatar');if(data?.avatar){const image=el('img');image.src=url(data.avatar);image.alt='';pict.append(image);}else pict.innerHTML=icon('profile');profileTab.replaceChildren(pict);}
+  for(const b of nav.children){const current=b.dataset.view===view||(b.dataset.view==='profile'&&['settings','personal','progress','favorites','achievements'].includes(view));if(current)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
   if(view==='settings')return settings();if(view==='personal')return personal();
   if(['progress','favorites','achievements','channels','community'].includes(view)){
    const labels={progress:['Мой прогресс','Пока без оценок','Отслеживание прогресса ещё не доступно.'],favorites:['Любимые пространства','Твои пространства','Перейти к играм и живому миру можно ниже.'],achievements:['Достижения','Твой путь продолжается','Система достижений ещё не доступна.'],channels:['Каналы','Скоро здесь','Каналы пока недоступны.'],community:['Сообщество','Скоро здесь','Общение с участниками пока недоступно.']}[view];header(labels[0]);empty(labels[1],labels[2]);if(view==='favorites'){body.append(button('Игры','games',()=>ctx.navigate('games')),button('Живой мир','world',()=>ctx.navigate('world')));}return;
@@ -123,9 +124,9 @@ export function create(ctx){
   const pencil=button('Редактировать профиль','edit',edit,'profile-avatar-edit');avatarWrap.append(avatar,pencil);
   const name=data?.name||ctx.account?.user_metadata?.full_name||ctx.account?.user_metadata?.name||'Твой профиль';top.append(avatarWrap,el('h1','profile-display-name',name));
   if(data?.bio)top.append(el('p','profile-bio',data.bio));else top.append(button('Добавить описание','edit',edit,'profile-edit-link'));
-  const details=[data?.city,data?.interests].filter(Boolean).join(' · ');if(details)top.append(el('p','profile-details',details));body.append(top);grid();
+  const details=[data?.city,data?.interests].filter(Boolean).join(' · ');if(details)top.append(el('p','profile-details',details));body.append(top);const links=el('div','profile-library-links');links.append(button('Сохранённые публикации','bookmark',()=>{feedSaved=true;view='feed';body.scrollTop=0;render();}),button('Настройки профиля','settings',()=>setView('settings')));body.append(links);grid();
  }
- for(const [id,label,symbol] of [['settings','Настройки профиля','settings'],['feed','Лента','feed'],['channels','Каналы','channels'],['community','Сообщество','community']]){const b=button(label,symbol,()=>setView(id),'profile-nav-item');b.dataset.view=id;nav.append(b);}
+ for(const [id,label,symbol] of [['feed','Лента','feed'],['channels','Каналы','channels'],['community','Сообщество','community'],['profile','Профиль','profile']]){const b=button(label,symbol,()=>setView(id),'profile-nav-item');b.dataset.view=id;nav.append(b);}
  async function update(){
   if(disposed)return;const nextUid=ctx.account?.id||null;
   // Auth refresh/route resume is not an account change. Keep the same DOM,
