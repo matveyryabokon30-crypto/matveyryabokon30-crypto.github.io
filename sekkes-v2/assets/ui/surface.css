@@ -527,3 +527,28 @@ body .pc-story-editor .se-layer-dragging .se-trash .living-icon{--icon-size:28px
 body .pc-story-editor .se-layer-dragging .se-trash span:not(.living-icon){display:none!important;}
 
 body .profile-create.pc-story-editor .se-footer{position:fixed!important;z-index:55!important;left:0!important;right:0!important;bottom:0!important;display:grid!important;grid-template-columns:48px 48px minmax(0,1fr)!important;gap:10px!important;align-items:center!important;padding:10px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))!important;background:linear-gradient(transparent,rgba(7,16,24,.68) 30%,rgba(7,16,24,.92))!important;pointer-events:auto!important}body .profile-create.pc-story-editor .se-tool-open .se-footer{visibility:hidden!important;pointer-events:none!important}body .profile-create.pc-story-editor .se-publish{min-height:52px!important;border-radius:28px!important;background:rgba(49,66,77,.78)!important;backdrop-filter:blur(18px) saturate(135%)!important;-webkit-backdrop-filter:blur(18px) saturate(135%)!important}
+
+/* story.46 — text formatting stays docked above the permanent publish navigation. */
+body .pc-story-editor .se-editor.se-text-docked .se-toolbox[data-kind=text]{
+ pointer-events:none!important;
+}
+body .pc-story-editor .se-editor.se-text-docked .se-toolbox[data-kind=text] .se-toolbox-head,
+body .pc-story-editor .se-editor.se-text-docked .se-toolbox[data-kind=text] .se-text-stage{
+ display:none!important;
+}
+body .pc-story-editor .se-editor.se-text-docked .se-toolbox[data-kind=text] .se-tool-body{
+ position:fixed!important;inset:auto 0 calc(74px + env(safe-area-inset-bottom))!important;
+ height:auto!important;display:block!important;overflow:visible!important;pointer-events:none!important;
+}
+body .pc-story-editor .se-editor.se-text-docked .se-toolbox[data-kind=text] .se-text-options{
+ position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;
+ display:grid!important;gap:8px!important;padding:8px 12px 10px!important;
+ background:rgba(12,24,32,.72)!important;
+ backdrop-filter:blur(22px) saturate(135%)!important;
+ -webkit-backdrop-filter:blur(22px) saturate(135%)!important;
+ border-top:1px solid rgba(235,246,255,.1)!important;
+ pointer-events:auto!important;
+}
+body .pc-story-editor .se-editor.se-text-docked .se-footer{
+ display:grid!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;
+}
