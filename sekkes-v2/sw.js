@@ -12,3 +12,5 @@ self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||!FILES.includes(e
 
 
 
+
+// story44-finalized-after-assets
