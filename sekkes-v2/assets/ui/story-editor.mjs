@@ -45,6 +45,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
  }
  function closeTools(){
   if(toolbox.contains(document.activeElement))document.activeElement.blur();
+  root.style.removeProperty('--se-stage-height');
   toolAnimation?.cancel();toolAnimation=null;toolLife?.abort();toolLife=null;toolGesture=null;
   toolbox.hidden=true;toolbox.replaceChildren();toolbox.style.transform='';toolKind='';
   root.classList.remove('se-tool-open');delete root.dataset.panel;mode='move';
@@ -97,7 +98,13 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
    remember();area.addEventListener('input',()=>{layer.text=area.value;schedule();},{signal:toolLife.signal});
    for(const [id,name] of [['sans','Modern'],['serif','Classic'],['mono','Mono']]){const b=choice(name,()=>{remember();layer.font=id;style();schedule();});b.dataset.font=id;fonts.append(b);}
    format.append(action('Подложка','text',()=>{remember();layer.background=!layer.background;style();schedule();}),action('Выравнивание','menu',()=>{remember();layer.align=layer.align==='center'?'left':layer.align==='left'?'right':'center';style();schedule();}),action('Удалить','trash',()=>removeLayer(layer)));
-   options.append(fonts,palette(c=>{remember();layer.color=c;style();schedule();},layer.color),format);const stage=el('div','se-text-stage');stage.append(area);body.append(stage,options);style();area.focus({preventScroll:true});
+   options.append(fonts,palette(c=>{remember();layer.color=c;style();schedule();},layer.color),format);
+   const stage=el('div','se-text-stage');stage.append(area);body.append(stage,options);
+   const finishText=e=>{if(e.target===stage||e.target===body){e.preventDefault();document.activeElement?.blur();closeTools();}};
+   stage.addEventListener('pointerdown',finishText,{signal:toolLife.signal});
+   body.addEventListener('pointerdown',finishText,{signal:toolLife.signal});
+   root.style.setProperty('--se-stage-height',`${Math.round(root.getBoundingClientRect().height)}px`);
+   style();area.focus({preventScroll:true});
   }else if(kind==='stickers'){
    body.append(action('Ссылка','link',()=>openTools('link')));
    const emojis=el('div','se-stickers');for(const value of ['❤️','✨','🌙','🔥','🌿','☀️','💬','⭐','😊','🫶','🎬','💡']){const b=choice(value,()=>{newLayer('emoji',value);closeTools();schedule();});b.setAttribute('aria-label',`Стикер ${value}`);emojis.append(b);}body.append(emojis);
