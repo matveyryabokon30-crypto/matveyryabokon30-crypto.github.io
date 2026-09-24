@@ -2,7 +2,8 @@
 export function viewportGeometry({height,width,visualHeight,visualWidth=width,offsetTop=0,scale=1,editing=false}){
  const valid=Math.abs(scale-1)<.02&&Math.abs(visualWidth-width)<3&&visualHeight>0&&visualHeight<=height;
  const keyboard=valid&&editing&&visualHeight<height-80;
- return {height:Math.round(keyboard?visualHeight:height),top:keyboard?Math.round(Math.max(0,Math.min(offsetTop,height-visualHeight))):0,width};
+ const storyText=keyboard&&!!document.querySelector('.se-editor[data-panel="text"]');
+ return {height:Math.round(keyboard&&!storyText?visualHeight:height),top:keyboard&&!storyText?Math.round(Math.max(0,Math.min(offsetTop,height-visualHeight))):0,width,keyboard};
 }
 export function lockViewport(signal){
  const root=document.documentElement,probe=document.createElement('div');probe.className='viewport-measure';probe.setAttribute('aria-hidden','true');document.body.append(probe);
@@ -12,7 +13,7 @@ export function lockViewport(signal){
   if(closing&&(!v||v.height>=height-80))closing=false;
   const box=viewportGeometry({height,width,visualHeight:v?.height,visualWidth:v?.width??width,offsetTop:v?.offsetTop||0,scale:v?.scale||1,editing:editing()||closing});
   const stamp=JSON.stringify(box);if(stamp===last)return;last=stamp;
-  root.style.setProperty('--app-height',box.height+'px');root.style.setProperty('--viewport-top',box.top+'px');root.style.setProperty('--keyboard-inset','0px');root.style.setProperty('--home-bottom-inset','0px');root.style.setProperty('--owner-visible-height','100%');root.dataset.keyboardOpen=String(box.height<height-80);
+  root.style.setProperty('--app-height',box.height+'px');root.style.setProperty('--viewport-top',box.top+'px');root.style.setProperty('--keyboard-inset','0px');root.style.setProperty('--home-bottom-inset','0px');root.style.setProperty('--owner-visible-height','100%');root.dataset.keyboardOpen=String(box.keyboard);
   document.dispatchEvent(new Event('sekkes-viewport-change'));
  }
  const schedule=()=>{if(!frame&&!signal.aborted)frame=requestAnimationFrame(update)};
