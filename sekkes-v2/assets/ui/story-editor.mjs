@@ -91,7 +91,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
    const colors=el('div','se-backgrounds');for(const [id,name] of [['blur','Автофон'],['dark','Тёмный'],['light','Светлый'],['sea','Глубокий']]){const b=choice(name,()=>{remember();surface.state.background=id;for(const x of colors.children)x.setAttribute('aria-pressed',String(x===b));schedule();});b.dataset.background=id;b.setAttribute('aria-pressed',String(surface.state.background===id));colors.append(b);}body.append(colors);
   }else if(kind==='text'){
    let layer=surface.state.layers.find(l=>l.id===selected&&l.kind==='text');if(!layer)layer=newLayer();if(!layer){closeTools();return;}
-   const area=el('textarea','se-text-input');area.rows=3;area.maxLength=500;area.placeholder='Напиши текст';area.value=layer.text;area.setAttribute('aria-label','Текст на сторис');
+   const area=el('textarea','se-text-input');area.rows=3;area.maxLength=500;area.placeholder='';area.value=layer.text;area.setAttribute('aria-label','Текст на сторис');
    const fonts=el('div','se-fonts'),format=el('div','se-text-format'),options=el('div','se-text-options');
    function style(){area.style.fontFamily=layer.font==='serif'?'Georgia,serif':layer.font==='mono'?'ui-monospace,monospace':'var(--font-ui),sans-serif';area.style.color=layer.color;area.style.textAlign=layer.align;area.dataset.background=String(layer.background);for(const b of fonts.children)b.setAttribute('aria-pressed',String(b.dataset.font===layer.font));surface.node.querySelector(`[data-layer-id="${layer.id}"]`)?.setAttribute('data-editing','true');}
    remember();area.addEventListener('input',()=>{layer.text=area.value;schedule();},{signal:toolLife.signal});
