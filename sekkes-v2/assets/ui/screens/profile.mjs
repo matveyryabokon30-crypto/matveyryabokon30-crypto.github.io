@@ -1,7 +1,8 @@
 import {createPostFeed,createSequence,feedPosts} from '../profile-media.mjs';
 import {profileEditor} from '../profile-editor.mjs';
+import {profileCreate} from '../profile-create.mjs';
 import {el,icon,row} from '../components.mjs';
-import {openProfileStore,validateMedia,mediaTypes} from '../profile-store.mjs';
+import {openProfileStore,mediaTypes} from '../profile-store.mjs';
 export function create(ctx){
  const node=el('section','screen profile-screen');node.setAttribute('aria-label','Профиль');
  const body=el('div','profile-body'),nav=el('nav','profile-bottom');nav.setAttribute('aria-label','Разделы профиля');
@@ -32,15 +33,19 @@ export function create(ctx){
   ownDialog.showModal();ownDialog.querySelector('.pe-bar button')?.focus({preventScroll:true});
  }
  function addMedia(){
-  if(!requireAccount())return;const owner=uid,token=epoch;dialog('Добавить материал');const form=el('form','profile-form');
-  const format=el('label','','Формат'),select=el('select');for(const [k,v] of Object.entries(mediaTypes)){const o=el('option','',v);o.value=k;select.append(o);}format.append(select);
-  const upload=el('label','','Файл'),input=el('input');input.type='file';input.required=true;
-  const change=()=>{input.value='';input.multiple=select.value==='carousel';input.accept=select.value==='video'?'video/mp4,video/webm,video/quicktime':select.value==='story'?'image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm,video/quicktime':'image/jpeg,image/png,image/webp,image/avif';};change();select.onchange=change;upload.append(input);
-  const caption=el('label','','Подпись'),text=el('textarea');text.maxLength=500;caption.append(text);
-  const error=el('p','profile-error');error.setAttribute('role','alert');const save=button('Добавить в профиль',null,null);save.type='submit';
-  form.append(format,upload,caption,el('p','profile-note','Медиатека на этом устройстве. Фото, видео и карусели появятся в ленте; сторис — только в сетке и просмотре сторис. Материал не публикуется в интернете.'),error,save);
-  form.onsubmit=async e=>{e.preventDefault();save.disabled=true;error.textContent='';try{const files=[...input.files];validateMedia(select.value,files);if(data.posts.length>=60)throw Error('В медиатеке уже 60 материалов. Удали ненужные, чтобы добавить новые.');const post={id:crypto.randomUUID(),kind:select.value,caption:text.value.trim(),at:new Date().toISOString(),files};if(await persist({...data,posts:[post,...data.posts]},owner,token)){closeDialog();filter='all';if(post.kind==='story'||view!=='feed')view='profile';render();}}catch(e){error.textContent=errorText(e);}finally{save.disabled=false;}};
-  ownDialog.append(form);
+  if(!requireAccount())return;const owner=uid,token=epoch;
+  closeDialog();inlineFeed?.setActive(false);
+  const current=()=>!disposed&&owner===uid&&token===epoch;
+  const creator=profileCreate({dialog:ownDialog,close:closeDialog,current,errorText,
+   save:async ({kind,files,caption})=>{
+    if(!current())return false;
+    if(data.posts.length>=60)throw Error('В медиатеке уже 60 материалов. Удали ненужные, чтобы добавить новые.');
+    const post={id:crypto.randomUUID(),kind,caption,at:new Date().toISOString(),files};
+    if(!await persist({...data,posts:[post,...data.posts]},owner,token))return false;
+    if(viewer===creator){closeDialog();filter='all';if(kind==='story'||view!=='feed')view='profile';}
+    render();return true;
+   }});
+  viewer=creator;ownDialog.showModal();creator.focus();
  }
  async function removePost(post){
   if(!requireAccount()||busy)return;const owner=uid,token=epoch;
