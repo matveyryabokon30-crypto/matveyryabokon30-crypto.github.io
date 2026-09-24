@@ -501,3 +501,27 @@ body .profile-create.pc-story-editor .se-toolbox[data-kind=text] .se-text-input:
   color:transparent!important;opacity:0!important;
 }
 body .profile-create.pc-story-editor .story-layer{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;}
+
+/* story.45 — drag-to-delete lives inside the reachable story canvas. */
+body .pc-story-editor .se-trash{
+ position:fixed!important;z-index:80!important;
+ left:50%!important;top:auto!important;right:auto!important;
+ bottom:max(calc(env(safe-area-inset-bottom) + 88px),112px)!important;
+ width:64px!important;height:64px!important;padding:0!important;
+ display:grid!important;place-items:center!important;
+ border-radius:50%!important;
+ background:rgba(30,38,44,.82)!important;
+ border:1px solid rgba(235,246,255,.18)!important;
+ box-shadow:0 12px 36px rgba(0,0,0,.28)!important;
+ backdrop-filter:blur(20px) saturate(135%)!important;
+ -webkit-backdrop-filter:blur(20px) saturate(135%)!important;
+ transform:translateX(-50%) scale(.88)!important;
+ opacity:0!important;pointer-events:none!important;
+ transition:opacity .12s ease,transform .12s ease,background .12s ease!important;
+}
+body .pc-story-editor .se-trash[hidden]{display:none!important;}
+body .pc-story-editor .se-layer-dragging .se-trash{
+ display:grid!important;opacity:1!important;transform:translateX(-50%) scale(1)!important;
+}
+body .pc-story-editor .se-layer-dragging .se-trash .living-icon{--icon-size:28px;}
+body .pc-story-editor .se-layer-dragging .se-trash span:not(.living-icon){display:none!important;}
