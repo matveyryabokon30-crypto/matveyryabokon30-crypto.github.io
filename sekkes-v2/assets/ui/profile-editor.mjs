@@ -1,7 +1,8 @@
+import {activeStories,markStoryAvatar} from './story-avatar.mjs';
 import {el,icon} from './components.mjs';
 import {validateMedia} from './profile-store.mjs';
 // Presentation and device-scoped draft only; future services are not impersonated.
-export function profileEditor({dialog,data,account,close,save,assetUrl,errorText}){
+export function profileEditor({dialog,data,account,close,save,assetUrl,errorText,openStory}){
  dialog.classList.add('profile-editor');
  const form=el('form','pe-form'),bar=el('header','pe-bar'),fields={};let avatar=data.avatar;
  const button=(label,symbol,action,cls='pe-button')=>{const b=el('button',cls);b.type='button';b.setAttribute('aria-label',label);if(symbol)b.innerHTML=icon(symbol);b.append(el('span','',label));b.onclick=action;return b;};
@@ -9,10 +10,11 @@ export function profileEditor({dialog,data,account,close,save,assetUrl,errorText
  const content=el('div','pe-content');form.append(content);
  const message=el('p','pe-message');message.setAttribute('role','status');
  const future=label=>{message.textContent=label+' — подробную настройку добавим позже.';};
- const hero=el('div','pe-hero'),avatarButton=button('Изменить фото профиля',null,()=>file.click(),'pe-avatar'),file=el('input','pe-file');file.type='file';file.accept='image/jpeg,image/png,image/webp,image/avif';file.hidden=true;file.setAttribute('aria-label','Фото профиля');
- const showAvatar=()=>{avatarButton.replaceChildren();if(avatar){const img=el('img');img.src=assetUrl(avatar);img.alt='Фото профиля';avatarButton.append(img);}else avatarButton.innerHTML=icon('profile');const badge=el('span','pe-avatar-badge');badge.innerHTML=icon('photo');avatarButton.append(badge);};showAvatar();
+ const hero=el('div','pe-hero'),avatarButton=button(activeStories(data.posts).length?'Открыть сторис':'Изменить фото профиля',null,()=>{if(activeStories(data.posts).length&&openStory)openStory();else file.click();},'pe-avatar'),file=el('input','pe-file');file.type='file';file.accept='image/jpeg,image/png,image/webp,image/avif';file.hidden=true;file.setAttribute('aria-label','Фото профиля');
+ const showAvatar=()=>{avatarButton.replaceChildren();markStoryAvatar(avatarButton,data.posts);if(avatar){const img=el('img');img.src=assetUrl(avatar);img.alt='Фото профиля';avatarButton.append(img);}else avatarButton.innerHTML=icon('profile');};showAvatar();
  file.onchange=()=>{try{if(!file.files.length)return;validateMedia('photo',[file.files[0]]);avatar=file.files[0];showAvatar();message.textContent='Новое фото выбрано. Нажми «Готово», чтобы сохранить.';}catch(e){message.textContent=errorText(e);file.value='';}};
- hero.append(avatarButton,button('Фото или аватар','photo',()=>file.click(),'pe-photo-link'),button('Создать аватар','spark',()=>future('Аватар'),'pe-subtle'),file);content.append(hero);
+ const avatarWrap=el('div','pe-avatar-wrap'),photoButton=button('Изменить фото профиля','photo',()=>file.click(),'pe-avatar-badge');avatarWrap.append(avatarButton,photoButton);
+ hero.append(avatarWrap,button('Фото или аватар','photo',()=>file.click(),'pe-photo-link'),button('Создать аватар','spark',()=>future('Аватар'),'pe-subtle'),file);content.append(hero);
  const group=title=>{const section=el('section','pe-section');section.append(el('h3','pe-heading',title));const panel=el('div','pe-panel');section.append(panel);content.append(section);return panel;};
  function field(panel,key,label,{type='text',max=100,multiline=false,symbol,tone='blue',placeholder='Добавить'}={}){
   const wrap=el('label','pe-field');if(symbol){const pict=el('span','pe-pict');pict.dataset.tone=tone;pict.innerHTML=icon(symbol);wrap.append(pict);}const body=el('span','pe-field-body');body.append(el('span','pe-label',label));const input=el(multiline?'textarea':'input');input.name=key;if(!multiline)input.type=type;input.maxLength=max;input.placeholder=placeholder;input.value=data[key]||'';if(key==='name'){input.value=data.name||account?.user_metadata?.full_name||account?.user_metadata?.name||'';input.required=true;input.autocomplete='given-name';}if(key==='username'){input.autocapitalize='none';input.spellcheck=false;}if(multiline)input.rows=3;body.append(input);wrap.append(body);panel.append(wrap);fields[key]=input;return input;

@@ -1,3 +1,4 @@
+import {storyEditor} from './story-editor.mjs';
 import {el,icon} from './components.mjs';
 import {mediaTypes,validateMedia,validatePostText} from './profile-store.mjs';
 
@@ -6,6 +7,7 @@ import {mediaTypes,validateMedia,validatePostText} from './profile-store.mjs';
 export function profileCreate({dialog,close,save,current=()=>true,errorText}){
  const life=new AbortController(),{signal}=life,urls=new Set();
  let disposed=false,step=0,pending=false,started=false,moving=false,animation=null,animationId=0,gesture=null,paintFrame=0,offset=0,suppressClickUntil=0,closing=false;
+ let storyController=null;
  const panel=el('section','pc-panel'),grip=el('button','pc-grip'),bar=el('header','pc-bar'),content=el('div','pc-content pe-content');
  const titleId=`pc-title-${crypto.randomUUID()}`;
  grip.type='button';grip.setAttribute('aria-label','Закрыть окно');grip.append(el('span'));panel.append(grip,bar,content);
@@ -17,7 +19,7 @@ export function profileCreate({dialog,close,save,current=()=>true,errorText}){
   const b=el('button',cls);b.type='button';b.setAttribute('aria-label',label);
   if(symbol)b.innerHTML=icon(symbol);b.append(el('span','',label));b.onclick=action;return b;
  }
- function release(){content.querySelectorAll('video').forEach(v=>{v.pause();v.removeAttribute('src');v.load();});for(const u of urls)URL.revokeObjectURL(u);urls.clear();}
+ function release(){storyController?.dispose();storyController=null;panel.classList.remove('pc-story-editor');dialog.classList.remove('pc-story-editor');content.querySelectorAll('video').forEach(v=>{v.pause();v.removeAttribute('src');v.load();});for(const u of urls)URL.revokeObjectURL(u);urls.clear();}
  function stopAnimation(){animationId++;animation?.cancel();animation=null;cancelAnimationFrame(paintFrame);paintFrame=0;}
  function translate(y){offset=y;panel.style.transform=`translate3d(0,${y}px,0)`;}
  function position(){const t=getComputedStyle(panel).transform;return t==='none'?0:Math.max(0,new DOMMatrixReadOnly(t).m42);}
@@ -50,6 +52,7 @@ export function profileCreate({dialog,close,save,current=()=>true,errorText}){
  function edit(kind){
   if(!alive()||pending||closing||!Object.hasOwn(mediaTypes,kind))return;const ticket=++step,isPost=kind==='post';
   release();content.replaceChildren();dialog.dataset.createKind=kind;header(mediaTypes[kind],true);
+  if(kind==='story'){panel.classList.add('pc-story-editor');dialog.classList.add('pc-story-editor');storyController=storyEditor({host:content,dialog,save,current:()=>alive()&&ticket===step,errorText,onPending(value){pending=value;grip.disabled=value;bar.querySelector('.pc-control')?.toggleAttribute('disabled',value);}});focus();return;}
   const form=el('form','pc-form'),input=el('input'),preview=el('div','pc-preview'),caption=el('label','pc-caption',isPost?'Текст поста':'Подпись'),text=el('textarea');
   let files=[];
   input.type='file';input.hidden=true;input.multiple=kind==='carousel';input.setAttribute('aria-label',`Файлы: ${mediaTypes[kind]}`);
@@ -95,7 +98,7 @@ export function profileCreate({dialog,close,save,current=()=>true,errorText}){
  // Claim only a downward drag that STARTED at the scroll owner's top. Text
  // selection, video controls and horizontal galleries remain native gestures.
  function begin(x,y,id,target){
-  if(!alive()||pending||closing||gesture||target.closest('textarea,input,select,video,.pc-preview'))return;
+  if(!alive()||pending||closing||gesture||target.closest('textarea,input,select,video,.pc-preview,.se-editor'))return;
   if(!target.closest('.pc-bar,.pc-grip')&&content.scrollTop>0)return;
   gesture={x,y,id,lastY:y,lastAt:performance.now(),velocity:0,claimed:false,base:0};
  }

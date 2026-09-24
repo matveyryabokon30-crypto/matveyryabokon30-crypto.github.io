@@ -8,3 +8,7 @@ Object.assign(iconPaths,{paperclip:'M8 12l6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l9
 Object.assign(iconPaths,{phone:'M7 3 3 5c0 9 7 16 16 16l2-4-5-3-2 3c-3-1-6-4-7-7l3-2Z',at:'M16 8v7c0 3 6 2 6-3a10 10 0 1 0-5 9M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',mail:'M3 5h18v14H3Zm0 0 9 8 9-8',link:'m9 15 6-6M8 16l-1 1a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0m0 12a4 4 0 0 0 6 0l5-5a4 4 0 0 0-6-6l-1 1',birthday:'M4 11h16v10H4Zm0 4c3 4 5-3 8 0s5 0 8 0M8 11V8m4 3V8m4 3V8M8 5V3m4 2V2m4 3V3',location:'M12 22S4 14 4 9a8 8 0 1 1 16 0c0 5-8 13-8 13ZM15 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0',palette:'M12 2a10 10 0 1 0 0 20c4 0-1-5 3-5h3c6 0 5-15-6-15ZM7 7h.01M12 5h.01M17 8h.01M6 13h.01',category:'M4 7h16v14H4ZM8 7V3h8v4M4 12h16m-10 0v3h4v-3',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',exit:'M10 3H3v18h7M9 12h13m-5-5 5 5-5 5'});
 
 Object.assign(iconPaths,{post:'M5 3h14v18H5ZM8 7h8M8 11h8M8 15h5'});
+
+Object.assign(iconPaths,{crop:'M7 2v15h15M2 7h15v15M21 3 3 21',text:'M3 5h12M9 5v16M5 21h8m3-10h6m-3 0v10m-2 0h4',smile:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM7 14c2 4 8 4 10 0M8 8h.01M16 8h.01',undo:'M3 10h10a7 7 0 0 1 0 14M3 10l5-5M3 10l5 5',clock:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 6v6l4 3'});
+
+Object.assign(iconPaths,{trash:'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7',rotate:'M20 8V3l-4 4M20 8a8 8 0 1 0 1 6'});

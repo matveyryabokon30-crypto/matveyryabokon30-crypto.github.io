@@ -1,3 +1,5 @@
+import {storySurface,normalizeStory,storyWindow} from './story-composition.mjs';
+import {smallStoryAvatar} from './story-avatar.mjs';
 // Account-local media presentation only. Storage and social publishing are not owned here.
 import {el,icon} from './components.mjs';
 export const feedPosts=posts=>(posts||[]).filter(p=>['post','photo','video','carousel'].includes(p.kind));
@@ -8,14 +10,14 @@ function control(label,symbol,action,cls='pm-control'){
  const b=el('button',cls);b.type='button';b.title=label;b.setAttribute('aria-label',label);b.innerHTML=icon(symbol);b.onclick=action;return b;
 }
 function assets(){const urls=new Set();return {url(blob){const u=URL.createObjectURL(blob);urls.add(u);return u;},dispose(){for(const u of urls)URL.revokeObjectURL(u);urls.clear();}};}
-function person(profile,account,pool){
- const n=el('div','pm-person');if(profile?.avatar){const img=el('img','pm-avatar');img.alt='';img.src=pool.url(profile.avatar);n.append(img);}
+function person(profile,account,pool,onStory){
+ const n=el('div','pm-person');n.append(smallStoryAvatar({profile,account,url:b=>pool.url(b),onOpen:onStory}));
  n.append(el('span','pm-name',profile?.name||account?.user_metadata?.full_name||'Твой профиль'));return n;
 }
 function failure(node,label='Не удалось открыть файл. Исходный материал сохранён.'){const n=el('p','pm-error',label);n.setAttribute('role','status');node.append(n);}
 
 // One shared vertical publication stream for the Feed tab and a post opened from the grid.
-export function createPostFeed({posts,profile,account,scrollRoot,onVideo,onRemove}){
+export function createPostFeed({posts,profile,account,scrollRoot,onVideo,onRemove,onStory}){
  const items=feedPosts(posts),node=el('div','pm-feed'),pool=assets(),life=new AbortController(),{signal}=life;
  node.setAttribute('aria-label','Публикации');const records=[];let active=true,disposed=false;
  const pauseRecord=r=>{if(r.video&&!r.video.paused){r.systemPause=true;r.video.pause();}};
@@ -31,7 +33,7 @@ export function createPostFeed({posts,profile,account,scrollRoot,onVideo,onRemov
  for(const post of items){
   const article=el('article','pm-post');article.dataset.postId=post.id;article.dataset.kind=post.kind;
   article.setAttribute('aria-label',post.caption||'Публикация');
-  const head=el('header','pm-post-head');head.append(person(profile,account,pool));
+  const head=el('header','pm-post-head');head.append(person(profile,account,pool,onStory));
   const menu=el('details','pm-menu'),summary=el('summary','pm-control');summary.setAttribute('aria-label','Действия с публикацией');summary.innerHTML=icon('menu');
   const remove=el('button','pm-remove','Удалить');remove.type='button';remove.onclick=async()=>{remove.disabled=true;try{await onRemove(post);}finally{remove.disabled=false;menu.open=false;}};menu.append(summary,remove);head.append(menu);
   const frame=el('div','pm-frame'),gallery=el('div','pm-gallery');gallery.setAttribute('aria-label',post.kind==='carousel'?'Карусель':'Медиа публикации');frame.append(gallery);
@@ -69,7 +71,7 @@ export function createSequence({posts,startId,profile,account,mode='story',close
  const items=mode==='story'?storyPosts(posts):feedPosts(posts).filter(p=>p.kind==='video');
  const root=el('div',`pm-sequence pm-${mode}`),life=new AbortController(),{signal}=life,pool=assets();
  const header=el('header','pm-sequence-head'),progress=el('div','pm-progress'),stage=el('div','pm-sequence-stage'),foot=el('footer','pm-sequence-foot');
- let systemPause=false;
+ let systemPause=false,composition=null,layout=null;
  let index=Math.max(0,items.findIndex(p=>p.id===startId)),current=null,currentPool=null,ready=false,failed=false,manual=false,holding=false,muted=true,active=true,elapsed=0,last=0,raf=0,disposed=false,gesture=null,holdTimer=0,mediaLife=null;
  const play=control('Пауза','stop',()=>{manual=!manual;sync();}),sound=control('Включить звук','sound',()=>{muted=!muted;if(current?.tagName==='VIDEO')current.muted=muted;sync();});
  const counter=el('span','pm-sequence-count');counter.setAttribute('aria-live','polite');
@@ -92,30 +94,31 @@ export function createSequence({posts,startId,profile,account,mode='story',close
  function tick(t){
   raf=0;if(!canRun()){last=0;return;}
   if(mode==='story'){
-   if(current.tagName==='VIDEO'){const duration=current.duration;paint(Number.isFinite(duration)&&duration>0?current.currentTime/duration:0);}
-   else{if(last)elapsed+=Math.min(t-last,100);paint(elapsed/5000);if(elapsed>=5000){advance(1,true);return;}}
+   if(current.tagName==='VIDEO'){const win=storyWindow(composition||normalizeStory(),current.duration);paint(win.end>win.start?(current.currentTime-win.start)/(win.end-win.start):0);if(win.end>0&&current.currentTime>=win.end-.03){advance(1,true);return;}}
+   else{if(last)elapsed+=Math.min(t-last,100);const duration=(composition?.duration||5)*1000;paint(elapsed/duration);if(elapsed>=duration){advance(1,true);return;}}
   }
   last=t;raf=requestAnimationFrame(tick);
  }
  function show(){
   cancelAnimationFrame(raf);raf=0;last=0;elapsed=0;ready=false;failed=false;manual=false;systemPause=false;holding=false;gesture=null;clearTimeout(holdTimer);mediaLife?.abort();mediaLife=new AbortController();
-  if(current?.tagName==='VIDEO'){current.pause();current.removeAttribute('src');current.load();}stage.replaceChildren();currentPool?.dispose();currentPool=assets();
-  const post=items[index];if(!post){close();return;}root.dataset.postId=post.id;root.dataset.index=String(index);const file=post.files[0],isVideo=videoFile(file),m=el(isVideo?'video':'img','pm-sequence-media');current=m;m.draggable=false;
+  if(current?.tagName==='VIDEO'){current.pause();current.removeAttribute('src');current.load();}layout?.dispose();layout=null;stage.replaceChildren();currentPool?.dispose();currentPool=assets();
+  const post=items[index];if(!post){close();return;}root.dataset.postId=post.id;root.dataset.index=String(index);const file=post.files[0],isVideo=videoFile(file),m=el(isVideo?'video':'img','pm-sequence-media');current=m;m.draggable=false;composition=mode==='story'?normalizeStory(post.story):null;if(composition){muted=composition.muted;layout=storySurface({media:m,composition});stage.append(layout.node);}
   m.addEventListener('error',()=>{failed=true;failure(stage,'Файл не воспроизводится в этом браузере. Он сохранён в профиле.');sync();},{signal:mediaLife.signal});
   if(isVideo){m.playsInline=true;m.muted=muted;m.controls=mode==='video';m.loop=mode==='video';m.preload='auto';
-   m.addEventListener('loadeddata',()=>{ready=true;sync();},{signal:mediaLife.signal});
+   m.addEventListener('loadeddata',()=>{if(composition){const win=storyWindow(composition,m.duration);if(win.start>0)m.currentTime=win.start;}ready=true;sync();},{signal:mediaLife.signal});
    m.addEventListener('ended',()=>{if(mode==='story'&&!manual&&!holding)advance(1,true);},{signal:mediaLife.signal});
    m.addEventListener('play',()=>{if(!active||document.hidden||!root.isConnected||holding){systemPause=true;m.pause();}else{manual=false;sync();}},{signal:mediaLife.signal});
    m.addEventListener('pause',()=>{if(systemPause)systemPause=false;else if(mode==='video'){manual=true;sync();}},{signal:mediaLife.signal});
   }else{m.alt=post.caption||'Сторис';m.addEventListener('load',()=>{ready=true;sync();},{signal:mediaLife.signal});}
   caption.textContent=post.caption||'';stamp.textContent=dateLabel(post.at);if(post.at)stamp.dateTime=post.at;sound.hidden=!isVideo;previous.disabled=index===0;next.disabled=index===items.length-1;counter.textContent=`${index+1} / ${items.length}`;
-  stage.append(m);m.src=currentPool.url(file);paint(0);sync();
+  if(!layout)stage.append(m);m.src=currentPool.url(file);paint(0);sync();
  }
  function advance(delta,automatic=false){const target=index+delta;if(target>=items.length){if(automatic||mode==='story')close();return;}if(target<0)return;index=target;show();}
  // The browser's native image drag cancels the swipe pointer stream.
  stage.addEventListener('dragstart',e=>e.preventDefault(),{signal});
  stage.addEventListener('contextmenu',e=>e.preventDefault(),{signal});
  stage.addEventListener('pointerdown',e=>{
+  if(e.target.closest('a'))return;
   if(e.isPrimary===false||e.button>0)return;const rect=stage.getBoundingClientRect();
   if(mode==='video'&&e.clientY>rect.bottom-64)return;gesture={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),held:false};
   // Capture is local to the media surface; never hijack editor or app scrolling.
@@ -133,5 +136,5 @@ export function createSequence({posts,startId,profile,account,mode='story',close
  const cancel=()=>{clearTimeout(holdTimer);gesture=null;holding=false;sync();};stage.addEventListener('pointercancel',cancel,{signal});stage.addEventListener('lostpointercapture',()=>{if(gesture)cancel();},{signal});
  root.addEventListener('keydown',e=>{if(e.target.matches('input'))return;if(['ArrowRight','ArrowDown'].includes(e.key)){e.preventDefault();advance(1);}else if(['ArrowLeft','ArrowUp'].includes(e.key)){e.preventDefault();advance(-1);}else if(e.key===' '){e.preventDefault();manual=!manual;sync();}},{signal});
  document.addEventListener('visibilitychange',()=>{holding=false;gesture=null;clearTimeout(holdTimer);sync();},{signal});
- show();return {node:root,setActive(value){active=value;sync();},dispose(){if(disposed)return;disposed=true;clearTimeout(holdTimer);cancelAnimationFrame(raf);mediaLife?.abort();life.abort();if(current?.tagName==='VIDEO'){current.pause();current.removeAttribute('src');current.load();}currentPool?.dispose();pool.dispose();}};
+ show();return {node:root,setActive(value){active=value;sync();},dispose(){if(disposed)return;disposed=true;clearTimeout(holdTimer);cancelAnimationFrame(raf);mediaLife?.abort();life.abort();if(current?.tagName==='VIDEO'){current.pause();current.removeAttribute('src');current.load();}layout?.dispose();currentPool?.dispose();pool.dispose();}};
 }

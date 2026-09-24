@@ -1,3 +1,5 @@
+import {normalizeStory} from '../story-composition.mjs';
+import {activeStories,markStoryAvatar,smallStoryAvatar} from '../story-avatar.mjs';
 import {createPostFeed,createSequence,feedPosts} from '../profile-media.mjs';
 import {profileEditor} from '../profile-editor.mjs';
 import {profileCreate} from '../profile-create.mjs';
@@ -9,13 +11,13 @@ export function create(ctx){
  node.append(body,nav);
  const store=openProfileStore(),urls=new Set();let data=null,uid=null,epoch=0,view='profile',filter='all',disposed=false,busy=false,loaded=false,loading=false,accountSeen=false;
  const ownDialog=el('dialog','profile-dialog');ownDialog.setAttribute('aria-label','Редактирование профиля');node.append(ownDialog);
- const dialogUrls=new Set();let inlineFeed=null,viewer=null;
+ const dialogUrls=new Set();let inlineFeed=null,viewer=null,storyModal=null,storyViewer=null,storyFocus=null;
  const routeHost=document.querySelector('#routeHost');
  const routeObserver=new MutationObserver(()=>{if(!node.isConnected)closeDialog();inlineFeed?.setActive(node.isConnected&&!ownDialog.open);});
  if(routeHost)routeObserver.observe(routeHost,{childList:true});
  const url=(blob,set=urls)=>{const u=URL.createObjectURL(blob);set.add(u);return u;};
  const release=set=>{for(const u of set)URL.revokeObjectURL(u);set.clear();};
- function closeDialog(){const old=viewer;viewer=null;old?.dispose();ownDialog.classList.remove('profile-editor','profile-media-dialog');ownDialog.querySelectorAll('video').forEach(v=>v.pause());ownDialog.close();ownDialog.replaceChildren();release(dialogUrls);inlineFeed?.setActive(node.isConnected);}
+ function closeDialog(){closeStories(false);const old=viewer;viewer=null;old?.dispose();ownDialog.classList.remove('profile-editor','profile-media-dialog');ownDialog.querySelectorAll('video').forEach(v=>v.pause());ownDialog.close();ownDialog.replaceChildren();release(dialogUrls);inlineFeed?.setActive(node.isConnected);}
  ownDialog.addEventListener('cancel',e=>{e.preventDefault();if(viewer?.requestClose)viewer.requestClose();else closeDialog();});
  ownDialog.addEventListener('close',()=>{if(!ownDialog.open)closeDialog();});
  function button(label,symbol,action,cls='profile-action'){const b=el('button',cls);b.type='button';b.setAttribute('aria-label',label);if(symbol)b.innerHTML=icon(symbol);b.append(el('span','',label));b.onclick=action;return b;}
@@ -25,10 +27,20 @@ export function create(ctx){
  function dialog(title){closeDialog();inlineFeed?.setActive(false);ownDialog.setAttribute('aria-label',title);ownDialog.append(button('Закрыть','close',closeDialog,'profile-dialog-close'),el('h2','',title));ownDialog.showModal();}
  async function persist(next,owner,token){if(busy)return false;busy=true;try{await store.save(owner,next);if(token!==epoch||disposed)return false;data=next;return true;}finally{busy=false;}}
  function errorText(error){return error?.name==='QuotaExceededError'?'На устройстве недостаточно места. Удали ненужные материалы.':error.message||'Не удалось сохранить. Попробуй ещё раз.';}
+ function closeStories(resume=true){
+  if(!storyModal)return;const modal=storyModal,session=storyViewer,target=storyFocus;storyModal=null;storyViewer=null;storyFocus=null;session?.dispose();if(modal.open)modal.close();modal.remove();
+  if(resume&&node.isConnected){viewer?.setActive?.(true);inlineFeed?.setActive(!ownDialog.open);if(target?.isConnected)target.focus({preventScroll:true});}
+ }
+ function openStories(){
+  if(!requireAccount())return;const stories=activeStories(data.posts);if(!stories.length)return;closeStories(false);storyFocus=document.activeElement;inlineFeed?.setActive(false);viewer?.setActive?.(false);
+  const modal=el('dialog','profile-dialog profile-media-dialog profile-story-dialog');storyModal=modal;modal.setAttribute('aria-label','Сторис');node.append(modal);
+  storyViewer=createSequence({posts:data.posts,startId:stories[0].id,profile:data,account:ctx.account,mode:'story',close:()=>closeStories(),onRemove:removePost});modal.append(storyViewer.node);
+  modal.addEventListener('cancel',e=>{e.preventDefault();closeStories();});modal.addEventListener('close',()=>{if(storyModal===modal)closeStories();});modal.showModal();storyViewer.setActive(true);modal.querySelector('.profile-dialog-close')?.focus({preventScroll:true});
+ }
  function edit(){
   if(!requireAccount())return;const owner=uid,token=epoch;
   closeDialog();inlineFeed?.setActive(false);ownDialog.setAttribute('aria-label','Редактировать профиль');
-  profileEditor({dialog:ownDialog,data,account:ctx.account,close:closeDialog,assetUrl:blob=>url(blob,dialogUrls),errorText,
+  profileEditor({dialog:ownDialog,data,account:ctx.account,close:closeDialog,assetUrl:blob=>url(blob,dialogUrls),errorText,openStory:openStories,
    save:async next=>{if(await persist(next,owner,token)){closeDialog();render();}}});
   ownDialog.showModal();ownDialog.querySelector('.pe-bar button')?.focus({preventScroll:true});
  }
@@ -37,11 +49,11 @@ export function create(ctx){
   closeDialog();inlineFeed?.setActive(false);
   const current=()=>!disposed&&owner===uid&&token===epoch;
   const creator=profileCreate({dialog:ownDialog,close:closeDialog,current,errorText,
-   save:async ({kind,files,caption})=>{
+   save:async ({kind,files,caption,story})=>{
     if(!current())return false;
     if(kind==='post')validatePostText(caption);
     if(data.posts.length>=60)throw Error('В медиатеке уже 60 материалов. Удали ненужные, чтобы добавить новые.');
-    const post={id:crypto.randomUUID(),kind,caption,at:new Date().toISOString(),files};
+    const post={id:crypto.randomUUID(),kind,caption,at:new Date().toISOString(),files};if(kind==='story')post.story=normalizeStory(story);
     if(!await persist({...data,posts:[post,...data.posts]},owner,token))return false;
     if(viewer===creator){closeDialog();filter='all';if(kind==='story'||view!=='feed')view='profile';}
     render();return true;
@@ -61,7 +73,7 @@ export function create(ctx){
   if(mode==='feed'){
    const bar=el('header','pm-viewer-bar');bar.append(button('Закрыть','back',closeDialog,'pm-control profile-dialog-close'),el('h2','','Публикации'));
    const scroller=el('div','pm-feed-scroll');ownDialog.append(bar,scroller);
-   viewer=createPostFeed({posts:data.posts,profile:data,account:ctx.account,scrollRoot:scroller,onVideo:video=>{const top=scroller.scrollTop,owner=uid,token=epoch;openPost(video,()=>{if(owner!==uid||token!==epoch)return;openPost(post);const previous=ownDialog.querySelector('.pm-feed-scroll');if(previous)previous.scrollTop=top;});},onRemove:removePost});scroller.append(viewer.node);
+   viewer=createPostFeed({posts:data.posts,profile:data,account:ctx.account,scrollRoot:scroller,onVideo:video=>{const top=scroller.scrollTop,owner=uid,token=epoch;openPost(video,()=>{if(owner!==uid||token!==epoch)return;openPost(post);const previous=ownDialog.querySelector('.pm-feed-scroll');if(previous)previous.scrollTop=top;});},onRemove:removePost,onStory:openStories});scroller.append(viewer.node);
    ownDialog.showModal();viewer.jump(post.id);
   }else{
    viewer=createSequence({posts:data.posts,startId:post.id,profile:data,account:ctx.account,mode,close:()=>{closeDialog();back?.();},onRemove:removePost});
@@ -73,7 +85,8 @@ export function create(ctx){
   const bar=el('header','pm-feed-bar');bar.append(button('Профиль','back',()=>setView('profile'),'profile-back'),el('h1','','Лента'),button('Добавить','plus',addMedia,'pm-control'));
   body.append(bar);
   if(!loaded){empty(ctx.account?'Загружаем публикации':'Твоя лента','Посты, фото, видео и карусели из твоего профиля.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
-  inlineFeed=createPostFeed({posts:feedPosts(data.posts),profile:data,account:ctx.account,scrollRoot:body,onVideo:openPost,onRemove:removePost});body.append(inlineFeed.node);
+  if(activeStories(data.posts).length){const strip=el('div','profile-story-strip'),entry=el('div','profile-story-entry');entry.append(smallStoryAvatar({profile:data,account:ctx.account,url,onOpen:openStories}),el('span','','Твои сторис'));strip.append(entry);body.append(strip);}
+  inlineFeed=createPostFeed({posts:feedPosts(data.posts),profile:data,account:ctx.account,scrollRoot:body,onVideo:openPost,onRemove:removePost,onStory:openStories});body.append(inlineFeed.node);
  }
  function grid(){
   const toolbar=el('div','profile-grid-heading');toolbar.append(button('Добавить','plus',addMedia));body.append(toolbar);
@@ -99,10 +112,10 @@ export function create(ctx){
    const labels={progress:['Мой прогресс','Пока без оценок','Отслеживание прогресса ещё не доступно.'],favorites:['Любимые пространства','Твои пространства','Перейти к играм и живому миру можно ниже.'],achievements:['Достижения','Твой путь продолжается','Система достижений ещё не доступна.'],channels:['Каналы','Скоро здесь','Каналы пока недоступны.'],community:['Сообщество','Скоро здесь','Общение с участниками пока недоступно.']}[view];header(labels[0]);empty(labels[1],labels[2]);if(view==='favorites'){body.append(button('Игры','games',()=>ctx.navigate('games')),button('Живой мир','world',()=>ctx.navigate('world')));}return;
   }
   if(view==='feed'){feed();return;}
-  const top=el('div','profile-identity');const avatar=button('Изменить фото','profile',edit,'profile-avatar');avatar.setAttribute('aria-label','Изменить фото профиля');avatar.replaceChildren();
+  const top=el('div','profile-identity'),avatarWrap=el('div','profile-avatar-wrap');const active=activeStories(data?.posts).length>0;const avatar=button(active?'Открыть сторис':'Изменить фото профиля','profile',active?openStories:edit,'profile-avatar');avatar.replaceChildren();markStoryAvatar(avatar,data?.posts);
   if(data?.avatar){const img=el('img');img.src=url(data.avatar);img.alt='Фото профиля';avatar.append(img);}else{const initials=(data?.name||ctx.account?.user_metadata?.full_name||ctx.account?.user_metadata?.name||'').trim().split(/\s+/).map(s=>s[0]).slice(0,2).join('');if(initials)avatar.append(el('span','profile-initials',initials));else avatar.innerHTML=icon('profile');}
-  const pencil=el('span','profile-avatar-edit');pencil.innerHTML=icon('edit');avatar.append(pencil);
-  const name=data?.name||ctx.account?.user_metadata?.full_name||ctx.account?.user_metadata?.name||'Твой профиль';top.append(avatar,el('h1','profile-display-name',name));
+  const pencil=button('Редактировать профиль','edit',edit,'profile-avatar-edit');avatarWrap.append(avatar,pencil);
+  const name=data?.name||ctx.account?.user_metadata?.full_name||ctx.account?.user_metadata?.name||'Твой профиль';top.append(avatarWrap,el('h1','profile-display-name',name));
   if(data?.bio)top.append(el('p','profile-bio',data.bio));else top.append(button('Добавить описание','edit',edit,'profile-edit-link'));
   const details=[data?.city,data?.interests].filter(Boolean).join(' · ');if(details)top.append(el('p','profile-details',details));body.append(top);grid();
  }

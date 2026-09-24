@@ -14,7 +14,7 @@ export function interactionPriority(doc,signal){
  doc.addEventListener('pointermove',move,{capture:true,passive:true,signal});
  for(const type of ['pointerup','pointercancel'])doc.addEventListener(type,end,{capture:true,passive:true,signal});
  doc.addEventListener('sekkes-viewport-change',()=>{if(doc.querySelector('.profile-dialog[open]'))hold()},{signal});
- doc.addEventListener('sekkes-sheet-motion',e=>{const {owner,active:running}=e.detail||{};if(!owner?.matches?.('.profile-dialog'))return;if(running){sheets.add(owner);hold();}else{sheets.delete(owner);if(!sheets.size)hold();}},{signal});
+ doc.addEventListener('sekkes-sheet-motion',e=>{const {owner,active:running}=e.detail||{};if(!owner?.matches?.('.profile-dialog,.se-editor'))return;if(running){sheets.add(owner);hold();}else{sheets.delete(owner);if(!sheets.size)hold();}},{signal});
  win.addEventListener('resize',hold,{passive:true,signal});win.addEventListener('orientationchange',hold,{passive:true,signal});
  signal.addEventListener('abort',()=>{win.clearTimeout(timer);gesture=null;sheets.clear();if(active)release()},{once:true});
 }
