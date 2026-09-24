@@ -16,8 +16,8 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
  const change=control('Заменить фото или видео','photo',()=>input.click());
  const publish=control('Добавить в сторис','check',commit,'se-publish');publish.append(el('span','','Добавить в сторис'));publish.disabled=true;
  const peek=control('Предпросмотр','eye',()=>{preview=!preview;root.classList.toggle('se-previewing',preview);peek.setAttribute('aria-pressed',String(preview));if(preview)closeTools();},'se-peek');
- const ratio=el('span','se-ratio','9:16'),toolbar=el('nav','se-toolbar');toolbar.setAttribute('aria-label','Инструменты сторис');
- const move=control('Кадрирование','crop',()=>openTools('crop'));
+ const toolbar=el('nav','se-toolbar');toolbar.setAttribute('aria-label','Инструменты сторис');
+ const move=control('Оформление','crop',()=>openTools('crop'));move.classList.add('se-extra');
  const text=control('Текст','text',()=>openTools('text'));
  const stickers=control('Стикеры','smile',()=>openTools('stickers'));
  const draw=control('Рисовать','edit',()=>openTools('draw'));
@@ -26,98 +26,149 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
  const playback=control('Пауза видео','stop',()=>{if(!surface)return;const m=surface.media;if(m.paused)m.play().catch(()=>{});else m.pause();});playback.hidden=true;
  const clip=control('Длительность','clock',()=>openTools('duration'));
  const undo=control('Отменить изменение','undo',()=>{if(pending||!surface||!history.length)return;Object.assign(surface.state,normalizeStory(JSON.parse(history.pop())));selected=null;closeTools();surface.render();surface.media.muted=surface.state.muted;updateButtons();});
- toolbar.append(move,text,stickers,draw,filters,sound,playback,clip,undo);
+ const more=control('Ещё инструменты','arrow',()=>{const expanded=root.classList.toggle('se-expanded');more.setAttribute('aria-expanded',String(expanded));});more.classList.add('se-more');more.setAttribute('aria-expanded','false');
+ for(const b of [clip,undo,sound,playback])b.classList.add('se-extra');toolbar.append(text,stickers,draw,filters,more,move,sound,playback,clip,undo);
  const selection=el('div','se-selection');selection.hidden=true;selection.append(control('Удалить выбранное','trash',()=>{const l=surface?.state.layers.find(x=>x.id===selected);if(l)removeLayer(l);}),control('Повернуть выбранное','rotate',()=>{const l=surface?.state.layers.find(x=>x.id===selected);if(l){remember();l.rotation+=15;schedule();}}));
- work.append(pick,ratio,toolbar,selection);footer.append(change,peek,publish);root.append(input,work,toolbox,error,footer);host.replaceChildren(root);toolbox.hidden=true;toolbar.hidden=true;ratio.hidden=true;footer.hidden=true;
+ work.append(pick,toolbar,selection);footer.append(change,peek,publish);root.append(input,work,toolbox,error,footer);host.replaceChildren(root);toolbox.hidden=true;toolbar.hidden=true;footer.hidden=true;root.dataset.ready='false';
  const snapshot=()=>surface?JSON.stringify(surface.export()):'';
  function remember(value=snapshot()){if(!value)return;if(history.at(-1)!==value)history.push(value);if(history.length>30)history.shift();updateButtons();}
- function paint(){raf=0;if(!alive()||!surface)return;surface.render();if(selected)surface.node.querySelector(`[data-layer-id="${selected}"]`)?.setAttribute('data-selected','true');selection.hidden=!selected;}
+ function paint(){raf=0;if(!alive()||!surface)return;surface.render();if(toolKind==='text')surface.node.querySelector(`[data-layer-id="${selected}"]`)?.setAttribute('data-editing','true');if(selected)surface.node.querySelector(`[data-layer-id="${selected}"]`)?.setAttribute('data-selected','true');selection.hidden=!selected;}
  function schedule(){if(!raf)raf=requestAnimationFrame(paint);}
  function updateButtons(){if(!surface)return;sound.setAttribute('aria-pressed',String(!surface.state.muted));sound.style.opacity=surface.state.muted?'.5':'1';undo.disabled=!history.length;publish.disabled=!ready||pending;root.dataset.tool=mode;}
  function clearSelection(){selected=null;selection.hidden=true;surface?.node.querySelectorAll('[data-selected]').forEach(n=>n.removeAttribute('data-selected'));}
- function closeTools(){toolLife?.abort();toolLife=null;toolbox.hidden=true;toolbox.replaceChildren();if(mode==='draw')mode='move';updateButtons();}
+ // Every tool uses one edge-attached surface. Text is edited over the image;
+ // the other tools share a bottom sheet with a stationary header and scroll body.
+ let toolKind='',toolAnimation=null,toolGesture=null;
+ function finishGesture(){
+  pointers.clear();gesture=null;root.classList.remove('se-adjusting');
+  document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));
+ }
+ function closeTools(){
+  if(toolbox.contains(document.activeElement))document.activeElement.blur();
+  toolAnimation?.cancel();toolAnimation=null;toolLife?.abort();toolLife=null;toolGesture=null;
+  toolbox.hidden=true;toolbox.replaceChildren();toolbox.style.transform='';toolKind='';
+  root.classList.remove('se-tool-open');delete root.dataset.panel;mode='move';
+  if(surface){surface.node.querySelectorAll('[data-editing]').forEach(n=>n.removeAttribute('data-editing'));surface.state.layers=surface.state.layers.filter(l=>l.id!==selected||l.text.trim());if(!surface.state.layers.some(l=>l.id===selected))clearSelection();surface.paintLayers();}
+  finishGesture();updateButtons();
+ }
  function label(text,node){const wrap=el('label','se-field');wrap.append(el('span','',text),node);return wrap;}
- function range(name,value,min,max,step,fn){const n=el('input');n.type='range';n.min=min;n.max=max;n.step=step;n.value=value;n.setAttribute('aria-label',name);n.addEventListener('pointerdown',()=>remember(),{signal:toolLife.signal});n.addEventListener('keydown',()=>remember(),{signal:toolLife.signal});n.addEventListener('input',()=>{fn(Number(n.value));schedule();},{signal:toolLife.signal});return label(name,n);}
- function choice(labelText,fn){const b=el('button','se-choice',labelText);b.type='button';b.onclick=()=>{if(!pending)fn();};return b;}
- function palette(fn,selectedColor=drawColor){const n=el('div','se-palette');for(const c of ['#ffffff','#151d23','#56e4d3','#5fa9ff','#ba89ff','#f38ab1','#ffe08a','#ff7c62']){const b=choice(c,()=>fn(c));b.style.setProperty('--swatch',c);b.classList.add('se-swatch');b.setAttribute('aria-label',`Цвет ${c}`);b.setAttribute('aria-pressed',String(c===selectedColor));n.append(b);}return n;}
+ function range(name,value,min,max,step,fn){
+  const n=el('input');n.type='range';n.min=min;n.max=max;n.step=step;n.value=value;n.setAttribute('aria-label',name);
+  const out=el('output','se-range-value',String(value)),wrap=label(name,n);wrap.append(out);
+  n.addEventListener('pointerdown',()=>remember(),{signal:toolLife.signal});n.addEventListener('keydown',()=>remember(),{signal:toolLife.signal});
+  n.addEventListener('input',()=>{fn(Number(n.value));out.value=Number(n.value).toFixed(step<1?1:0);schedule();},{signal:toolLife.signal});return wrap;
+ }
+ function choice(text,fn,cls='se-choice'){const b=el('button',cls,text);b.type='button';b.onclick=()=>{if(!pending)fn(b);};return b;}
+ function palette(fn,selectedColor=drawColor){
+  const n=el('div','se-palette');n.setAttribute('aria-label','Цвет');
+  for(const c of ['#ffffff','#151d23','#56e4d3','#5fa9ff','#ba89ff','#f38ab1','#ffe08a','#ff7c62']){
+   const b=choice('',()=>{fn(c);for(const x of n.children)x.setAttribute('aria-pressed',String(x===b));},'se-swatch');b.style.setProperty('--swatch',c);b.setAttribute('aria-label',`Цвет ${c}`);b.setAttribute('aria-pressed',String(c===selectedColor));n.append(b);
+  }return n;
+ }
  function newLayer(kind='text',value=''){
   if(!surface||surface.state.layers.length>=20){error.textContent='В одной сторис может быть до 20 надписей и стикеров.';return null;}
-  remember();const layer={id:crypto.randomUUID(),kind,text:value,x:.5,y:.5,size:kind==='emoji'?.17:.07,rotation:0,font:'sans',color:'#ffffff',background:kind==='link',align:'center',url:''};surface.state.layers.push(layer);selected=layer.id;surface.render();return layer;
+  remember();const layer={id:crypto.randomUUID(),kind,text:value,x:.5,y:.5,size:kind==='emoji'?.17:.07,rotation:0,font:'sans',color:'#ffffff',background:kind==='link',align:'center',url:''};surface.state.layers.push(layer);selected=layer.id;surface.paintLayers();return layer;
+ }
+ function sheetGesture(head){
+  const sig=toolLife.signal;
+  head.style.touchAction='none';
+  head.addEventListener('pointerdown',e=>{if(e.button>0||e.target.closest('button,input')||pending)return;e.preventDefault();toolGesture={id:e.pointerId,y:e.clientY,dy:0};head.setPointerCapture(e.pointerId);toolAnimation?.cancel();},{signal:sig});
+  head.addEventListener('pointermove',e=>{const g=toolGesture;if(!g||g.id!==e.pointerId)return;e.preventDefault();g.dy=Math.max(0,e.clientY-g.y);toolbox.style.transform=`translate3d(0,${g.dy}px,0)`;document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:true}}));},{signal:sig});
+  const end=e=>{const g=toolGesture;if(!g||g.id!==e.pointerId)return;toolGesture=null;if(e.type==='pointerup'&&g.dy>64){closeTools();return;}toolbox.style.transform='';if(g.dy&&toolbox.animate)toolAnimation=toolbox.animate([{transform:`translateY(${g.dy}px)`},{transform:'translateY(0)'}],{duration:140,easing:'ease-out'});finishGesture();};
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])head.addEventListener(type,end,{signal:sig});
  }
  function openTools(kind){
-  if(!ready||pending||!surface)return;preview=false;root.classList.remove('se-previewing');closeTools();toolLife=new AbortController();toolbox.hidden=false;mode=kind==='draw'?'draw':'move';if(mode==='draw')clearSelection();updateButtons();
-  const titles={crop:'Кадрирование',text:'Текст',stickers:'Стикеры',draw:'Рисование',filters:'Фильтры',duration:'Длительность'};
-  const top=el('header','se-toolbox-head');top.append(el('h3','',titles[kind]),control('Готово','check',()=>{document.activeElement?.blur();closeTools();},'se-tool-done'));toolbox.append(top);
+  if(!ready||pending||!surface)return;
+  finishGesture();preview=false;root.classList.remove('se-previewing');peek.setAttribute('aria-pressed','false');closeTools();
+  toolLife=new AbortController();toolKind=kind;root.dataset.panel=kind;root.classList.add('se-tool-open');toolbox.dataset.kind=kind;toolbox.hidden=false;mode=kind==='draw'?'draw':'move';if(mode==='draw')clearSelection();updateButtons();
+  const titles={crop:'Оформление',text:'Текст',stickers:'Стикеры',link:'Ссылка',draw:'Рисование',filters:'Фильтры',duration:'Длительность'};
+  const top=el('header','se-toolbox-head'),grip=el('div','se-toolbox-grip'),body=el('div','se-tool-body');grip.setAttribute('aria-hidden','true');
+  top.append(grip,el('h3','',titles[kind]),control('Готово','check',closeTools,'se-tool-done'));toolbox.append(top,body);sheetGesture(top);
+  if(kind!=='text'&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&toolbox.animate){document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:true}}));toolAnimation=toolbox.animate([{transform:'translateY(100%)'},{transform:'translateY(0)'}],{duration:160,easing:'cubic-bezier(.2,.7,.2,1)'});const currentAnimation=toolAnimation;currentAnimation.finished.then(()=>{if(toolAnimation===currentAnimation&&!pointers.size&&!toolGesture)document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));}).catch(()=>{});}
+  const action=(name,symbol,fn)=>{const b=control(name,symbol,fn,'se-action');b.append(el('span','',name));return b;};
   if(kind==='crop'){
-   const row=el('div','se-choice-row');row.append(choice('Вписать целиком',()=>fit(false)),choice('Заполнить экран',()=>fit(true)),choice('Повернуть',()=>{remember();surface.state.media.rotation=(surface.state.media.rotation+90)%360;surface.state.media.scale=1;surface.state.media.x=.5;surface.state.media.y=.5;schedule();}),choice('Сбросить',()=>{remember();surface.state.media={x:.5,y:.5,scale:1,rotation:0};schedule();}));
-   toolbox.append(row,range('Масштаб',surface.state.media.scale,.2,8,.01,v=>{surface.state.media.scale=v;}));
-   const backgrounds=el('div','se-choice-row');for(const [id,name] of [['blur','Размытый фон'],['dark','Тёмный'],['light','Светлый'],['sea','Глубокий']])backgrounds.append(choice(name,()=>{remember();surface.state.background=id;schedule();}));toolbox.append(backgrounds);
+   const row=el('div','se-action-row');row.append(action('Повернуть','rotate',()=>{remember();surface.state.media.rotation=(surface.state.media.rotation+90)%360;autoFill();schedule();}),action('Сбросить','undo',()=>{remember();surface.state.media={x:.5,y:.5,scale:1,rotation:0};autoFill();schedule();}));body.append(row);
+   const colors=el('div','se-backgrounds');for(const [id,name] of [['blur','Автофон'],['dark','Тёмный'],['light','Светлый'],['sea','Глубокий']]){const b=choice(name,()=>{remember();surface.state.background=id;for(const x of colors.children)x.setAttribute('aria-pressed',String(x===b));schedule();});b.dataset.background=id;b.setAttribute('aria-pressed',String(surface.state.background===id));colors.append(b);}body.append(colors);
   }else if(kind==='text'){
-   let layer=surface.state.layers.find(l=>l.id===selected&&l.kind==='text');if(!layer)layer=newLayer();if(!layer)return;
-   const area=el('textarea');area.rows=2;area.maxLength=500;area.placeholder='Напиши текст';area.value=layer.text;area.setAttribute('aria-label','Текст на сторис');remember();area.addEventListener('input',()=>{layer.text=area.value;schedule();},{signal:toolLife.signal});
-   const options=el('div','se-choice-row');for(const [id,name] of [['sans','Современный'],['serif','Литературный'],['mono','Моно']])options.append(choice(name,()=>{remember();layer.font=id;schedule();}));
-   options.append(choice('Подложка',()=>{remember();layer.background=!layer.background;schedule();}),choice('Выравнивание',()=>{remember();layer.align=layer.align==='center'?'left':layer.align==='left'?'right':'center';schedule();}),choice('Удалить',()=>removeLayer(layer)));
-   toolbox.append(label('Надпись',area),options,palette(c=>{remember();layer.color=c;schedule();},layer.color),range('Размер текста',layer.size,.025,.25,.005,v=>{layer.size=v;}));
-   // Only an explicit text action focuses the input; initial sheet opening never does.
-   area.focus({preventScroll:true});
+   let layer=surface.state.layers.find(l=>l.id===selected&&l.kind==='text');if(!layer)layer=newLayer();if(!layer){closeTools();return;}
+   const area=el('textarea','se-text-input');area.rows=3;area.maxLength=500;area.placeholder='Напиши текст';area.value=layer.text;area.setAttribute('aria-label','Текст на сторис');
+   const fonts=el('div','se-fonts'),format=el('div','se-text-format'),options=el('div','se-text-options');
+   function style(){area.style.fontFamily=layer.font==='serif'?'Georgia,serif':layer.font==='mono'?'ui-monospace,monospace':'var(--font-ui),sans-serif';area.style.color=layer.color;area.style.textAlign=layer.align;area.dataset.background=String(layer.background);for(const b of fonts.children)b.setAttribute('aria-pressed',String(b.dataset.font===layer.font));surface.node.querySelector(`[data-layer-id="${layer.id}"]`)?.setAttribute('data-editing','true');}
+   remember();area.addEventListener('input',()=>{layer.text=area.value;schedule();},{signal:toolLife.signal});
+   for(const [id,name] of [['sans','Modern'],['serif','Classic'],['mono','Mono']]){const b=choice(name,()=>{remember();layer.font=id;style();schedule();});b.dataset.font=id;fonts.append(b);}
+   format.append(action('Подложка','text',()=>{remember();layer.background=!layer.background;style();schedule();}),action('Выравнивание','menu',()=>{remember();layer.align=layer.align==='center'?'left':layer.align==='left'?'right':'center';style();schedule();}),action('Удалить','trash',()=>removeLayer(layer)));
+   options.append(fonts,palette(c=>{remember();layer.color=c;style();schedule();},layer.color),format);const stage=el('div','se-text-stage');stage.append(area);body.append(stage,options);style();area.focus({preventScroll:true});
   }else if(kind==='stickers'){
-   const emojis=el('div','se-stickers');for(const s of ['❤️','✨','🌙','🔥','🌿','☀️','💬','⭐','😊','🫶','🎬','💡'])emojis.append(choice(s,()=>{newLayer('emoji',s);closeTools();schedule();}));toolbox.append(emojis);
-   const href=el('input');href.type='url';href.placeholder='https://…';href.setAttribute('aria-label','Адрес ссылки');const title=el('input');title.maxLength=80;title.placeholder='Название ссылки';title.setAttribute('aria-label','Название ссылки');
-   toolbox.append(label('Ссылка',href),title,choice('Добавить ссылку',()=>{const url=storyLink(href.value);if(!url){error.textContent='Укажи ссылку с https:// или http://.';return;}const l=newLayer('link',title.value.trim()||'Открыть ссылку');if(l)l.url=url;error.textContent='';closeTools();schedule();}));
+   body.append(action('Ссылка','link',()=>openTools('link')));
+   const emojis=el('div','se-stickers');for(const value of ['❤️','✨','🌙','🔥','🌿','☀️','💬','⭐','😊','🫶','🎬','💡']){const b=choice(value,()=>{newLayer('emoji',value);closeTools();schedule();});b.setAttribute('aria-label',`Стикер ${value}`);emojis.append(b);}body.append(emojis);
+  }else if(kind==='link'){
+   const href=el('input');href.type='url';href.placeholder='https://…';href.setAttribute('aria-label','Адрес ссылки');const title=el('input');title.maxLength=80;title.placeholder='Название';title.setAttribute('aria-label','Название ссылки');
+   body.append(label('Адрес',href),label('Название',title),action('Добавить ссылку','check',()=>{const value=storyLink(href.value);if(!value){error.textContent='Укажи ссылку с https:// или http://.';return;}const l=newLayer('link',title.value.trim()||'Открыть ссылку');if(l)l.url=value;error.textContent='';closeTools();schedule();}));
   }else if(kind==='draw'){
-   toolbox.append(palette(c=>{drawColor=c;}),range('Толщина линии',drawWidth,.002,.04,.001,v=>{drawWidth=v;}),choice('Закончить рисование',closeTools),choice('Убрать рисунок',()=>{remember();surface.state.strokes=[];schedule();}));
+   const actions=el('div','se-action-row');actions.append(action('Отменить линию','undo',()=>{remember();surface.state.strokes.pop();schedule();}),action('Очистить','trash',()=>{remember();surface.state.strokes=[];schedule();}));body.append(palette(c=>{drawColor=c;}),range('Толщина',drawWidth,.002,.04,.001,v=>{drawWidth=v;}),actions);
   }else if(kind==='filters'){
-   const list=el('div','se-choice-row');for(const [id,[name]] of Object.entries(storyFilters))list.append(choice(name,()=>{remember();surface.state.filter=id;schedule();}));toolbox.append(list);
+   const list=el('div','se-filter-list');for(const [id,[name,filter]] of Object.entries(storyFilters)){
+    const b=choice('',()=>{remember();surface.state.filter=id;for(const x of list.children)x.setAttribute('aria-pressed',String(x===b));schedule();},'se-filter');b.setAttribute('aria-label',name);b.setAttribute('aria-pressed',String(surface.state.filter===id));
+    const canvas=el('canvas');canvas.width=96;canvas.height=128;canvas.setAttribute('aria-hidden','true');canvas.style.filter=filter;
+    try{const cx=canvas.getContext('2d'),w=surface.size.width,h=surface.size.height,scale=Math.max(96/w,128/h);cx.drawImage(surface.media,(96-w*scale)/2,(128-h*scale)/2,w*scale,h*scale);}catch{/* A neutral thumbnail remains until the decoder supplies a frame. */}
+    b.append(canvas,el('span','',name));list.append(b);
+   }body.append(list);
   }else if(kind==='duration'){
    if(surface.media.tagName==='VIDEO'){
-    const d=surface.media.duration,win=storyWindow(surface.state,d);
-    if(!Number.isFinite(d)||!d)return;
-    toolbox.append(range('Начало видео, секунды',win.start,0,Math.max(0,d-.2),.1,v=>{surface.state.trim.start=v;if(surface.state.trim.end!=null&&surface.state.trim.end<=v)surface.state.trim.end=Math.min(d,v+.2);surface.media.currentTime=v;}),range('Конец видео, секунды',win.end,.2,d,.1,v=>{surface.state.trim.end=Math.max(surface.state.trim.start+.2,v);}));
-   }else toolbox.append(range('Секунды показа',surface.state.duration,3,15,1,v=>{surface.state.duration=v;}));
+    const d=surface.media.duration,win=storyWindow(surface.state,d);if(!Number.isFinite(d)||!d){closeTools();return;}
+    const start=range('Начало, сек.',win.start,0,Math.max(0,d-.2),.1,v=>{surface.state.trim.start=v;if(surface.state.trim.end!=null&&surface.state.trim.end<=v){surface.state.trim.end=Math.min(d,v+.2);end.querySelector('input').value=surface.state.trim.end;end.querySelector('output').value=surface.state.trim.end.toFixed(1);}surface.media.currentTime=v;}),end=range('Конец, сек.',win.end,.2,d,.1,v=>{surface.state.trim.end=Math.max(surface.state.trim.start+.2,v);end.querySelector('input').value=surface.state.trim.end;});body.append(start,end);
+   }else body.append(range('Секунды показа',surface.state.duration,3,15,1,v=>{surface.state.duration=v;}));
   }
  }
  function removeLayer(layer){remember();surface.state.layers=surface.state.layers.filter(l=>l.id!==layer.id);clearSelection();closeTools();schedule();}
- function fit(fill){if(!surface)return;remember();const m=surface.state.media;m.x=.5;m.y=.5;m.scale=1;if(fill)m.scale=clamp(mediaGeometry(surface.size.width,surface.size.height,m).fill,.2,8);schedule();}
+ function autoFill(){if(!surface)return;const m=surface.state.media;m.x=.5;m.y=.5;m.scale=clamp(mediaGeometry(surface.size.width,surface.size.height,m).fill,.2,128);}
  function releaseMedia(){mediaLife?.abort();mediaLife=null;if(surface){const m=surface.media;if(m.tagName==='VIDEO'){m.pause();m.removeAttribute('src');m.load();}surface.dispose();surface.node.remove();surface=null;}if(url){URL.revokeObjectURL(url);url=null;}}
  function bindGestures(){
-  const frame=surface.node,sig=mediaLife.signal;frame.tabIndex=0;frame.setAttribute('aria-label','Полотно сторис 9:16. Перемещай одним пальцем, меняй размер двумя.');
-  function position(e){return {x:e.clientX,y:e.clientY};}
+  const frame=surface.node,sig=mediaLife.signal;frame.tabIndex=0;frame.setAttribute('aria-label','Полотно сторис. Перемещение одним пальцем, масштаб и поворот двумя. Клавиши стрелок перемещают, плюс и минус меняют размер.');
+  let before='',baseAngle=0;
+  const point=e=>({x:e.clientX,y:e.clientY});
   function base(){
-   const ps=[...pointers.values()];if(!ps.length)return;const mid=ps.length>1?{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}:ps[0];
-   const target=surface.state.layers.find(l=>l.id===selected)||surface.state.media;
-   gesture={rect:frame.getBoundingClientRect(),mid,dist:ps.length>1?Math.max(1,Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y)):0,target,x:target.x,y:target.y,scale:target.scale||target.size,stroke:null};
+   const ps=[...pointers.values()];if(!ps.length)return;const mid=ps.length>1?{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}:ps[0],target=surface.state.layers.find(l=>l.id===selected)||surface.state.media;
+   baseAngle=ps.length>1?Math.atan2(ps[1].y-ps[0].y,ps[1].x-ps[0].x):0;
+   gesture={rect:frame.getBoundingClientRect(),mid,dist:ps.length>1?Math.max(1,Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y)):0,target,x:target.x,y:target.y,scale:target.scale||target.size,rotation:target.rotation,unitWidth:selected?1:mediaGeometry(surface.size.width,surface.size.height,{...target,scale:1}).width,stroke:null};
   }
   frame.addEventListener('pointerdown',e=>{
-   if(!ready||pending||preview||e.button>0)return;e.preventDefault();error.textContent='';
-   if(!pointers.size){remember();const layer=e.target.closest('[data-layer-id]');clearSelection();if(mode!=='draw'&&layer)selected=layer.dataset.layerId;}
-   pointers.set(e.pointerId,position(e));try{frame.setPointerCapture?.(e.pointerId);}catch{/* The pointer may have been cancelled by the operating system. */}base();
+   if(!ready||pending||preview||toolKind==='text'||e.button>0||pointers.size>=2)return;e.preventDefault();error.textContent='';
+   if(!pointers.size){before=snapshot();const layer=e.target.closest('[data-layer-id]');clearSelection();if(mode!=='draw'&&layer)selected=layer.dataset.layerId;}
+   pointers.set(e.pointerId,point(e));try{frame.setPointerCapture(e.pointerId);}catch{}base();
    if(mode==='draw'&&pointers.size===1&&surface.state.strokes.length<100){const r=gesture.rect;gesture.stroke={color:drawColor,width:drawWidth,points:[[clamp((e.clientX-r.left)/r.width,0,1),clamp((e.clientY-r.top)/r.height,0,1)]]};surface.state.strokes.push(gesture.stroke);}
    document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:true}}));root.classList.add('se-adjusting');schedule();
   },{signal:sig});
   frame.addEventListener('pointermove',e=>{
-   if(!pointers.has(e.pointerId)||!gesture||pending)return;e.preventDefault();pointers.set(e.pointerId,position(e));const ps=[...pointers.values()],g=gesture,r=g.rect;
+   if(!pointers.has(e.pointerId)||!gesture||pending)return;e.preventDefault();pointers.set(e.pointerId,point(e));const ps=[...pointers.values()],g=gesture,r=g.rect;
    if(g.stroke&&ps.length===1){if(g.stroke.points.length<2000)g.stroke.points.push([clamp((e.clientX-r.left)/r.width,0,1),clamp((e.clientY-r.top)/r.height,0,1)]);schedule();return;}
-   const mid=ps.length>1?{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}:ps[0];let ratio=1;
-   if(ps.length>1&&g.dist){const s=clamp(g.scale*Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y)/g.dist,selected ? .025 : .2,selected ? .32 : 8);ratio=s/g.scale;if(selected)g.target.size=s;else g.target.scale=s;}
-   const mx=(mid.x-r.left)/r.width,my=(mid.y-r.top)/r.height,bx=(g.mid.x-r.left)/r.width,by=(g.mid.y-r.top)/r.height;
-   g.target.x=clamp(mx-(bx-g.x)*ratio,selected?0:-3,selected?1:4);g.target.y=clamp(my-(by-g.y)*ratio,selected?0:-3,selected?1:4);schedule();
+   const mid=ps.length>1?{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}:ps[0];let ratio=1,angle=0;
+   if(ps.length>1&&g.dist){
+    ratio=Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y)/g.dist;angle=Math.atan2(ps[1].y-ps[0].y,ps[1].x-ps[0].x)-baseAngle;angle=Math.atan2(Math.sin(angle),Math.cos(angle));
+    g.target.rotation=g.rotation+angle*180/Math.PI;
+    const unit=selected?1:mediaGeometry(surface.size.width,surface.size.height,{...g.target,scale:1}).width;
+    const value=clamp(g.scale*ratio*g.unitWidth/unit,selected ? .025 : .2,selected ? .32 : 128);ratio=value*unit/(g.scale*g.unitWidth);if(selected)g.target.size=value;else g.target.scale=value;
+   }
+   // Rotate the vector in screen pixels, not normalized 9:16 coordinates.
+   const vx=g.x*r.width-(g.mid.x-r.left),vy=g.y*r.height-(g.mid.y-r.top),c=Math.cos(angle),s=Math.sin(angle);
+   g.target.x=clamp((mid.x-r.left+(vx*c-vy*s)*ratio)/r.width,selected?0:-3,selected?1:4);g.target.y=clamp((mid.y-r.top+(vx*s+vy*c)*ratio)/r.height,selected?0:-3,selected?1:4);schedule();
   },{signal:sig});
-  const end=e=>{if(!pointers.has(e.pointerId))return;pointers.delete(e.pointerId);if(pointers.size){base();return;}gesture=null;root.classList.remove('se-adjusting');document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));schedule();};
+  const end=e=>{if(!pointers.has(e.pointerId))return;pointers.delete(e.pointerId);if(pointers.size){base();return;}if(snapshot()!==before)remember(before);before='';finishGesture();schedule();};
   for(const t of ['pointerup','pointercancel','lostpointercapture'])frame.addEventListener(t,end,{signal:sig});
   frame.addEventListener('dblclick',e=>{const l=surface.state.layers.find(l=>l.id===e.target.closest('[data-layer-id]')?.dataset.layerId);if(l?.kind==='text'){selected=l.id;openTools('text');}},{signal:sig});
-  frame.addEventListener('wheel',e=>{if(!ready||pending||preview)return;e.preventDefault();remember();surface.state.media.scale=clamp(surface.state.media.scale*Math.exp(-e.deltaY*.002),.2,8);schedule();},{passive:false,signal:sig});
+  frame.addEventListener('wheel',e=>{if(!ready||pending||preview)return;e.preventDefault();remember();surface.state.media.scale=clamp(surface.state.media.scale*Math.exp(-e.deltaY*.002),.2,128);schedule();},{passive:false,signal:sig});
   frame.addEventListener('dragstart',e=>e.preventDefault(),{signal:sig});frame.addEventListener('contextmenu',e=>e.preventDefault(),{signal:sig});
   frame.addEventListener('keydown',e=>{if(e.target.matches('input,textarea')||pending)return;const target=surface.state.layers.find(l=>l.id===selected)||surface.state.media;
-   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','Delete'].includes(e.key)){e.preventDefault();remember();if(e.key==='Delete'&&selected){removeLayer(target);return;}if(e.key==='ArrowLeft')target.x-=.01;if(e.key==='ArrowRight')target.x+=.01;if(e.key==='ArrowUp')target.y-=.01;if(e.key==='ArrowDown')target.y+=.01;target.x=clamp(target.x,selected?0:-3,selected?1:4);target.y=clamp(target.y,selected?0:-3,selected?1:4);if(['+','-'].includes(e.key)){const k=selected?'size':'scale';target[k]=clamp(target[k]*(e.key==='+'?1.05:.95),selected ? .025 : .2,selected ? .32 : 8);}schedule();}
+   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','Delete'].includes(e.key)){e.preventDefault();remember();if(e.key==='Delete'&&selected){removeLayer(target);return;}if(e.key==='ArrowLeft')target.x-=.01;if(e.key==='ArrowRight')target.x+=.01;if(e.key==='ArrowUp')target.y-=.01;if(e.key==='ArrowDown')target.y+=.01;target.x=clamp(target.x,selected?0:-3,selected?1:4);target.y=clamp(target.y,selected?0:-3,selected?1:4);if(['+','-'].includes(e.key)){const k=selected?'size':'scale';target[k]=clamp(target[k]*(e.key==='+'?1.05:.95),selected ? .025 : .2,selected ? .32 : 128);}schedule();}
   },{signal:sig});
  }
  function loaded(selectedFile){
   document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));root.classList.remove('se-adjusting');
   const ticket=++revision;ready=false;closeTools();clearSelection();pointers.clear();gesture=null;releaseMedia();history.length=0;file=selectedFile;mediaLife=new AbortController();
   const isVideo=file.type.startsWith('video/'),m=el(isVideo?'video':'img');if(isVideo){m.playsInline=true;m.preload='auto';m.muted=true;}else{m.alt='Фото для сторис';m.decoding='async';}
-  surface=storySurface({media:m,composition:{muted:isVideo},interactive:true,onReady:()=>{if(!alive()||revision!==ticket)return;ready=true;updateButtons();}});
-  const guides=el('div','se-guide');guides.setAttribute('aria-hidden','true');guides.append(el('span','se-guide-center'));surface.node.append(guides);
-  work.prepend(surface.node);pick.hidden=true;toolbar.hidden=false;ratio.hidden=false;footer.hidden=false;sound.hidden=!isVideo;playback.hidden=!isVideo;bindGestures();
+  surface=storySurface({media:m,composition:{muted:isVideo},interactive:true,onReady:()=>{if(!alive()||revision!==ticket||ready)return;autoFill();surface.render();ready=true;root.dataset.ready='true';updateButtons();}});
+  root.dataset.ready='false';
+  work.prepend(surface.node);pick.hidden=true;toolbar.hidden=false;footer.hidden=false;sound.hidden=!isVideo;playback.hidden=!isVideo;bindGestures();
   m.addEventListener('error',()=>{if(alive()&&revision===ticket){ready=false;publish.disabled=true;error.textContent='Не удалось открыть файл. Выбери другой — исходный файл не изменён.';}},{signal:mediaLife.signal});
   if(isVideo){
    for(const event of ['play','pause'])m.addEventListener(event,()=>{playback.setAttribute('aria-label',m.paused?'Продолжить видео':'Пауза видео');playback.innerHTML=icon(m.paused?'play':'stop');},{signal:mediaLife.signal});
@@ -134,6 +185,7 @@ export function storyEditor({host,dialog,save,current=()=>true,onPending=()=>{},
   catch(e){if(alive())error.textContent=errorText(e);}finally{pending=false;onPending(false);if(alive()){root.removeAttribute('aria-busy');root.querySelectorAll('button,input,textarea').forEach(n=>n.disabled=false);updateButtons();}}
  }
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&surface?.media.tagName==='VIDEO')surface.media.pause();},{signal});
- document.addEventListener('sekkes-orientation-reset',()=>{pointers.clear();gesture=null;root.classList.remove('se-adjusting');document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));},{signal});
- return {node:root,dispose(){if(disposed)return;disposed=true;revision++;life.abort();toolLife?.abort();cancelAnimationFrame(raf);pointers.clear();gesture=null;releaseMedia();document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));root.remove();}};
+ document.addEventListener('sekkes-orientation-reset',finishGesture,{signal});
+ dialog.addEventListener('cancel',e=>{if(toolKind){e.preventDefault();e.stopImmediatePropagation();closeTools();}},{capture:true,signal});
+ return {node:root,dispose(){if(disposed)return;disposed=true;revision++;life.abort();toolAnimation?.cancel();toolLife?.abort();cancelAnimationFrame(raf);pointers.clear();gesture=null;releaseMedia();document.dispatchEvent(new CustomEvent('sekkes-sheet-motion',{detail:{owner:root,active:false}}));root.remove();}};
 }

@@ -10,7 +10,7 @@ const color=(v,d='#ffffff')=>/^#[\da-f]{6}$/i.test(v||'')?v:d;
 export function storyLink(value){try{const u=new URL(String(value));return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
 export function normalizeStory(value={}){
  const v=value&&typeof value==='object'?value:{},m=v.media||{};
- return {version:1,format:'9:16',media:{x:num(m.x,.5,-4,5),y:num(m.y,.5,-4,5),scale:num(m.scale,1,.2,8),rotation:num(m.rotation,0,-3600,3600)},
+ return {version:1,format:'9:16',media:{x:num(m.x,.5,-4,5),y:num(m.y,.5,-4,5),scale:num(m.scale,1,.2,128),rotation:num(m.rotation,0,-3600,3600)},
   filter:Object.hasOwn(storyFilters,v.filter)?v.filter:'none',background:['blur','dark','light','sea'].includes(v.background)?v.background:'blur',muted:v.muted===true,duration:num(v.duration,5,3,15),
   trim:{start:num(v.trim?.start,0,0,86400),end:v.trim?.end==null?null:num(v.trim.end,null,0,86400)},
   layers:(Array.isArray(v.layers)?v.layers:[]).slice(0,20).map((l,i)=>({id:String(l.id||`layer-${i}`).slice(0,80),kind:['text','emoji','link'].includes(l.kind)?l.kind:'text',text:String(l.text||'').slice(0,500),x:num(l.x,.5,0,1),y:num(l.y,.5,0,1),size:num(l.size,.08,.025,.32),rotation:num(l.rotation,0,-3600,3600),font:Object.hasOwn(storyFonts,l.font)?l.font:'sans',color:color(l.color),background:l.background===true,align:['left','center','right'].includes(l.align)?l.align:'center',url:storyLink(l.url)})),
@@ -30,7 +30,7 @@ export function storySurface({media,composition,interactive=false,onReady=()=>{}
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('story-drawing');svg.setAttribute('viewBox','0 0 900 1600');svg.setAttribute('aria-hidden','true');
  backdrop.width=160;backdrop.height=284;backdrop.setAttribute('aria-hidden','true');media.classList.add('story-source');media.draggable=false;
  node.append(backdrop,media,svg,layerHost);node.dataset.format='9:16';
- const state=normalizeStory(composition),life=new AbortController(),{signal}=life,layers=new Map();let width=0,height=0,disposed=false,poster=false;
+ const state=normalizeStory(composition),life=new AbortController(),{signal}=life,layers=new Map();let width=0,height=0,disposed=false,poster=false,lastMedia='',lastLayers='',lastStrokes='';
  function snapshot(){
   if(disposed||poster||!width||(media.tagName==='VIDEO'&&media.readyState<2))return;
   try{const ctx=backdrop.getContext('2d'),s=Math.max(160/width,284/height);ctx.drawImage(media,(160-width*s)/2,(284-height*s)/2,width*s,height*s);poster=true;}catch{/* A neutral background remains if this decoder cannot supply a poster. */}
@@ -59,7 +59,7 @@ export function storySurface({media,composition,interactive=false,onReady=()=>{}
   state.strokes.forEach((stroke,i)=>{let path=svg.children[i];if(!path){path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('fill','none');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');svg.append(path);}
    const points=stroke.points;path.setAttribute('d',points.length?points.map((p,j)=>`${j?'L':'M'}${(p[0]*900).toFixed(2)},${(p[1]*1600).toFixed(2)}`).join(' ')+(points.length===1?` l.01,0`:''):'');path.setAttribute('stroke',stroke.color);path.setAttribute('stroke-width',String(stroke.width*900));});
  }
- function render(){if(disposed)return;paintMedia();paintLayers();paintDrawing();}
+ function render(){if(disposed)return;const m=JSON.stringify([width,height,state.media,state.filter,state.background]),l=JSON.stringify(state.layers),s=JSON.stringify(state.strokes);if(m!==lastMedia){lastMedia=m;paintMedia();}if(l!==lastLayers){lastLayers=l;paintLayers();}if(s!==lastStrokes){lastStrokes=s;paintDrawing();}}
  media.addEventListener(media.tagName==='VIDEO'?'loadedmetadata':'load',dimensions,{signal});
  media.addEventListener('loadeddata',()=>{snapshot();},{signal});
  render();if(media.complete&&media.naturalWidth)dimensions();
