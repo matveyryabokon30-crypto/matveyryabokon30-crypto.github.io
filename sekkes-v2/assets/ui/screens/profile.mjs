@@ -9,7 +9,7 @@ export function create(ctx){
  const node=el('section','screen profile-screen');node.setAttribute('aria-label','Профиль');
  const body=el('div','profile-body'),nav=el('nav','profile-bottom');nav.setAttribute('aria-label','Разделы профиля');
  node.append(body,nav);
- const store=openProfileStore(),urls=new Set();let data=null,uid=null,epoch=0,view='profile',filter='all',disposed=false,busy=false,loaded=false,loading=false,accountSeen=false;
+ const store=openProfileStore(),urls=new Set();let data=null,uid=null,epoch=0,view='profile',filter='all',feedSaved=false,disposed=false,busy=false,loaded=false,loading=false,accountSeen=false;
  const ownDialog=el('dialog','profile-dialog');ownDialog.setAttribute('aria-label','Редактирование профиля');node.append(ownDialog);
  const dialogUrls=new Set();let inlineFeed=null,viewer=null,storyModal=null,storyViewer=null,storyFocus=null;
  const routeHost=document.querySelector('#routeHost');
@@ -31,10 +31,10 @@ export function create(ctx){
   if(!storyModal)return;const modal=storyModal,session=storyViewer,target=storyFocus;storyModal=null;storyViewer=null;storyFocus=null;session?.dispose();if(modal.open)modal.close();modal.remove();
   if(resume&&node.isConnected){viewer?.setActive?.(true);inlineFeed?.setActive(!ownDialog.open);if(target?.isConnected)target.focus({preventScroll:true});}
  }
- function openStories(){
+ function openStories(startId){
   if(!requireAccount())return;const stories=activeStories(data.posts);if(!stories.length)return;closeStories(false);storyFocus=document.activeElement;inlineFeed?.setActive(false);viewer?.setActive?.(false);
   const modal=el('dialog','profile-dialog profile-media-dialog profile-story-dialog');storyModal=modal;modal.setAttribute('aria-label','Сторис');node.append(modal);
-  storyViewer=createSequence({posts:data.posts,startId:stories[0].id,profile:data,account:ctx.account,mode:'story',close:()=>closeStories(),onRemove:removePost});modal.append(storyViewer.node);
+  storyViewer=createSequence({posts:data.posts,startId:typeof startId==='string'?startId:stories[0].id,profile:data,account:ctx.account,mode:'story',close:()=>closeStories(),onRemove:removePost});modal.append(storyViewer.node);
   modal.addEventListener('cancel',e=>{e.preventDefault();closeStories();});modal.addEventListener('close',()=>{if(storyModal===modal)closeStories();});modal.showModal();storyViewer.setActive(true);modal.querySelector('.profile-dialog-close')?.focus({preventScroll:true});
  }
  function edit(){
@@ -44,11 +44,11 @@ export function create(ctx){
    save:async next=>{if(await persist(next,owner,token)){closeDialog();render();}}});
   ownDialog.showModal();ownDialog.querySelector('.pe-bar button')?.focus({preventScroll:true});
  }
- function addMedia(){
+ function addMedia(initialKind=null){
   if(!requireAccount())return;const owner=uid,token=epoch;
   closeDialog();inlineFeed?.setActive(false);
   const current=()=>!disposed&&owner===uid&&token===epoch;
-  const creator=profileCreate({dialog:ownDialog,close:closeDialog,current,errorText,
+  const creator=profileCreate({dialog:ownDialog,close:closeDialog,current,errorText,initialKind:typeof initialKind==='string'?initialKind:null,
    save:async ({kind,files,caption,story})=>{
     if(!current())return false;
     if(kind==='post')validatePostText(caption);
@@ -59,6 +59,10 @@ export function create(ctx){
     render();return true;
    }});
   viewer=creator;ownDialog.showModal();creator.focus();
+ }
+ async function changePost(post,field,value){
+  if(!requireAccount()||busy||!['liked','saved'].includes(field))return false;
+  const owner=uid,token=epoch;const saved=await persist({...data,posts:data.posts.map(p=>p.id===post.id?{...p,[field]:value}:p)},owner,token);if(saved&&field==='saved'&&!value&&feedSaved&&view==='feed'&&!ownDialog.open)render();return saved;
  }
  async function removePost(post){
   if(!requireAccount()||busy)return;const owner=uid,token=epoch;
@@ -73,7 +77,7 @@ export function create(ctx){
   if(mode==='feed'){
    const bar=el('header','pm-viewer-bar');bar.append(button('Закрыть','back',closeDialog,'pm-control profile-dialog-close'),el('h2','','Публикации'));
    const scroller=el('div','pm-feed-scroll');ownDialog.append(bar,scroller);
-   viewer=createPostFeed({posts:data.posts,profile:data,account:ctx.account,scrollRoot:scroller,onVideo:video=>{const top=scroller.scrollTop,owner=uid,token=epoch;openPost(video,()=>{if(owner!==uid||token!==epoch)return;openPost(post);const previous=ownDialog.querySelector('.pm-feed-scroll');if(previous)previous.scrollTop=top;});},onRemove:removePost,onStory:openStories});scroller.append(viewer.node);
+   viewer=createPostFeed({posts:data.posts,profile:data,account:ctx.account,scrollRoot:scroller,onVideo:video=>{const top=scroller.scrollTop,owner=uid,token=epoch;openPost(video,()=>{if(owner!==uid||token!==epoch)return;openPost(post);const previous=ownDialog.querySelector('.pm-feed-scroll');if(previous)previous.scrollTop=top;});},onRemove:removePost,onStory:openStories,onChange:changePost,notify:ctx.notify});scroller.append(viewer.node);
    ownDialog.showModal();viewer.jump(post.id);
   }else{
    viewer=createSequence({posts:data.posts,startId:post.id,profile:data,account:ctx.account,mode,close:()=>{closeDialog();back?.();},onRemove:removePost});
@@ -82,11 +86,13 @@ export function create(ctx){
   ownDialog.querySelector('.profile-dialog-close')?.focus({preventScroll:true});
  }
  function feed(){
-  const bar=el('header','pm-feed-bar');bar.append(button('Профиль','back',()=>setView('profile'),'profile-back'),el('h1','','Лента'),button('Добавить','plus',addMedia,'pm-control'));
+  const bar=el('header','pm-feed-bar');bar.append(button('Профиль','back',()=>setView('profile'),'profile-back'),el('h1','',feedSaved?'Сохранённое':'Лента'));const saved=button('Сохранённые публикации','bookmark',()=>{feedSaved=!feedSaved;body.scrollTop=0;render();},'pm-control');saved.setAttribute('aria-pressed',String(feedSaved));bar.append(saved,button('Добавить','plus',addMedia,'pm-control'));
   body.append(bar);
   if(!loaded){empty(ctx.account?'Загружаем публикации':'Твоя лента','Посты, фото, видео и карусели из твоего профиля.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
-  if(activeStories(data.posts).length){const strip=el('div','profile-story-strip'),entry=el('div','profile-story-entry');entry.append(smallStoryAvatar({profile:data,account:ctx.account,url,onOpen:openStories}),el('span','','Твои сторис'));strip.append(entry);body.append(strip);}
-  inlineFeed=createPostFeed({posts:feedPosts(data.posts),profile:data,account:ctx.account,scrollRoot:body,onVideo:openPost,onRemove:removePost,onStory:openStories});body.append(inlineFeed.node);
+  const strip=el('nav','profile-story-strip');strip.setAttribute('aria-label','Сторис');
+  const add=el('div','profile-story-entry'),addButton=button('Добавить сторис','plus',()=>addMedia('story'),'pm-story-add');add.append(addButton,el('span','','Добавить'));strip.append(add);
+  for(const [i,story] of activeStories(data.posts).entries()){const entry=el('div','profile-story-entry'),avatar=smallStoryAvatar({profile:data,account:ctx.account,url,onOpen:()=>openStories(story.id)});avatar.setAttribute('aria-label',`Открыть сторис ${i+1}`);entry.append(avatar,el('span','',`История ${i+1}`));strip.append(entry);}body.append(strip);
+  inlineFeed=createPostFeed({posts:feedPosts(data.posts).filter(p=>!feedSaved||p.saved===true),profile:data,account:ctx.account,scrollRoot:body,onVideo:openPost,onRemove:removePost,onStory:openStories,onChange:changePost,notify:ctx.notify});body.append(inlineFeed.node);
  }
  function grid(){
   const toolbar=el('div','profile-grid-heading');toolbar.append(button('Добавить','plus',addMedia));body.append(toolbar);
@@ -125,7 +131,7 @@ export function create(ctx){
   // Auth refresh/route resume is not an account change. Keep the same DOM,
   // media URLs, scroll position and open draft, including an in-flight load.
   if(accountSeen&&nextUid===uid&&(loaded||loading||!uid))return;
-  const token=++epoch;accountSeen=true;uid=nextUid;loaded=false;loading=Boolean(uid);data=null;
+  const token=++epoch;accountSeen=true;uid=nextUid;feedSaved=false;loaded=false;loading=Boolean(uid);data=null;
   closeDialog();render();if(!uid)return;
   try{const result=await store.load(uid);if(token!==epoch||disposed)return;data=result;loaded=true;render();}
   catch(e){if(token===epoch&&!disposed){empty('Не удалось открыть профиль',errorText(e));}}

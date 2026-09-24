@@ -12,3 +12,5 @@ Object.assign(iconPaths,{post:'M5 3h14v18H5ZM8 7h8M8 11h8M8 15h5'});
 Object.assign(iconPaths,{crop:'M7 2v15h15M2 7h15v15M21 3 3 21',text:'M3 5h12M9 5v16M5 21h8m3-10h6m-3 0v10m-2 0h4',smile:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM7 14c2 4 8 4 10 0M8 8h.01M16 8h.01',undo:'M3 10h10a7 7 0 0 1 0 14M3 10l5-5M3 10l5 5',clock:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 6v6l4 3'});
 
 Object.assign(iconPaths,{trash:'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7',rotate:'M20 8V3l-4 4M20 8a8 8 0 1 0 1 6'});
+
+Object.assign(iconPaths,{bookmark:'M6 3h12v18l-6-4-6 4Z'});

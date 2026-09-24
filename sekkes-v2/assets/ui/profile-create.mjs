@@ -4,7 +4,7 @@ import {mediaTypes,validateMedia,validatePostText} from './profile-store.mjs';
 
 // One native modal owns the whole flow. Focus stays on the stationary dialog;
 // only its bottom-anchored panel moves. The shared viewport owns the keyboard.
-export function profileCreate({dialog,close,save,current=()=>true,errorText}){
+export function profileCreate({dialog,close,save,current=()=>true,errorText,initialKind=null}){
  const life=new AbortController(),{signal}=life,urls=new Set();
  let disposed=false,step=0,pending=false,started=false,moving=false,animation=null,animationId=0,gesture=null,paintFrame=0,offset=0,suppressClickUntil=0,closing=false;
  let storyController=null;
@@ -126,6 +126,6 @@ export function profileCreate({dialog,close,save,current=()=>true,errorText}){
  dialog.addEventListener('click',e=>{if(e.target===dialog) dismiss();},{signal});
  document.addEventListener('visibilitychange',()=>{if(document.hidden){if(gesture)end(gesture.id,true);content.querySelectorAll('video').forEach(v=>v.pause());}},{signal});
  document.addEventListener('sekkes-orientation-reset',()=>{if(gesture)end(gesture.id,true);},{signal});
- motion(true);choose();
+ motion(true);if(initialKind&&Object.hasOwn(mediaTypes,initialKind))edit(initialKind);else choose();
  return {focus,requestClose:dismiss,dispose(){if(disposed)return;disposed=true;step++;gesture=null;stopAnimation();motion(false);life.abort();release();dialog.classList.remove('profile-create');dialog.removeAttribute('aria-labelledby');dialog.removeAttribute('autofocus');delete dialog.dataset.createKind;}};
 }

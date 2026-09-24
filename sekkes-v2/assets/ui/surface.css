@@ -148,10 +148,10 @@ body .pm-menu summary{list-style:none;}
 body .pm-menu summary::-webkit-details-marker{display:none;}
 body .pm-menu .pm-remove{position:absolute;z-index:4;right:0;top:0;min-height:44px;padding:8px 20px;color:var(--ui-ink);background:var(--ui-sheet)!important;white-space:nowrap;}
 body .pm-frame{position:relative;width:100%;min-width:0;}
-body .pm-gallery{display:flex;align-items:stretch;width:100%;height:min(133.333vw,calc(var(--app-height,100dvh) - 156px));min-height:160px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;}
+body .pm-gallery{display:flex;align-items:stretch;width:100%;height:auto;aspect-ratio:3/4;min-height:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;}
 body .pm-gallery::-webkit-scrollbar{display:none;}
 body .pm-slide{flex:0 0 100%;width:100%;min-width:0;height:100%;position:relative;scroll-snap-align:start;scroll-snap-stop:always;}
-body .pm-slide>:is(img,video){display:block;width:100%;height:100%;object-fit:contain;border-radius:0;background:transparent;}
+body .pm-slide>:is(img,video){display:block;width:100%;height:100%;object-fit:cover;border-radius:0;background:transparent;}
 body .pm-frame>:is(.pm-prev,.pm-next,.pm-expand){position:absolute;z-index:2;filter:drop-shadow(0 1px 3px #000b);}
 body .pm-prev{left:4px;top:calc(50% - 22px);}
 body .pm-next{right:4px;top:calc(50% - 22px);}
@@ -445,3 +445,31 @@ html[data-motion=reduced] body :is(.story-text-motion,.story-text-effect){animat
  body #shell .se-editor .se-text-input[data-text-background=glass]{background:#19303dcf!important;}
 }
 @media(max-height:500px){body .st-dock{min-height:122px;max-height:64%;}body :is(.st-tabs .st-control,.st-choices,.st-tag){min-height:40px;height:40px;}body .se-text-stage{min-height:36px;}}
+
+/* Feed media uses the current asset ratio, never a viewport-height letterbox. */
+body .pm-post .pm-gallery{align-items:flex-start;}
+body .pm-post .pm-slide{height:auto;align-self:stretch;}
+body .pm-post .pm-slide>:is(img,video){position:absolute;inset:0;min-width:0;min-height:0;}
+body .pm-post-foot{padding:0 16px 4px;}
+body .pm-actions{display:flex;align-items:center;gap:8px;min-height:52px;}
+body .pm-actions .pm-save{margin-left:auto;}
+body :is(.pm-actions,.pm-feed-bar) [aria-pressed=false]{opacity:.55;}
+body :is(.pm-actions,.pm-feed-bar) [aria-pressed=true]{opacity:1;}
+body .pm-actions [aria-pressed=true] .living-icon-fallback{fill:currentColor;fill-opacity:.24;}
+body .pm-post-foot .pm-caption{margin:0;font-size:.94rem;}
+body .pm-caption[data-collapsed=true]{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+body .pm-caption-toggle{display:block;min-height:44px;padding:6px 0;color:var(--ui-muted);font:inherit;text-align:left;}
+body .pm-caption-toggle[hidden]{display:none;}
+body .profile-story-strip{overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;align-items:start;gap:18px;padding-block:12px 20px;}
+body .profile-story-entry{display:flex;flex:none;flex-direction:column;align-items:center;gap:8px;width:72px;font-size:.72rem;}
+body .profile-story-entry .story-avatar-small,body .pm-story-add{width:64px;height:64px;min-height:64px;border-radius:50%;}
+body .pm-story-add{display:grid;place-items:center;background:var(--ui-sheet);--icon-size:24px;}
+body .pm-story-add>span:not(.living-icon){display:none;}
+@media(min-width:720px){body .profile-body[data-profile-view=feed]>.pm-feed,body .profile-body[data-profile-view=feed]>.profile-story-strip,body .pm-feed-scroll>.pm-feed{max-width:680px;margin-inline:auto;}}
+
+@layer sekkes-borderless{body .pm-caption-toggle{background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}body .pm-feed-bar [aria-pressed=true] .living-icon-fallback{fill:currentColor;fill-opacity:.24;}}
+
+body :is(.pm-feed,.profile-story-strip) .story-avatar-small{grid-template:minmax(0,1fr)/minmax(0,1fr);}
+body :is(.pm-feed,.profile-story-strip) .story-avatar-small>img{min-width:0;min-height:0;aspect-ratio:1;}
+
+body .pm-feed-bar h1{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}

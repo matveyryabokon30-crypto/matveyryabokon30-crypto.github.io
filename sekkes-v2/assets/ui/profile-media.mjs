@@ -1,3 +1,4 @@
+import {copyText} from './clipboard.mjs';
 import {storySurface,normalizeStory,storyWindow} from './story-composition.mjs';
 import {smallStoryAvatar} from './story-avatar.mjs';
 // Account-local media presentation only. Storage and social publishing are not owned here.
@@ -17,9 +18,9 @@ function person(profile,account,pool,onStory){
 function failure(node,label='Не удалось открыть файл. Исходный материал сохранён.'){const n=el('p','pm-error',label);n.setAttribute('role','status');node.append(n);}
 
 // One shared vertical publication stream for the Feed tab and a post opened from the grid.
-export function createPostFeed({posts,profile,account,scrollRoot,onVideo,onRemove,onStory}){
+export function createPostFeed({posts,profile,account,scrollRoot,onVideo,onRemove,onStory,onChange,notify=()=>{}}){
  const items=feedPosts(posts),node=el('div','pm-feed'),pool=assets(),life=new AbortController(),{signal}=life;
- node.setAttribute('aria-label','Публикации');const records=[];let active=true,disposed=false;
+ node.setAttribute('aria-label','Публикации');const records=[],captionChecks=[];let active=true,disposed=false;
  const pauseRecord=r=>{if(r.video&&!r.video.paused){r.systemPause=true;r.video.pause();}};
  const pause=()=>records.forEach(pauseRecord);
  const safePlay=v=>{if(active&&!document.hidden&&node.isConnected&&!v.dataset.userPaused)v.play().catch(()=>{});};
@@ -38,12 +39,14 @@ export function createPostFeed({posts,profile,account,scrollRoot,onVideo,onRemov
   const remove=el('button','pm-remove','Удалить');remove.type='button';remove.onclick=async()=>{remove.disabled=true;try{await onRemove(post);}finally{remove.disabled=false;menu.open=false;}};menu.append(summary,remove);head.append(menu);
   const frame=el('div','pm-frame'),gallery=el('div','pm-gallery');gallery.setAttribute('aria-label',post.kind==='carousel'?'Карусель':'Медиа публикации');frame.append(gallery);
   const r={article,ratio:0,video:null,loaded:false,load:null};let index=0;
+  const resize=()=>{const m=slides[index]?.m,w=m?.naturalWidth||m?.videoWidth,h=m?.naturalHeight||m?.videoHeight;if(w>0&&h>0){gallery.style.aspectRatio=`${w} / ${h}`;article.dataset.orientation=w>h?'landscape':w<h?'portrait':'square';}};
   const slides=[];for(const [i,file] of post.files.entries()){
    const slide=el('div','pm-slide'),m=el(videoFile(file)?'video':'img');
    if(videoFile(file)){m.controls=true;m.playsInline=true;m.muted=true;m.loop=true;m.preload='metadata';r.video=m;
     m.addEventListener('play',()=>{delete m.dataset.userPaused;if(!active||document.hidden||!node.isConnected){pauseRecord(r);return;}for(const other of records)if(other.video&&other.video!==m)pauseRecord(other);},{signal});
     m.addEventListener('pause',()=>{if(r.systemPause)r.systemPause=false;else m.dataset.userPaused='true';},{signal});
    }else{m.alt=post.caption||`Фото ${i+1}`;m.decoding='async';}
+   m.addEventListener(videoFile(file)?'loadedmetadata':'load',resize,{signal});
    m.addEventListener('error',()=>{if(!slide.querySelector('.pm-error'))failure(slide);},{signal});slide.append(m);gallery.append(slide);slides.push({m,file});
   }
   r.load=()=>{if(r.loaded||disposed)return;r.loaded=true;slides.forEach(({m,file})=>{m.src=pool.url(file);});};
@@ -53,17 +56,28 @@ export function createPostFeed({posts,profile,account,scrollRoot,onVideo,onRemov
    const select=i=>gallery.scrollTo({left:i*gallery.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
    const prev=control('Предыдущее фото','back',()=>select(Math.max(0,index-1)),'pm-control pm-prev'),next=control('Следующее фото','arrow',()=>select(Math.min(post.files.length-1,index+1)),'pm-control pm-next');
    post.files.forEach((_,i)=>dots.append(control(`Фото ${i+1} из ${post.files.length}`,'photo',()=>select(i),'pm-dot')));
-   const sync=()=>{index=Math.max(0,Math.min(post.files.length-1,Math.round(gallery.scrollLeft/Math.max(1,gallery.clientWidth))));count.textContent=`${index+1} / ${post.files.length}`;prev.disabled=index===0;next.disabled=index===post.files.length-1;[...dots.children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));};
+   const sync=()=>{index=Math.max(0,Math.min(post.files.length-1,Math.round(gallery.scrollLeft/Math.max(1,gallery.clientWidth))));resize();count.textContent=`${index+1} / ${post.files.length}`;prev.disabled=index===0;next.disabled=index===post.files.length-1;[...dots.children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));};
    gallery.addEventListener('scroll',sync,{passive:true,signal});gallery.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();select(Math.max(0,Math.min(post.files.length-1,index+(e.key==='ArrowRight'?1:-1))));}},{signal});
    frame.append(prev,next,count);article.append(head,frame,dots);sync();
   }else {article.append(head);if(post.files.length)article.append(frame);}
-  if(post.caption)article.append(el('p','pm-caption',post.caption));
+  const foot=el('footer','pm-post-foot'),actions=el('div','pm-actions');actions.setAttribute('aria-label','Действия с публикацией');
+  const toggle=(field,label,symbol)=>{let value=post[field]===true;const b=control(label,symbol,async()=>{b.disabled=true;try{if(await onChange?.(post,field,!value)){value=!value;b.setAttribute('aria-pressed',String(value));}}catch(e){notify(e.message||'Не удалось сохранить.');}finally{b.disabled=false;}});b.setAttribute('aria-pressed',String(value));return b;};
+  if(onChange)actions.append(toggle('liked','Нравится — на этом устройстве','heart'));
+  const share=control('Поделиться','send',async()=>{try{const files=post.files.map((blob,i)=>new File([blob],`sekkes-${i+1}.${blob.type.split('/')[1]?.replace('jpeg','jpg')||'bin'}`,{type:blob.type}));const payload={text:post.caption||'',...(files.length?{files}:{})};if(navigator.share&&(!files.length||navigator.canShare?.({files})))await navigator.share(payload);else if(post.caption){await copyText(post.caption);notify('Подпись скопирована. Отправка файлов недоступна в этом браузере.');}else notify('Отправка файлов недоступна в этом браузере.');}catch(e){if(e.name!=='AbortError')notify('Не удалось поделиться публикацией.');}});actions.append(share);
+  if(post.caption)actions.append(control('Скопировать подпись','copy',async()=>{try{await copyText(post.caption);notify('Подпись скопирована.');}catch{notify('Не удалось скопировать подпись.');}}));
+  if(onChange){const save=toggle('saved','Сохранить в избранное на этом устройстве','bookmark');save.classList.add('pm-save');actions.append(save);}
+  foot.append(actions);
+  if(post.caption){const caption=el('p','pm-caption',post.caption);caption.id=`caption-${crypto.randomUUID()}`;caption.dataset.collapsed='true';const more=el('button','pm-caption-toggle','ещё');more.type='button';more.setAttribute('aria-expanded','false');more.setAttribute('aria-controls',caption.id);more.onclick=()=>{const expanded=more.getAttribute('aria-expanded')!=='true';more.setAttribute('aria-expanded',String(expanded));caption.dataset.collapsed=String(!expanded);more.textContent=expanded?'свернуть':'ещё';if(!expanded)queueCaptions();};foot.append(caption,more);captionChecks.push({caption,more});}
+  article.append(foot);
   const label=dateLabel(post.at);if(label){const time=el('time','pm-date',label);time.dateTime=post.at;article.append(time);}
   node.append(article);records.push(r);visibility.observe(article);nearby.observe(article);
  }
  if(!items.length)node.append(el('p','pm-empty','Здесь появятся твои посты, фото, видео и карусели. Сторис остаются в сетке профиля.'));
+ const measureCaptions=()=>{for(const {caption,more} of captionChecks)if(caption.dataset.collapsed==='true')more.hidden=caption.scrollHeight<=caption.clientHeight+1;};
+ let captionFrame=0,captionWidth=-1;const queueCaptions=()=>{if(!disposed&&!captionFrame)captionFrame=requestAnimationFrame(()=>{captionFrame=0;if(!disposed)measureCaptions();});};
+ const captionObserver=new ResizeObserver(entries=>{const width=entries[0]?.contentRect.width;if(width!==captionWidth){captionWidth=width;queueCaptions();}});captionObserver.observe(node);document.fonts?.ready.then(queueCaptions);
  document.addEventListener('visibilitychange',chooseVideo,{signal});
- return {node,setActive(value){active=value;chooseVideo();},jump(id){const r=records.find(r=>r.article.dataset.postId===id);if(!r)return;r.load();const top=r.article.getBoundingClientRect().top-scrollRoot.getBoundingClientRect().top+scrollRoot.scrollTop;scrollRoot.scrollTo({top,behavior:'instant'});},dispose(){if(disposed)return;disposed=true;active=false;pause();life.abort();visibility.disconnect();nearby.disconnect();for(const r of records)r.article.querySelectorAll('video').forEach(v=>{v.removeAttribute('src');v.load();});pool.dispose();}};
+ return {node,setActive(value){active=value;chooseVideo();},jump(id){const r=records.find(r=>r.article.dataset.postId===id);if(!r)return;r.load();const top=r.article.getBoundingClientRect().top-scrollRoot.getBoundingClientRect().top+scrollRoot.scrollTop;scrollRoot.scrollTo({top,behavior:'instant'});},dispose(){if(disposed)return;disposed=true;active=false;pause();life.abort();captionObserver.disconnect();cancelAnimationFrame(captionFrame);visibility.disconnect();nearby.disconnect();for(const r of records)r.article.querySelectorAll('video').forEach(v=>{v.removeAttribute('src');v.load();});pool.dispose();}};
 }
 
 // Full-viewport stories and vertical video viewing share cleanup, not publication semantics.
