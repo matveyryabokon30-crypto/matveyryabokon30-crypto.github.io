@@ -4,24 +4,12 @@ import {restoreSceneClock,saveSceneClock,FlowField,geometry,renderDensity,palett
 export function installEvolving(win,doc){
  let storage;try{storage=win.localStorage}catch{/* Restricted browsing may deny storage. */}
  const clock=restoreSceneClock(storage);let lastSaved=clock.seconds,state={active:false,motion:true,user:0,agent:0},levels={user:0,agent:0};
- let sketch=null,ready=false,disposed=false,resizeTimer=0,field=null,particles=null,ages=null,cloth=null,trails=null,trailCx=null,cx,width=1,height=1,frame=0,density=1,lastChrome=-Infinity;
+ let sketch=null,ready=false,disposed=false,resizeTimer=0,field=null,particles=null,ages=null,cloth=null,trails=null,trailCx=null,cx,width=1,height=1,frame=0,density=1;
  const count=4500,vector=new Float32Array(2),temp=new Float32Array(2);
  function persist(force=false){if(!force&&clock.seconds-lastSaved<5)return;lastSaved=clock.seconds;saveSceneClock(storage,clock);}
  function pause(){sketch?.noLoop();clock.pause();persist(true);}
  function apply(){if(!ready)return;if(state.active&&state.motion&&!doc.hidden)sketch.loop();else pause();}
  function diagnostic(){const canvas=doc.querySelector('canvas');if(!canvas)return;canvas.dataset.elapsed=clock.seconds.toFixed(2);canvas.dataset.epoch=String(field?.epoch||0);canvas.dataset.palette=String(Math.floor(clock.seconds/COLOR_SECONDS)%PALETTE.length);canvas.dataset.frame=String(frame);canvas.dataset.angle=cloth.angle.toFixed(3);canvas.dataset.density=String(density);}
- const chromeSample=doc.createElement('canvas');chromeSample.width=16;chromeSample.height=1;
- const chromeCx=chromeSample.getContext('2d',{willReadFrequently:true});
- function chrome(force=false){
-  if(!force&&clock.seconds-lastChrome<.25)return;lastChrome=clock.seconds;
-  if(!cx||!chromeCx)return;
-  // Downsample only the upper band, not the full animated canvas. Reading 16
-  // pixels four times a second keeps browser chrome tied to the visible cloth.
-  chromeCx.drawImage(cx.canvas,0,0,cx.canvas.width,Math.min(cx.canvas.height,Math.round(40*density)),0,0,16,1);
-  const pixels=chromeCx.getImageData(0,0,16,1).data,rgb=[0,0,0];
-  for(let i=0;i<pixels.length;i+=4)for(let c=0;c<3;c++)rgb[c]+=pixels[i+c]/16;
-  win.parent.postMessage({type:'sekkes-topology-palette',rgb},win.location.origin);
- }
  function step(dt,prime=false){
   if(!cx||!field)return;
   if(!prime)field.advance(clock.seconds);
@@ -63,7 +51,7 @@ export function installEvolving(win,doc){
     // A formed first still also serves Reduced Motion; no empty canvas flash.
     for(let i=0;i<23;i++)step(1/60,true);step(1/60);
     p.frameRate(30);p.noLoop();ready=true;diagnostic();
-    win.parent.postMessage({type:'sekkes-topology-ready'},win.location.origin);chrome(true);
+    win.parent.postMessage({type:'sekkes-topology-ready'},win.location.origin);
     // p5 setup can run inside the constructor before sketch is assigned.
     win.setTimeout(()=>{if(!disposed)apply()},0);
    };
@@ -71,7 +59,7 @@ export function installEvolving(win,doc){
     if(disposed||!ready||!state.active||!state.motion||doc.hidden){p.noLoop();clock.pause();return;}
     try{const dt=clock.tick(win.performance.now());if(!dt)return;
      for(const k of ['user','agent'])levels[k]+=(state[k]-levels[k])*(1-Math.exp(-dt*(state[k]>levels[k]?10:3)));
-     step(dt);chrome();persist();if(frame%15===0)diagnostic();
+     step(dt);persist();if(frame%15===0)diagnostic();
     }catch{pause();}
    };
   },doc.querySelector('#topology'));}catch{pause();}
