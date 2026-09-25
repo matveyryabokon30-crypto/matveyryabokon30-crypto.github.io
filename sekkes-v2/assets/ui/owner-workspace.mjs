@@ -1,3 +1,4 @@
+import {readAssessment,assessmentSource,assessmentEditor,VERDICTS} from './owner-assessment.mjs';
 import {dashboardRecords} from './owner-dashboard.mjs';
 import {createTimeline} from './chat/timeline.mjs';
 import {mediaView,mediaLoader,isMedia} from './attachment-view.mjs';
@@ -81,15 +82,34 @@ export function create(ctx){
  if(data.dashboard?.catalog_unavailable)content.append(hint('Учебный каталог временно недоступен. Сохранённые документы доступны ниже.'));
  if(data.training_display_unavailable)content.append(hint('Журнал учебных запусков временно недоступен.'));
  const records=dashboardRecords(data,current),automatic=el('div','owner-automatic');automatic.setAttribute('aria-label','Данные с сервера');
- for(const d of records){const detail=el('details','owner-auto-record'),summary=el('summary','',d.title);detail.append(summary,hint(d.label),el('p','owner-auto-text',d.content));if(d.at)detail.append(hint(new Date(d.at).toLocaleString('ru-RU')));automatic.append(detail);}
+ for(const d of records){
+  const source=assessmentSource(data,d.id),prior=source?latest().find(doc=>{const v=readAssessment(doc);return v?.source?.id===source.source.id&&v.source.type===source.source.type;}):null;
+  const detail=el('details','owner-auto-record'),summary=el('summary','',d.title);
+  detail.append(summary,hint(prior?'Ручная оценка: '+VERDICTS[readAssessment(prior).verdict]+' · v'+prior.revision:d.label),el('p','owner-auto-text',d.content));
+  if(d.at)detail.append(hint(new Date(d.at).toLocaleString('ru-RU')));
+  if(source)detail.append(button(prior?'Изменить оценку':'Оценить ответ',()=>{if(busy||live.active)return;current='evaluation';editing=prior;dirty=!prior;paint();openAssessment(prior?{...readAssessment(prior),title:prior.title}:{title:source.question.slice(0,160),...source});}));
+  automatic.append(detail);
+ }
  if(current==='material')for(const m of data.media||[]){const detail=el('details','owner-auto-record');detail.append(el('summary','',m.name),hint('Вложение административного диалога · '+m.mime),button('Открыть файл',()=>run(async()=>{const ticket=epoch,blob=await request('content',{id:m.id});if(ticket===epoch&&detail.isConnected){detail.querySelector('.owner-file-preview')?.remove();const box=el('div','owner-file-preview');box.append(preview(m,blob));detail.append(box);}})));automatic.append(detail);}
  if(!automatic.children.length)automatic.append(hint('Пока нет записей. Они появятся после загрузки материала или соответствующего запуска.'));
  content.append(automatic);
- const list=el('div','owner-documents');for(const d of latest().filter(x=>x.kind===current))list.append(button(`${d.title} · черновик v${d.revision}`,()=>{if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm()}));content.append(list,button('Новый документ',()=>{if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm()}),button('Обновить данные',()=>{if(dirty)return;void run(load)}));
+ const list=el('div','owner-documents');for(const d of latest().filter(x=>x.kind===current))list.append(button(`${d.title} · ${readAssessment(d)?VERDICTS[readAssessment(d).verdict]:'черновик'} · v${d.revision}`,()=>{if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm()}));content.append(list,button(current==='evaluation'?'Новая проверка':'Новый документ',()=>{if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm()}),button('Обновить данные',()=>{if(dirty)return;void run(load)}));
  }
- function paintDocumentsForm(){content.querySelector('.owner-editor')?.remove();const form=el('div','owner-editor'),name=el('input','owner-input'),body=el('textarea','owner-input');name.placeholder='Название';name.setAttribute('aria-label','Название документа');name.maxLength=160;body.placeholder='Содержание';body.setAttribute('aria-label','Содержание документа');body.rows=10;body.maxLength=30000;name.value=editing?.title||'';body.value=editing?.content||'';name.oninput=body.oninput=()=>dirty=true;
+ function paintDocumentsForm(){if(current==='evaluation'&&(!editing||readAssessment(editing)))return openAssessment(editing?{...readAssessment(editing),title:editing.title}:{});content.querySelector('.owner-editor')?.remove();const form=el('div','owner-editor'),name=el('input','owner-input'),body=el('textarea','owner-input');name.placeholder='Название';name.setAttribute('aria-label','Название документа');name.maxLength=160;body.placeholder='Содержание';body.setAttribute('aria-label','Содержание документа');body.rows=10;body.maxLength=30000;name.value=editing?.title||'';body.value=editing?.content||'';name.oninput=body.oninput=()=>dirty=true;
  form.append(name,body,button('Сохранить новую версию',()=>run(async()=>{const id=editing?.id||crypto.randomUUID();await request('document',{id,kind:current,revision:editing?.revision||0,title:name.value,content:body.value});dirty=false;editing=null;await load();notice.textContent='Версия сохранена как черновик.'})));
  if(editing){const versions=(data.documents||[]).filter(x=>x.id===editing.id);form.append(hint('Предыдущие версии:'));for(const v of versions)form.append(button(`v${v.revision} · ${new Date(v.created_at).toLocaleString('ru-RU')}`,()=>{body.value=v.content;name.value=v.title;dirty=true;notice.textContent='Содержимое старой версии открыто. Сохранение создаст новую версию.'}));}content.append(form);
+ }
+ function openAssessment(value){
+ content.querySelector('.owner-editor')?.remove();
+ const id=editing?.id||crypto.randomUUID(),revision=editing?.revision||0,ticket=epoch;
+ const versions=(data?.documents||[]).filter(d=>d.id===id).sort((a,b)=>b.revision-a.revision);
+ const form=assessmentEditor({value,versions,onDirty:()=>{dirty=true;},onSave:async encoded=>{
+  if(busy||disposed||ticket!==epoch)throw Error('Действие недоступно. Открой проверку заново.');
+  busy=true;node.setAttribute('aria-busy','true');
+  try{await request('document',{id,kind:'evaluation',revision,...encoded});if(disposed||ticket!==epoch)return;dirty=false;editing=null;await load();if(ticket===epoch)notice.textContent='Проверка сохранена. Это ручная оценка, не автоматическое обучение.';}
+  catch(e){throw Error(error(e));}
+  finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false');}}
+ }});content.append(form);
  }
  async function refresh(){if(isDirty()||busy||recording)return;await run(async()=>{const s=await request('status');if(s.active)await load();else activation()})}
  function reset(){timeline?.dispose();timeline=null;timelineState=null;content.querySelector('.owner-composer')?._resizeObserver?.disconnect();epoch++;loader.reset();void live.stop();recorder.cancel();for(const u of urls.values())URL.revokeObjectURL(u);urls.clear();data=null;draft='';retry=null;selected=[];dirty=false;busy=false;editing=null;node.setAttribute('aria-busy','false');content.replaceChildren(hint('Войди в аккаунт владельца.'));tabs.replaceChildren()}

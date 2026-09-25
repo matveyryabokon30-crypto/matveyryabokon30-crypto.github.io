@@ -55,3 +55,5 @@ html[data-keyboard-open=true] .owner-screen{padding-bottom:calc(var(--keyboard-i
 
 /* Server records use the existing glass surface, never nested cards. */
 .owner-auto-record{padding:12px 0}.owner-auto-record summary{cursor:pointer;overflow-wrap:anywhere}.owner-auto-text{white-space:pre-wrap;overflow-wrap:anywhere}.owner-automatic{min-width:0}
+
+.owner-assessment-field{display:grid;gap:6px;min-width:0}.owner-assessment .owner-input{box-sizing:border-box;width:100%;min-width:0}
