@@ -52,3 +52,6 @@ html[data-keyboard-open=true] .owner-screen{padding-bottom:calc(var(--keyboard-i
 .owner-composer-pill>.owner-attachments{grid-column:1/-1;grid-row:1;max-height:110px;margin:0 0 6px}
 .owner-composer-pill:has(>.owner-attachments:not(:empty))>.owner-input{grid-row:2}
 .owner-composer-pill:has(>.owner-attachments:not(:empty))>.icon-button{grid-row:3}
+
+/* Server records use the existing glass surface, never nested cards. */
+.owner-auto-record{padding:12px 0}.owner-auto-record summary{cursor:pointer;overflow-wrap:anywhere}.owner-auto-text{white-space:pre-wrap;overflow-wrap:anywhere}.owner-automatic{min-width:0}
