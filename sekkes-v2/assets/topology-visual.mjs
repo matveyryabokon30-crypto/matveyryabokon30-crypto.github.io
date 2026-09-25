@@ -1,4 +1,4 @@
-// SEKKES Canvas adaptation of the flow-field idea in Vanta TOPOLOGY.
+// AI Marius Canvas adaptation of the flow-field idea in Vanta TOPOLOGY.
 // Original: Teng Bao / Kjetil Midtgarden Golid. See topology-LICENSE.txt.
 // No media capture, network, or dependency on the chat submission path.
 import {readLevels} from './lake-visual.mjs';

@@ -1,4 +1,4 @@
-/** SEKKES P2.0. Provider-neutral contracts. No network, microphone, billing or deployment. */
+/** AI Marius P2.0. Provider-neutral contracts. No network, microphone, billing or deployment. */
 export class ContractError extends Error {
   constructor(code) { super(code); this.name = 'ContractError'; this.code = code; }
 }

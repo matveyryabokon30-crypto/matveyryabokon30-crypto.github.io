@@ -89,7 +89,7 @@ export function create(ctx){
  function feed(){
   const bar=el('header','pm-feed-bar');bar.append(button('Добавить','plus',addMedia,'pm-control pm-feed-add'),el('h1','',feedSaved?'Сохранённое':'Лента'));
   body.append(bar);
-  if(!loaded){empty(ctx.account?'Загружаем публикации':'Твоя лента','Посты, фото, видео и карусели из твоего профиля.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
+  if(!loaded){empty(ctx.account?'Загружаем публикации':'Твоя лента','Посты, фото, видео и карусели из твоего профиля.');if(!ctx.account)body.append(button('Войти в AI Marius','profile',()=>ctx.runtime()?.accountAction()));return;}
   const strip=el('nav','profile-story-strip');strip.setAttribute('aria-label','Сторис');
   const add=el('div','profile-story-entry'),addButton=button('Добавить сторис','plus',()=>addMedia('story'),'pm-story-add');add.append(addButton,el('span','','Добавить'));strip.append(add);
   for(const [i,story] of activeStories(data.posts).entries()){const entry=el('div','profile-story-entry'),avatar=smallStoryAvatar({profile:data,account:ctx.account,url,onOpen:()=>openStories(story.id)});avatar.setAttribute('aria-label',`Открыть сторис ${i+1}`);entry.append(avatar,el('span','',`История ${i+1}`));strip.append(entry);}body.append(strip);
@@ -98,7 +98,7 @@ export function create(ctx){
  function grid(){
   const toolbar=el('div','profile-grid-heading');toolbar.append(button('Добавить','plus',addMedia));body.append(toolbar);
   const filters=el('div','profile-filters');filters.setAttribute('aria-label','Формат материалов');for(const [key,label,symbol] of [['all','Все','feed'],...Object.entries(mediaTypes).map(([k,v])=>[k,v,k])]){const b=button(label,symbol,()=>{filter=key;render();},'profile-filter');b.setAttribute('aria-pressed',String(filter===key));filters.append(b);}body.append(filters);
-  if(!loaded){empty(ctx.account?'Загружаем профиль':'Твой профиль','Аватар, анкета и личные материалы.');if(!ctx.account)body.append(button('Войти в SEKKES','profile',()=>ctx.runtime()?.accountAction()));return;}
+  if(!loaded){empty(ctx.account?'Загружаем профиль':'Твой профиль','Аватар, анкета и личные материалы.');if(!ctx.account)body.append(button('Войти в AI Marius','profile',()=>ctx.runtime()?.accountAction()));return;}
   const posts=(data?.posts||[]).filter(p=>filter==='all'||p.kind===filter);if(!posts.length){empty('Пока нет материалов','Добавь пост, фото, видео, карусель или сторис.');return;}
   const list=el('div','profile-media-grid');
   for(const post of posts){const b=el('button','profile-tile');b.type='button';b.setAttribute('aria-label',mediaTypes[post.kind]+(post.caption?': '+post.caption:''));b.onclick=()=>openPost(post);
@@ -107,9 +107,9 @@ export function create(ctx){
   }body.append(list);
  }
  function settings(){header('Настройки профиля');const group=el('div','settings-group');
-  group.append(row({title:'Мой прогресс',description:'Личный путь',iconName:'progress',action:()=>setView('progress')}),row({title:'Сохранённые разговоры',description:'Твоя переписка с SEKKES',iconName:'chat',action:()=>ctx.showConversation()}),row({title:'Любимые пространства',iconName:'heart',action:()=>setView('favorites')}),row({title:'Достижения',iconName:'spark',action:()=>setView('achievements')}),row({title:'Личные настройки',description:'Анкета, вход и голос помощника',iconName:'profile',action:()=>setView('personal')}));body.append(group);
+  group.append(row({title:'Мой прогресс',description:'Личный путь',iconName:'progress',action:()=>setView('progress')}),row({title:'Сохранённые разговоры',description:'Твоя переписка с AI Marius',iconName:'chat',action:()=>ctx.showConversation()}),row({title:'Любимые пространства',iconName:'heart',action:()=>setView('favorites')}),row({title:'Достижения',iconName:'spark',action:()=>setView('achievements')}),row({title:'Личные настройки',description:'Анкета, вход и голос помощника',iconName:'profile',action:()=>setView('personal')}));body.append(group);
  }
- function personal(){header('Личные настройки');const group=el('div','settings-group');group.append(row({title:'Редактировать анкету и аватар',iconName:'edit',action:edit}),row({title:'Face ID / ключ доступа',iconName:'shield',action:()=>ctx.runtime()?.faceIdSettings()}),row({title:'Голос помощника',iconName:'sound',action:()=>ctx.runtime()?.voiceSettings()}),row({title:'Оформление приложения',iconName:'settings',action:()=>ctx.navigate('settings')}),row({title:ctx.account?'Выйти из аккаунта':'Войти в SEKKES',iconName:'profile',action:()=>ctx.runtime()?.accountAction()}));body.append(group);}
+ function personal(){header('Личные настройки');const group=el('div','settings-group');group.append(row({title:'Редактировать анкету и аватар',iconName:'edit',action:edit}),row({title:'Face ID / ключ доступа',iconName:'shield',action:()=>ctx.runtime()?.faceIdSettings()}),row({title:'Голос помощника',iconName:'sound',action:()=>ctx.runtime()?.voiceSettings()}),row({title:'Оформление приложения',iconName:'settings',action:()=>ctx.navigate('settings')}),row({title:ctx.account?'Выйти из аккаунта':'Войти в AI Marius',iconName:'profile',action:()=>ctx.runtime()?.accountAction()}));body.append(group);}
  function setView(next){if(next==='feed'&&view==='feed'&&!feedSaved){body.scrollTo({top:0,behavior:'instant'});return;}closeDialog();if(next==='feed')feedSaved=false;view=next;body.scrollTop=0;render();}
  function render(){
   if(disposed)return;inlineFeed?.dispose();inlineFeed=null;body.dataset.profileView=view;body.querySelectorAll('video').forEach(v=>v.pause());release(urls);body.replaceChildren();

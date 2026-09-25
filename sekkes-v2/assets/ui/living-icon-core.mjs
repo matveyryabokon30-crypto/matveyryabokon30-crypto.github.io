@@ -1,4 +1,4 @@
-// Original SEKKES particle choreography, inspired by the owner's Thinking Orbs
+// Original AI Marius particle choreography, inspired by the owner's Thinking Orbs
 // reference. Canvas dots preserve semantic glyphs while exploring 3D forms.
 export function iconSeed(name){let n=17;for(const c of name)n=(n*31+c.charCodeAt(0))>>>0;return (n%10007)/10007;}
 export function iconMode(name){

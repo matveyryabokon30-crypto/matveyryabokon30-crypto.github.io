@@ -26,7 +26,7 @@ const requestResult=request=>new Promise((resolve,reject)=>{request.onsuccess=()
 // immutable byte records; metadata contains references, not live File handles.
 export function openProfileStore(factory=globalThis.indexedDB){
  let dbPromise;const references=new WeakMap();
- function db(){if(!factory)return Promise.reject(Error('Хранилище устройства недоступно.'));return dbPromise||(dbPromise=new Promise((resolve,reject)=>{const r=factory.open('sekkes-profile-device-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('profiles');r.onsuccess=()=>{r.result.onversionchange=()=>r.result.close();resolve(r.result);};r.onerror=()=>{dbPromise=null;reject(r.error);};r.onblocked=()=>reject(Error('Закрой другие вкладки SEKKES и повтори.'));}));}
+ function db(){if(!factory)return Promise.reject(Error('Хранилище устройства недоступно.'));return dbPromise||(dbPromise=new Promise((resolve,reject)=>{const r=factory.open('sekkes-profile-device-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('profiles');r.onsuccess=()=>{r.result.onversionchange=()=>r.result.close();resolve(r.result);};r.onerror=()=>{dbPromise=null;reject(r.error);};r.onblocked=()=>reject(Error('Закрой другие вкладки AI Marius и повтори.'));}));}
  function remember(blob,uid,ref){if(blob instanceof Blob)references.set(blob,{uid,ref});return blob;}
  function tagLegacy(value,uid){
   if(value.avatar)remember(value.avatar,uid,{legacy:'avatar'});

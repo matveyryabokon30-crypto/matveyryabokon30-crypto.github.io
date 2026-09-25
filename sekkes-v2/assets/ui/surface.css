@@ -1,4 +1,4 @@
-/* SEKKES surface contract. This file is the single authority for materials,
+/* AI Marius surface contract. This file is the single authority for materials,
    decoration and editor layout; no route-specific framed-card variants. */
 :root,html[data-theme=light],html[data-theme=dark],body #shell,body #shell[data-route=home]{
  --ui-pane:rgba(15,29,36,.42);--ui-sheet:rgba(15,29,36,.68);

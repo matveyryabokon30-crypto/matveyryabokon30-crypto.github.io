@@ -136,7 +136,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
    current=id;const screen=cache.get(id);host.replaceChildren(screen.node);if(id==='admin')await screen.refresh();for(const [i,b]of [...modeSwitch.children].entries())b.setAttribute('aria-pressed',String((i===1)===(id==='admin')));if(id==='home'){screen.node.append(dock);screen.timeline.layout();}else{app.append(dock);screen.node.scrollTop=screen.scrollTop||0;}
    app.dataset.route=id;composer.hidden=id!=='home';paintConversation();
    for(const a of nav.children){a.hidden=a.dataset.route==='home'&&id==='home';if(a.dataset.route===id)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}
-   updateVoice(voice);updateSend();document.title=descriptor.title+' · SEKKES';if(!document.activeElement?.matches('textarea,input'))host.focus({preventScroll:true});actions?.refresh();if(pendingCompose&&pendingCompose.scope===id){const item=pendingCompose;pendingCompose=null;writeDraft(item.scope,item.text);}
+   updateVoice(voice);updateSend();document.title=descriptor.title+' · AI Marius';if(!document.activeElement?.matches('textarea,input'))host.focus({preventScroll:true});actions?.refresh();if(pendingCompose&&pendingCompose.scope===id){const item=pendingCompose;pendingCompose=null;writeDraft(item.scope,item.text);}
   }catch{notify('Не удалось загрузить раздел. Проверь подключение.')}
  }
  document.addEventListener('sekkes-orientation-reset',()=>{menu.close({restoreFocus:false});actions?.refresh();},{signal});

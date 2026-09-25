@@ -1,4 +1,4 @@
-// Browser speech-to-text only. Never sends a message or calls the SEKKES AI API.
+// Browser speech-to-text only. Never sends a message or calls the AI Marius AI API.
 export class Dictation {
  constructor({Recognition=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition,onText=()=>{},onState=()=>{},setTimer=setTimeout,clearTimer=clearTimeout}={}){Object.assign(this,{Recognition,onText,onState});this.setTimer=(...args)=>setTimer(...args);this.clearTimer=(...args)=>clearTimer(...args);this.state='idle';this.generation=0;this.recognition=null;this.timer=null;this.disposed=false}
  get supported(){return Boolean(this.Recognition)}

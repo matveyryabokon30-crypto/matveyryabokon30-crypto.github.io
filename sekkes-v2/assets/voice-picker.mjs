@@ -56,7 +56,7 @@ export class VoicePicker {
       choose.onclick=async()=>{
         if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
         this.player.stop();
-        if(!this.preferences.loaded){this.message.textContent='Войди в SEKKES, чтобы сохранить голос в профиле.';return;}
+        if(!this.preferences.loaded){this.message.textContent='Войди в AI Marius, чтобы сохранить голос в профиле.';return;}
         const saved=this.preferences.select(voice.id);this.render();
         try{await saved;if(this.opened)this.message.textContent='Голос сохранён для следующего разговора.';}
         catch{if(this.opened)this.message.textContent='Не удалось сохранить голос. Попробуй ещё раз.';}

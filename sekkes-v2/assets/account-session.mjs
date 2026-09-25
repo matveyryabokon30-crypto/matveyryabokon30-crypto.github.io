@@ -2,7 +2,7 @@ import {createClient} from './vendor/supabase.mjs';
 import {S3Api,S3Error} from './s3-api.mjs?v=2026.09.21-ui.9.20';
 import {SekkesPasskeys} from './passkeys.mjs';
 
-// SDK owns rotation, cross-tab locking and persistence; SEKKES owns admission.
+// SDK owns rotation, cross-tab locking and persistence; AI Marius owns admission.
 export class AccountSession {
  constructor(api,{factory=createClient,storage=globalThis.localStorage,onLost=()=>{}}={}){
   this.api=api;this.closing=null;this.epoch=0;this.allowed=false;this.onLost=onLost;

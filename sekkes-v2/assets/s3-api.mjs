@@ -1,5 +1,5 @@
 import {createProfileSync} from './profile-sync.mjs';
-/** SEKKES S3 client. Session tokens are sent only to the dedicated SEKKES project. */
+/** AI Marius S3 client. Session tokens are sent only to the dedicated AI Marius project. */
 const PROTECTED=new Set(['ctcoqgsztdtsazdiwcmd','emenwjzhjsieivbfxmuo']);
 export class S3Error extends Error{constructor(code){super(code);this.code=code;}}
 export class S3Api{

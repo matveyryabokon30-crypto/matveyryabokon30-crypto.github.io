@@ -16,7 +16,7 @@ import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09
 import {VoicePicker} from './voice-picker.mjs?v=2026.09.20-s3.28';
 import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.20';
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
-const msg={VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер SEKKES недоступен.',AUTH_REQUIRED:'Войди в SEKKES.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Недостаточно доступного резерва бюджета. Требуется сверка расходов.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',DUPLICATE_TURN:'Этот запрос уже принят сервером. Не отправляй его повторно. Ответ можно проверить после повторного входа.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
+const msg={VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер AI Marius недоступен.',AUTH_REQUIRED:'Войди в AI Marius.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Недостаточно доступного резерва бюджета. Требуется сверка расходов.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',DUPLICATE_TURN:'Этот запрос уже принят сервером. Не отправляй его повторно. Ответ можно проверить после повторного входа.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
 let account=null,accountPanel=null,accountRestore=null;
 let journalId=null,textBusy=false,retryTurn=null;
 let transcript=null,historyCursor=null,historyLoading=false,hasMoreHistory=false;
@@ -35,7 +35,7 @@ const draft=$('#draft'),dialog=$('#dialog'),body=$('#dialogContent');
 const status=t=>{if(globalThis.window?.SekkesUI)globalThis.window?.SekkesUI.status(t);else $('#aiStateLabel').textContent=t};
 function note(t){const x=$('#toast');x.textContent=t;x.hidden=false;clearTimeout(note.t);note.t=setTimeout(()=>x.hidden=true,6500)}
 function fail(e){note(msg[e?.code]||msg.SERVICE_UNAVAILABLE)}
-function title(t){return'<div class="kicker">SEKKES</div><h2 id="dialogTitle">'+t+'</h2>'}
+function title(t){return'<div class="kicker">AI Marius</div><h2 id="dialogTitle">'+t+'</h2>'}
 function view(html){body.innerHTML=html;dialog.dataset.s3='true';if(!dialog.open)dialog.showModal()}
 function logged(){return api?.token&&(Date.now()<api.expiresAt||account?.allowed)}
 async function ensure(action){pending=action;if(!api){fail(new S3Error('SETUP_REQUIRED'));return false}if(!logged()&&accountRestore)await accountRestore;if(!logged()){login();return false}try{await account?.ensureFresh();return true}catch(e){fail(e);return false}}
@@ -114,7 +114,7 @@ function voiceControls(state){
  button.textContent=state==='recovery'?'Завершить прошлый разговор':state==='recovering'?'Завершаю прошлый разговор…':state==='closing'?'Завершаю разговор…':active?'Завершить разговор':'Начать голосовой разговор';
  button.disabled=waiting;
  $('#micButton').hidden=active||waiting||state==='recovery';
- $('#s3LoginButton').textContent=logged()?'Выйти из аккаунта':'Войти в SEKKES';
+ $('#s3LoginButton').textContent=logged()?'Выйти из аккаунта':'Войти в AI Marius';
  document.body.classList.toggle('s3-live',state==='live');
 }
 function silenceTransport(x){
@@ -145,6 +145,7 @@ async function waitForIce(pc){
  });
 }
 async function startLive(){
+ if(textBusy)return note('Дождись ответа на предыдущее сообщение, затем начни голосовой разговор.');
  if(starting||closing||recovering||live)return;
  if(globalThis.window?.SekkesUI?.captureBusy)return note('Сначала заверши запись в чате.');
  if(recoveryNeeded)return recoverPrevious();
@@ -214,6 +215,7 @@ async function startLive(){
   x.stage='ICE';await waitForIce(pc);check();voiceTrace('offer.ready');
   const sdp=pc.localDescription?.sdp;if(!sdp)throw new S3Error('LOCAL_SDP_INVALID');
   x.stage='PROFILE';const profileResult=await profileReady;check();if(!profileResult.ok)throw profileResult.error;
+  x.stage='CONTEXT';await transcript?.flush();check();
   x.id=crypto.randomUUID();x.stage='PROVIDER';voiceTrace('provider.request');
   const answer=await api.createLive(sdp,selectedVoice,undefined,'conversation',x.id);check();voiceTrace('provider.ready');x.id=answer.id;
   x.identity=new VoiceIdentityHandshake({send:e=>dc.send(JSON.stringify(e)),instruction:answer.startupInstruction,onReady:()=>voiceTrace('identity.ready'),onError:()=>{voiceTrace('error','IDENTITY');if(live===x)note('Не удалось подтвердить настройки голоса. Заверши разговор и начни заново.')}});
@@ -293,8 +295,8 @@ async function toggleVoice(){
  return startLive();
 }
 
-function logout(){transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;accountPanel?.cancel();pending=null;retryTurn=null;globalThis.window?.SekkesUI?.reset();journalId=null;dialog.close();picker?.close();preferences?.reset();endLive(undefined,'logout');api?.logout();accepted=false;textHistory=[];draft.value='';$('#s3Transcript')?.remove();status('Войди в SEKKES')}
-function mount(){if(globalThis.window?.SekkesUI)return;const tools=document.createElement('div');tools.className='s3-tools';tools.innerHTML='<button id="s3LoginButton" class="s3-login">Войти в SEKKES</button>';$('#aiFull').append(tools);$('#s3LoginButton').onclick=()=>logged()?logout():login();}
+function logout(){transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;accountPanel?.cancel();pending=null;retryTurn=null;globalThis.window?.SekkesUI?.reset();journalId=null;dialog.close();picker?.close();preferences?.reset();endLive(undefined,'logout');api?.logout();accepted=false;textHistory=[];draft.value='';$('#s3Transcript')?.remove();status('Войди в AI Marius')}
+function mount(){if(globalThis.window?.SekkesUI)return;const tools=document.createElement('div');tools.className='s3-tools';tools.innerHTML='<button id="s3LoginButton" class="s3-login">Войти в AI Marius</button>';$('#aiFull').append(tools);$('#s3LoginButton').onclick=()=>logged()?logout():login();}
 mount();
 window.SekkesS2={retryMessage,loadProfile:()=>api.syncProfile(),saveProfile:(uid,value)=>api.saveProfile(uid,value),chatMedia:body=>api.request('media',body?{method:'POST',body}:{}),ownerRequest:(path,body)=>ownerRequest(api,path,body),ownerCode:code=>ownerCode(account,api,code),ownerPasskey:async()=>{const keys=account.passkeys(()=>{});try{if(!await keys.signIn())throw Error('RECENT_PROOF_REQUIRED');return await ownerRequest(api,'activate',{});}finally{keys.destroy();}},voiceFailed:id=>render('user','Не отправлено',{id:'j:'+id+':user',state:'failed'}),recordingStarted:()=>globalThis.window?.SekkesUI?.beforeText(),voicePending:id=>render('user','…',{id:'j:'+id+':user',state:'pending'}),saveDraft,loadEarlier:()=>hasMoreHistory?syncHistory(true):Promise.resolve(),get voiceActive(){return Boolean(restartPending||(starting&&!startup?.cancelled)||live||recovering||recoveryNeeded)},stopVoice:()=>recoveryNeeded&&!live&&!starting?recoverPrevious():endLive(),toggleMic:toggleVoice,sendText,sendVoice,interrupt:()=>endLive(undefined,'interrupt'),end:logout,login,faceIdSettings,voiceSettings:voicePicker,accountAction:()=>logged()?logout():login(),get updateReady(){return !accountRestore&&!loginBusy&&!historyLoading},get busy(){return Boolean(live||starting||closing||recovering||textBusy)},get dirty(){return Boolean(live||starting||closing||draft.value.trim()||textHistory.length||loginBusy||textBusy)}};
 addEventListener('sekkes:route',e=>{if(!globalThis.window?.SekkesUI&&!['ai','text'].includes(e.detail.route)&&live)endLive()});
@@ -302,11 +304,11 @@ document.addEventListener('visibilitychange',()=>{if(!globalThis.window?.SekkesU
 addEventListener('pagehide',()=>{endLive(undefined,'pagehide');accountPanel?.cancel();});
 dialog.addEventListener('close',()=>accountPanel?.cancel());
 // Runtime configuration. Generated alongside this exact release; no startup JSON timeout.
-try{config=runtimeConfig;api=new S3Api(config);voiceManifest=voiceCatalog;preferences=new VoicePreferences({profile:supabaseVoiceProfile(api),enabledIds:voiceManifest.voices.filter(v=>v.enabled).map(v=>v.id),defaultVoice:'bossa',storage:{setItem:(k,v)=>localStorage.setItem(k,v)},onChange:id=>{selectedVoice=id;}});status('Войди в SEKKES для разговора')}catch{status('Не удалось загрузить настройки приложения. Обнови SEKKES.')}
+try{config=runtimeConfig;api=new S3Api(config);voiceManifest=voiceCatalog;preferences=new VoicePreferences({profile:supabaseVoiceProfile(api),enabledIds:voiceManifest.voices.filter(v=>v.enabled).map(v=>v.id),defaultVoice:'bossa',storage:{setItem:(k,v)=>localStorage.setItem(k,v)},onChange:id=>{selectedVoice=id;}});status('Войди в AI Marius для разговора')}catch{status('Не удалось загрузить настройки приложения. Обнови AI Marius.')}
 
 if(api){
- account=new AccountSession(api,{onLost:()=>{transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;endLive(undefined,'logout');accepted=false;textHistory=[];journalId=null;globalThis.window?.SekkesUI?.reset();status('Войди в SEKKES');}});
- accountRestore=account.restore().then(async restored=>{if(restored)await finishAccountLogin();}).catch(()=>{status('Войди в SEKKES для разговора');}).finally(()=>{accountRestore=null;});
+ account=new AccountSession(api,{onLost:()=>{transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;endLive(undefined,'logout');accepted=false;textHistory=[];journalId=null;globalThis.window?.SekkesUI?.reset();status('Войди в AI Marius');}});
+ accountRestore=account.restore().then(async restored=>{if(restored)await finishAccountLogin();}).catch(()=>{status('Войди в AI Marius для разговора');}).finally(()=>{accountRestore=null;});
 }
 
 addEventListener('online',()=>{transcript?.flush().then(()=>syncHistory()).catch(()=>{});});
