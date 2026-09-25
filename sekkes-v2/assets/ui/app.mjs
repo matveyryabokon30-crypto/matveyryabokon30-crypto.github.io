@@ -1,3 +1,4 @@
+import {retryPayload} from '../message-retry.mjs';
 import {createMessageStore} from './chat/model.mjs';
 import {messageActions,deliveryMark,messageKey} from './message-actions.mjs';
 import {interactionPriority} from './interaction-priority.mjs';
@@ -67,6 +68,11 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   const state=meta.state||((previous?.dataset.delivery==='failed'||previous?.dataset.delivery==='pending')&&meta.at?'sent':previous?.dataset.delivery)||'';
   const stampAt=meta.stampAt||meta.at||(state==='sent'&&previous?.dataset.delivery!=='sent'?new Date().toISOString():previous?.dataset.stampAt)||node.dataset.at;
   node.dataset.stampAt=stampAt;const stamp=messageTime(stampAt,state,role);if(stamp){const time=el('time','message-time',stamp.text);time.dateTime=stamp.iso;time.title=stamp.title;time.setAttribute('aria-label',stamp.title);if(role==='user')time.append(deliveryMark(state||'sent'));node.append(time)}
+  if(role==='user'&&state==='failed'){
+   const retry=retryPayload(meta.id,text,meta.retry);
+   if(retry){const button=el('button','message-retry','Отправить снова');button.type='button';button.disabled=textPending;button.setAttribute('aria-label','Отправить это сообщение снова');
+    button.addEventListener('click',async event=>{event.stopPropagation();if(textPending||ctx.runtime()?.busy||recording?.busy||dictation?.busy)return;button.disabled=true;try{await ctx.runtime()?.retryMessage(retry);}finally{if(button.isConnected)button.disabled=textPending;}});node.append(button);}
+  }
   actions?.bind(node,{scope:'home',id:meta.id||messageKey('live',null,role+':'+node.dataset.at+':'+JSON.stringify(text)),text:typeof text==='string'?text:node.querySelector('.rich-message')?.textContent||''});
   if(meta.id)messageRecords.set(meta.id,{role,text,meta:{...meta,state,at:node.dataset.at,stampAt}});
   if(state)node.dataset.delivery=state;if(previous)previous.replaceWith(node);else list.append(node);
@@ -106,7 +112,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
    });
   },status(text){status.textContent=text;status.hidden=!text},voice:updateVoice,render(role,text,meta){appendMessage(role,text,meta);if(role==='user')ctx.timeline?.jump()},beforeText(){/* Capture/auth completions must not reopen a collapsed chat. */},
   get captureBusy(){return Boolean(recording?.busy||dictation?.busy)},sendRecording(){recording?.send()},
-  textBusy(busy){textPending=busy;ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){const changed=ctx.account?.id!==user?.id;ctx.account=user;if(changed)files.reset();if(changed||!ownerAllowed)void probeOwner();ctx.profileUpdate?.();if(resume&&user?.id===resume.uid){const saved=resume;resume=null;draft.value=saved.draft||'';for(const row of saved.messages||[])appendMessage(row.role,row.text,row.meta);ctx.runtime()?.saveDraft?.();updateSend();ctx.timeline?.jump()}},
+  textBusy(busy){textPending=busy;document.querySelectorAll('.message-retry').forEach(button=>button.disabled=busy);ctx.captureChanged();composer.setAttribute('aria-busy',String(busy))},account(user){const changed=ctx.account?.id!==user?.id;ctx.account=user;if(changed)files.reset();if(changed||!ownerAllowed)void probeOwner();ctx.profileUpdate?.();if(resume&&user?.id===resume.uid){const saved=resume;resume=null;draft.value=saved.draft||'';for(const row of saved.messages||[])appendMessage(row.role,row.text,row.meta);ctx.runtime()?.saveDraft?.();updateSend();ctx.timeline?.jump()}},
   reset(){conversationOpen=false;paintConversation();files.reset();resume=null;messageRecords.clear();try{sessionStorage.removeItem(resumeKey)}catch{}ctx.pauseMedia();dictation?.cancel();recording?.reset();for(const url of attachmentURLs)URL.revokeObjectURL(url);attachmentURLs.clear();pendingMessages.length=0;ctx.messages?.replaceChildren(el('p','empty-state','Диалог пуст.'));cache.get('home')?.reset();ctx.account=null;void probeOwner();ctx.profileUpdate?.();if(current==='admin')ctx.navigate('home')},
   voiceEvent(event){if(event.type==='response.audio.delta'||event.type==='response.output_audio.delta')updateVoice('speaking');if(event.type==='response.audio.done'||event.type==='response.output_audio.done'||event.type==='input_audio_buffer.speech_started')updateVoice('listening')}
  };
