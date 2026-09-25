@@ -1,7 +1,7 @@
 {
   "qa-media.html": "862e73d6fcdd171962455e568de835a88457f1b214ba40ecee97f6f89e0a4bab",
   "classic.html": "fdb2d5b2b190092cab896d471db0c42db8e5054c918246fc58e4fcc959fc1629",
-  "version.json": "340eb1537eb74bb87cec55ba508ec9d13ea7a54cfb329c5d8e6b2bfbcd5a9d9f",
+  "version.json": "40d2292a1f29cf75b13c3d1cc7db4ab77071f58b4e48434faf302590db04dc8c",
   "qa-media-v2.html": "706e8de86f3a4f99f1ad8dbdde047eca4d80e0a0a4d6cfad4e8fdb3b53378c18",
   "qa-stop.html": "e45fdb2a4b12af62fbfa77ea760adb65cfb04ab0658b41c5b694f6559ada20b0",
   "qa.html": "ea87e04450a76240bc88bebed1b920159180ad2b5c3026a265d5cd2da49ce5c5",
@@ -10,12 +10,12 @@
   "manifest.webmanifest": "35a4ede8417e4d54ce70485cf2a3da8faaa26d9bd4c0b90c7042081424566f0b",
   "voices.json": "61a91c9d5fb7487467412963d3cd187f1273ec3241abe4aa3c2e29ac4795ca01",
   "index.html": "ff07a30f77358b7aac7f87aa2a774b9196c012c0c52f02be7932c0352f47a261",
-  "sw.js": "1870e4c9a231f7589d45fecb127019e8787cc6a9a470b21a48af56b4f20d4e64",
+  "sw.js": "2b80684ef3b332fa320e2d92c2c267f2c6c46489e9dd37ab7bf2802bc955b842",
   "qa/chat-time-update.test.mjs": "b6eb3b0bcc141c229007d6f6631da150b04f310bc21b5743ed64f11cb005507b",
   "assets/registry-foundation.mjs": "c5da3e69a58768add40c5bc719470d4946bd82d0ee48a2e4fcb7821970996bab",
   "assets/s2-api-3.mjs": "3d97b64dae109ba2fb38396b06abad6b5f41340db9fc2692d84b9d8049ec6d8b",
   "assets/topology-global.mjs": "5ec2fce844a43dbcb508006cbfdc6904457b18e5b7c09640ede2584000025d02",
-  "assets/voice-trace.mjs": "6bedb7d831a0acc6a556a857172afd59c746317febb8411397073f1b114b2ccf",
+  "assets/voice-trace.mjs": "0e3fdd1ab06beee51c0a47bee9a46097a0d97a268df85870b4734da468769a9a",
   "assets/topology-cloth.mjs": "4fcd5e9bddded622ffbefb1d000c2192c55fbe7c00cf0636dfe401ae959ea94e",
   "assets/topology-evolving-core.mjs": "e13208e23de42dc0bddc11e422d0810d838ae37084c1a52b20783298ede2418a",
   "assets/ui-s1-1.css": "f26194e360d14d9b76a2007fb891acfb4e0a4af4a01d8d6435373281589b5efe",
@@ -50,7 +50,7 @@
   "assets/ui-s2-3.js": "b8725a4fe3db5e7823a2c6759e0ed62ddf5716bf18dc63811aed17d9e675f5fe",
   "assets/voice-end-command.mjs": "e59bb910a8ecb7a8b7335b8ee2d437a2bcc34b13ff48df1d03ec97d3004de0e8",
   "assets/preview-player.mjs": "50f56b889614c9fe5d6317bb730f6eb8f58d11a0ab6da6b8fefa1b7ebf9535f2",
-  "assets/voice-s3-0.mjs": "c63d1a29dcc4be3d20200f2caad5d5d78c53e28a1d3cddaafe03d6ef0e2ad9f6",
+  "assets/voice-s3-0.mjs": "686b556459d615416f86888eadbbb58732d2f7a7efdaafcb64370fff79e5610d",
   "assets/topology-chrome.mjs": "0743d401fa45df5364742bf422212407bbf1463392b578c3801d174d651a2f3d",
   "assets/ui/owner.css": "82e560273376593b81b3af687b181b9d1fc5759c47fbf8c7e93098eb26b48580",
   "assets/ui/mic-wave.mjs": "53e7d94a2a8e478fd3a579c1c541c6119a459b430a9bdda82db3712dca6bcfce",
@@ -93,5 +93,6 @@
   "assets/ui/screens/home.mjs": "4dd551340c03819ba64199419673cd552eb2921d9fed83bcc39bde9e68ee50b7",
   "assets/ui/screens/settings.mjs": "e8fc8f22ce5a9551730d4361a6cfdccc4a946112557d354c0d1de9d908fcf96e",
   "assets/ui/owner-dashboard.mjs": "7d312893fe7af979cd3701998aa865645101e9c09292b3d76eb072d8b5ffbda7",
-  "assets/voice-switch.mjs": "48cace8e092c3940d435c54e1c6208a3378230e3b627ed7822bad911389cb7d0"
+  "assets/voice-switch.mjs": "48cace8e092c3940d435c54e1c6208a3378230e3b627ed7822bad911389cb7d0",
+  "assets/voice-handoff-media.mjs": "212d83d2228afb00141f74d4f200d7fab643a623c2eeeca6800a31c62691d46e"
 }

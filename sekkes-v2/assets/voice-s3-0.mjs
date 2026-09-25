@@ -1,3 +1,4 @@
+import {retainVoiceMedia} from './voice-handoff-media.mjs';
 import {VoiceSwitch} from './voice-switch.mjs';
 import {retryExisting} from './message-retry.mjs';
 import {ownerRequest,ownerCode} from './owner-api.mjs';
@@ -17,7 +18,7 @@ import {VoicePreferences,supabaseVoiceProfile} from './preferences.mjs?v=2026.09
 import {VoicePicker} from './voice-picker.mjs?v=2026.09.20-s3.28';
 import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.20';
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
-const msg={VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер AI Marius недоступен.',AUTH_REQUIRED:'Войди в AI Marius.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Недостаточно доступного резерва бюджета. Требуется сверка расходов.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',DUPLICATE_TURN:'Этот запрос уже принят сервером. Не отправляй его повторно. Ответ можно проверить после повторного входа.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
+const msg={READY_TIMEOUT:'Звук не подключился. Нажми кнопку голосового разговора, чтобы повторить без перезагрузки.',VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер AI Marius недоступен.',AUTH_REQUIRED:'Войди в AI Marius.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Недостаточно доступного резерва бюджета. Требуется сверка расходов.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',DUPLICATE_TURN:'Этот запрос уже принят сервером. Не отправляй его повторно. Ответ можно проверить после повторного входа.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
 let account=null,accountPanel=null,accountRestore=null;
 let journalId=null,textBusy=false,retryTurn=null,activeRun=null,activeReady=false,queueSending=false;
 let transcript=null,historyCursor=null,historyLoading=false,hasMoreHistory=false;
@@ -163,7 +164,7 @@ async function waitForIce(pc){
   pc.addEventListener('icegatheringstatechange',changed);changed();
  });
 }
-async function startLive({handoff=false}={}){
+async function startLive({handoff=false,media=null}={}){
  if(textBusy)return note('Дождись ответа на предыдущее сообщение, затем начни голосовой разговор.');
  if(starting||closing||recovering||live)return;
  if(globalThis.window?.SekkesUI?.captureBusy)return note('Сначала заверши запись в чате.');
@@ -171,13 +172,15 @@ async function startLive({handoff=false}={}){
  if(!logged()){if(await ensure('live'))return startLive();return;}
  starting=true;const x={cancelled:false,id:null,stream:null,pc:null,audio:null,stage:'MIC',introDone:false,outputReady:false,channelReady:false};startup=x;
  x.settled=new Promise(resolve=>{x.resolveSettled=resolve;});
+ x.connected=new Promise((resolve,reject)=>{x.resolveConnected=resolve;x.rejectConnected=reject;});x.connected.catch(()=>{});
  voiceTrace('begin');voiceControls('connecting');status('');picker?.close();
  const active=()=>!x.cancelled&&(startup===x||live===x);
  const check=()=>{if(!active())throw Object.assign(new Error('CANCELLED'),{code:'CANCELLED'});};
  const markReady=()=>{
   if(live!==x||x.cancelled||x.ready||!x.startedEvent||!x.channelReady||!x.outputReady||!x.micAttached)return;
-  x.ready=true;clearTimeout(x.connectTimer);voiceTrace('ready');voiceControls('live');status('');
+  x.ready=true;x.resolveConnected();voiceTrace('ready');voiceControls('live');status('');
   try{x.lake=startLakeVisual(x.pc)}catch{/* The call remains usable without animation. */}
+  if(handoff){x.introDone=true;return;}
   // Start the entrance only after transport + remote playback have settled.
   // Neither an unavailable cue nor a rejected cue may strand the live connection.
   Promise.resolve(sessionCues?.play('start')).then(result=>{
@@ -187,8 +190,9 @@ async function startLive({handoff=false}={}){
   }).catch(e=>{if(active()){voiceTrace('intro.failed',e.name);note('Разговор подключён, но сигнал начала не воспроизвёлся.');}});
  };
  try{
-  sessionCues?.begin?.();voiceTrace('mic.request');
-  const capture=navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false}).then(stream=>{
+  if(media){Object.assign(x,media.take());voiceTrace('mic.reused');}else sessionCues?.begin?.();
+  voiceTrace('mic.request');
+  const capture=(x.stream?Promise.resolve(x.stream):navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false})).then(stream=>{
    if(x.cancelled){for(const t of stream.getTracks())t.stop();throw Object.assign(new Error('CANCELLED'),{code:'CANCELLED'});}x.stream=stream;return stream;
   });
   // Independent profile I/O overlaps capture and SDP/ICE preparation. Attach
@@ -202,7 +206,7 @@ async function startLive({handoff=false}={}){
   const pc=x.pc=new RTCPeerConnection();
   for(const track of x.stream.getTracks())pc.addTrack(track,x.stream);
   x.micAttached=true;voiceTrace('mic.attached');
-  const audio=x.audio=new Audio();audio.autoplay=true;audio.playsInline=true;
+  const audio=x.audio=x.audio||new Audio();audio.muted=false;audio.autoplay=true;audio.playsInline=true;
   x.playRemote=async()=>{
    if(!active()||!audio.srcObject||x.playPending)return;
    x.playPending=true;
@@ -249,7 +253,6 @@ async function startLive({handoff=false}={}){
   x.commands=new VoiceEndCommand({currentPersona:['bossa','delta'].includes(answer.voice)?'vera':'marius',switchVoice:target=>switchLiveVoice(x,target),send:event=>dc.send(JSON.stringify(event)),stop:()=>{if(live===x)endLive(undefined,'voice');},onError:()=>{voiceTrace('error','END_COMMAND');if(live===x)note('Голосовые команды недоступны. Используй кнопку завершения и ручной выбор голоса.');}});
   x.transcript=transcript;live=x;
   x.timer=setTimeout(()=>{if(live===x)endLive('45 минут завершены','duration');},45*60*1000);
-  x.connectTimer=setTimeout(()=>{if(live===x){voiceTrace('error',x.startedEvent?'AUDIO_TIMEOUT':'SESSION_TIMEOUT');endLive('Подключение не завершилось. Попробуй начать заново.','timeout');}},30000);
   // Counts only: no audio, text, addresses, SDP or identifiers in diagnostics.
   const sampleFlow=async()=>{
    if(!active()||!pc.getStats)return;
@@ -258,11 +261,12 @@ async function startLive({handoff=false}={}){
   };
   x.flowTimer=setTimeout(sampleFlow,5000);
   x.stage='REMOTE_SDP';await setupDeadline(pc.setRemoteDescription({type:'answer',sdp:answer.sdp}),20000,'REMOTE_SDP');check();voiceTrace('remote.sdp');markReady();
+  x.stage='READY';await setupDeadline(x.connected,30000,'READY');check();
  }catch(e){
   if(x.cancelled)e=Object.assign(new Error('CANCELLED'),{code:'CANCELLED'});
   x.cancelled=true;if(startup===x||live===x){voiceTrace('error',e.code||x.stage+'_'+e.name);if(e.code!=='CANCELLED'){sessionCues?.cancel();sessionCues?.resetRoute?.();}}
   const wasLive=live===x;if(wasLive)await endLive(undefined,'setup_error');else disposeTransport(x);
-  if(!wasLive&&x.id&&e.code!=='LIVE_BUSY'&&e.code!=='DUPLICATE_TURN'){try{await closeSession(x.id)}catch{recoveryNeeded=true;}}
+  if(!wasLive&&!x.closeRequested&&x.id&&e.code!=='LIVE_BUSY'&&e.code!=='DUPLICATE_TURN'){try{await closeSession(x.id)}catch{recoveryNeeded=true;}}
   if(e.code==='LIVE_BUSY')recoveryNeeded=true;
   if(e.code!=='CANCELLED'){const errors={NotAllowedError:'Разреши доступ к микрофону в настройках браузера.',NotFoundError:'Браузер не нашёл микрофон.',NotReadableError:'Микрофон занят или недоступен. Закрой другой голосовой звонок.'};note(errors[e.name]||msg[e.code]||'Не удалось подключить разговор. Код: '+(e.code||x.stage+'_'+e.name));}
  }finally{
@@ -274,16 +278,17 @@ async function startLive({handoff=false}={}){
 async function switchLiveVoice(x,target){
  if(live!==x||voiceSwitch?.pending)return false;
  const uid=api.user?.id,epoch=api.authEpoch,savedTranscript=transcript;
+ let media;try{media=retainVoiceMedia(x)}catch{note('Не удалось переключить голос. Заверши разговор кнопкой и подключись снова.');return false;}
  voiceSwitch=new VoiceSwitch({
   isCurrent:()=>api.authEpoch===epoch&&api.user?.id===uid&&logged(),
   onState:()=>note(target==='vera'?'Подключаю Веру…':'Возвращаю Мариуса…'),
   close:()=>endLive(undefined,'voice_switch'),
   flush:async()=>{if(recoveryNeeded)throw Error('CLOSE_FAILED');if(!savedTranscript||savedTranscript.disposed)throw Error('CONTEXT_UNAVAILABLE');await savedTranscript.flush();if(savedTranscript.queue.length)throw Error('CONTEXT_UNSAVED');},
   select:voice=>preferences.select(voice),
-  start:async()=>{await startLive({handoff:true});if(!live)throw Error('CONNECT_FAILED');},
+  start:async()=>{await startLive({handoff:true,media});if(!live?.ready)throw Error('CONNECT_FAILED');},
   onError:()=>note('Переключение остановлено. Проверь соединение и выбранный голос в настройках, затем повтори подключение.')
  });
- return voiceSwitch.run(target);
+ try{return await voiceSwitch.run(target);}finally{media.release();if(!live&&!starting)sessionCues?.resetRoute?.();}
 }
 async function closeSession(id){unclosedId=id;await api.closeLive(id);if(unclosedId===id)unclosedId=null;}
 async function recoverPrevious(){
@@ -298,12 +303,12 @@ function endLive(message,reason='button'){
  voiceTrace('stop',reason);
  if(restartPending){restartPending=false;voiceControls('idle');status('');}
  if(closing)return closing;
- if(startup){startup.cancelled=true;silenceTransport(startup);}
+ if(startup){startup.cancelled=true;startup.rejectConnected?.(new S3Error('CANCELLED'));silenceTransport(startup);}
  const x=live;
  if(!x){if(startup&&reason==='button')sessionCues?.play('end');else {sessionCues?.cancel();sessionCues?.resetRoute?.();}if(startup){disposeTransport(startup);if(!startup.id){startup=null;starting=false;}voiceControls('idle');status('');}return Promise.resolve();}
- live=null;x.cancelled=true;
+ live=null;x.cancelled=true;x.closeRequested=true;x.rejectConnected?.(new S3Error('CANCELLED'));
  silenceTransport(x);
- if(reason!=='voice_switch'&&(reason==='button'||reason==='voice'||x.channelReady||x.ready))sessionCues?.play('end');else {sessionCues?.cancel();sessionCues?.resetRoute?.();}
+ if(reason!=='voice_switch'&&(reason==='button'||reason==='voice'||x.channelReady||x.ready))sessionCues?.play('end');else if(reason!=='voice_switch'){sessionCues?.cancel();sessionCues?.resetRoute?.();}
  clearTimeout(x.timer);clearTimeout(x.connectTimer);clearTimeout(x.flowTimer);
  try{x.identity?.dispose()}catch{}
  let final;try{final=x.finalization?.finish()}catch{final=Promise.resolve(false)}
