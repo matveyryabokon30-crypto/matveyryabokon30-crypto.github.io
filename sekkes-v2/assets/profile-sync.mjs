@@ -9,7 +9,7 @@ export function createProfileSync(api,{store=openProfileStore(),locks=globalThis
   const epoch=api.authEpoch;
   const current=()=>{if(!uid||api.user?.id!==uid||api.authEpoch!==epoch)throw Error('Аккаунт изменился. Открой профиль заново.');};
   const task=async()=>{current();await api.sessionController?.ensureFresh();current();
-   const rpc=async args=>{current();const r=await api.transport(api.config.projectUrl+'/rest/v1/rpc/sekkes_profile_sync',{method:'POST',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{...api.auth(),'Content-Type':'application/json'},body:JSON.stringify(args)});const d=await r.json();current();if(!r.ok){const e=Error(d.message==='PROFILE_CONFLICT'?'Профиль изменён на другом устройстве. Закрой редактор и открой заново.':'Не удалось синхронизировать анкету. Проверь подключение и повтори.');e.code=d.message;throw e;}return {...d,data:profileText(d.data)};};
+   const rpc=async args=>{current();const r=await api.transport(api.config.projectUrl+'/rest/v1/rpc/sekkes_profile_sync',{method:'POST',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(12000),headers:{...api.auth(),apikey:api.config.publishableKey,'Content-Type':'application/json'},body:JSON.stringify(args)});const d=await r.json();current();if(!r.ok){const e=Error(d.message==='PROFILE_CONFLICT'?'Профиль изменён на другом устройстве. Закрой редактор и открой заново.':'Не удалось синхронизировать анкету. Проверь подключение и повтори.');e.code=d.message;throw e;}return {...d,data:profileText(d.data)};};
    return work({rpc,current});};
   const promise=tail.catch(()=>{}).then(()=>locks?locks.request('sekkes-profile-'+uid,task):task());tail=promise;return promise;
  }
@@ -18,7 +18,7 @@ export function createProfileSync(api,{store=openProfileStore(),locks=globalThis
   load(uid=api.user?.id){return run(uid,async({rpc,current})=>{
    const local=await store.load(uid);current();let remote=await rpc({});
    // Migrate this device's existing text once. Never overwrite an existing server profile.
-   if(remote.revision===0){try{remote=await rpc({p_data:profileText(local),p_revision:0});}catch(e){if(e.code!=='PROFILE_CONFLICT')throw e;remote=await rpc({});}}
+   if(Object.values(profileText(local)).some(Boolean)&&(remote.revision===0||(remote.revision===1&&!local._profileSync&&!Object.values(remote.data).some(Boolean)))){try{remote=await rpc({p_data:profileText(local),p_revision:remote.revision});}catch(e){if(e.code!=='PROFILE_CONFLICT')throw e;remote=await rpc({});}}
    return canonical(uid,local,remote,current);
   });},
   save(uid,next){return run(uid,async({rpc,current})=>{
