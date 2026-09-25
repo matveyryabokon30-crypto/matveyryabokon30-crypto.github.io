@@ -10,9 +10,17 @@ export function installEvolving(win,doc){
  function pause(){sketch?.noLoop();clock.pause();persist(true);}
  function apply(){if(!ready)return;if(state.active&&state.motion&&!doc.hidden)sketch.loop();else pause();}
  function diagnostic(){const canvas=doc.querySelector('canvas');if(!canvas)return;canvas.dataset.elapsed=clock.seconds.toFixed(2);canvas.dataset.epoch=String(field?.epoch||0);canvas.dataset.palette=String(Math.floor(clock.seconds/COLOR_SECONDS)%PALETTE.length);canvas.dataset.frame=String(frame);canvas.dataset.angle=cloth.angle.toFixed(3);canvas.dataset.density=String(density);}
+ const chromeSample=doc.createElement('canvas');chromeSample.width=16;chromeSample.height=1;
+ const chromeCx=chromeSample.getContext('2d',{willReadFrequently:true});
  function chrome(force=false){
   if(!force&&clock.seconds-lastChrome<.25)return;lastChrome=clock.seconds;
-  win.parent.postMessage({type:'sekkes-topology-palette',rgb:paletteAt(clock.seconds)},win.location.origin);
+  if(!cx||!chromeCx)return;
+  // Downsample only the upper band, not the full animated canvas. Reading 16
+  // pixels four times a second keeps browser chrome tied to the visible cloth.
+  chromeCx.drawImage(cx.canvas,0,0,cx.canvas.width,Math.min(cx.canvas.height,Math.round(40*density)),0,0,16,1);
+  const pixels=chromeCx.getImageData(0,0,16,1).data,rgb=[0,0,0];
+  for(let i=0;i<pixels.length;i+=4)for(let c=0;c<3;c++)rgb[c]+=pixels[i+c]/16;
+  win.parent.postMessage({type:'sekkes-topology-palette',rgb},win.location.origin);
  }
  function step(dt,prime=false){
   if(!cx||!field)return;

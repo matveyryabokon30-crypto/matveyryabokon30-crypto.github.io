@@ -1,7 +1,7 @@
 /* AI Marius surface contract. This file is the single authority for materials,
    decoration and editor layout; no route-specific framed-card variants. */
 :root,html[data-theme=light],html[data-theme=dark],body #shell,body #shell[data-route=home]{
- --ui-pane:rgba(15,29,36,.42);--ui-sheet:rgba(15,29,36,.68);
+ --ui-pane:rgba(235,245,250,.10);--ui-sheet:rgba(26,40,46,.28);
  --ui-selected:rgba(221,241,245,.12);--ui-ink:#eef5f7;--ui-muted:#bacdd3;
  --surface:var(--ui-pane);--surface-raised:var(--ui-sheet);--glass:var(--ui-pane);
  --selected:var(--ui-selected);--control-glass:var(--ui-pane);--control-line:transparent;
@@ -60,7 +60,7 @@ body .profile-editor .pe-pict{border-radius:0;flex-shrink:0;}
 body .profile-editor .pe-label,body .profile-editor :is(.pe-row-body small,.pe-note,.pe-toggle small){color:var(--ui-muted);}
 body .profile-editor .pe-field :is(input,textarea){border-radius:8px;padding:4px 0;min-height:32px;font-size:16px;line-height:1.5;}
 body .profile-editor .pe-field textarea{resize:none;}
-body .profile-editor .pe-field :is(input,textarea):focus{background:var(--ui-selected)!important;}
+body .profile-editor .pe-field :is(input,textarea):focus{background:transparent!important;}
 body .profile-editor .pe-field input[type=date]{min-height:36px;text-align:left;}
 body .profile-editor input::-webkit-date-and-time-value{text-align:left;}
 body .profile-editor .pe-contact-actions{padding:8px 0;}
@@ -492,3 +492,11 @@ body .profile-library-links .profile-action{display:inline-flex;align-items:cent
 .message-retry{display:block;min-height:44px;padding:8px 0;border:0;background:transparent;color:inherit;font:inherit;font-size:.85em;text-decoration:underline;cursor:pointer;touch-action:manipulation}
 .message-retry:disabled{opacity:.45;cursor:default}
 .message-retry:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+
+/* glass.57: a caret identifies text focus; never paint a rectangular tile
+   inside the shared glass pane. Checkbox/switch and story artwork keep their styles. */
+@layer sekkes-borderless{
+ body :is(textarea,input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])):is(:focus,:focus-visible){background:transparent!important;caret-color:var(--ui-ink);}
+}
+/* Blur the scene once at the outside of each floating control group. */
+body :is(.menu-trigger,.navigation-panel,.live-control,.composer,.owner-composer-pill,.profile-bottom,.owner-mode,.owner-tabs){-webkit-backdrop-filter:blur(16px) saturate(120%);backdrop-filter:blur(16px) saturate(120%);}

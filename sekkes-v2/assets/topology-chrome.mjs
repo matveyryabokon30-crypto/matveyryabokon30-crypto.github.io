@@ -15,8 +15,8 @@ export function mountTopologyChrome(doc){
 }
 export function chromeColor(rgb){
  if(!Array.isArray(rgb)||rgb.length!==3||Array.from(rgb).some(v=>!Number.isFinite(v)||v<0||v>255))return null;
- const base=[0,34,34];
- return '#'+rgb.map((v,i)=>Math.round(base[i]+(v-base[i])*.22).toString(16).padStart(2,'0')).join('');
+ // The frame supplies the rendered upper scene, already shaded by the cloth.
+ return '#'+rgb.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
 }
 export function applyTopologyChrome(doc,rgb){
  const color=chromeColor(rgb);if(!color)return false;
