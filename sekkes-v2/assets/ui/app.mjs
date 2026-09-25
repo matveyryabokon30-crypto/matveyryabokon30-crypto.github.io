@@ -74,7 +74,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  }
  function sendError(code){
   composer.dataset.error=code||'';
-  const labels={BUDGET_STOP:'Достигнут лимит запросов',JOURNAL_SAVE_FAILED:'Не удалось сохранить сообщение',NotAllowedError:'Нет доступа к микрофону',MIC_DENIED:'Нет доступа к микрофону'};
+  const labels={BUDGET_STOP:'Недостаточно доступного резерва бюджета. Требуется сверка расходов.',JOURNAL_SAVE_FAILED:'Не удалось сохранить сообщение',NotAllowedError:'Нет доступа к микрофону',MIC_DENIED:'Нет доступа к микрофону'};
   const label=code?(labels[code]||'Не удалось отправить. Повторить отправку'):'Отправить сообщение';
   $('#sendButton').setAttribute('aria-label',label);$('#sendButton').title=label;if(code)notify(label);
  }
