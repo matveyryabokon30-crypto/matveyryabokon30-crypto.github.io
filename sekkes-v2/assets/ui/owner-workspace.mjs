@@ -1,3 +1,4 @@
+import {instructionPanel} from './owner-instructions.mjs';
 import {readAssessment,assessmentSource,assessmentEditor,VERDICTS} from './owner-assessment.mjs';
 import {dashboardRecords} from './owner-dashboard.mjs';
 import {createTimeline} from './chat/timeline.mjs';
@@ -78,6 +79,16 @@ export function create(ctx){
  function paintDocuments(){
  const descriptions={instruction:'Действующие серверные настройки и учебные версии загружаются автоматически. Ручные документы ниже сохраняются как черновики.',material:'Учебные материалы и вложения административного диалога загружаются автоматически.',example:'Ответы административного диалога появляются автоматически. Они ещё не оценены как правильные учебные примеры.',evaluation:'Учебные и проверочные запуски появляются автоматически. Завершённый запуск не означает успешную оценку качества.'};
  content.append(hint(descriptions[current]));
+ if(current==='instruction'){
+  const ticket=epoch;
+  content.append(instructionPanel({state:data.instruction_control,documents:data.documents||[],available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,onApply:async payload=>{
+   busy=true;node.setAttribute('aria-busy','true');
+   try{const result=await request('instruction',payload);if(disposed||ticket!==epoch)return;data.instruction_control=result;paint();notice.textContent='Инструкция применена. Новые сообщения и голосовые подключения используют выбранную версию.';}
+   catch(e){throw Error(error(e));}
+   finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false');}}
+  }}));
+ }
+
  if(!data.dashboard)content.append(hint('Серверные настройки пока не загружены.'));
  if(data.dashboard?.catalog_unavailable)content.append(hint('Учебный каталог временно недоступен. Сохранённые документы доступны ниже.'));
  if(data.training_display_unavailable)content.append(hint('Журнал учебных запусков временно недоступен.'));
@@ -93,7 +104,7 @@ export function create(ctx){
  if(current==='material')for(const m of data.media||[]){const detail=el('details','owner-auto-record');detail.append(el('summary','',m.name),hint('Вложение административного диалога · '+m.mime),button('Открыть файл',()=>run(async()=>{const ticket=epoch,blob=await request('content',{id:m.id});if(ticket===epoch&&detail.isConnected){detail.querySelector('.owner-file-preview')?.remove();const box=el('div','owner-file-preview');box.append(preview(m,blob));detail.append(box);}})));automatic.append(detail);}
  if(!automatic.children.length)automatic.append(hint('Пока нет записей. Они появятся после загрузки материала или соответствующего запуска.'));
  content.append(automatic);
- const list=el('div','owner-documents');for(const d of latest().filter(x=>x.kind===current))list.append(button(`${d.title} · ${readAssessment(d)?VERDICTS[readAssessment(d).verdict]:'черновик'} · v${d.revision}`,()=>{if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm()}));content.append(list,button(current==='evaluation'?'Новая проверка':'Новый документ',()=>{if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm()}),button('Обновить данные',()=>{if(dirty)return;void run(load)}));
+ const list=el('div','owner-documents');for(const d of latest().filter(x=>x.kind===current))list.append(button(`${d.title} · ${readAssessment(d)?VERDICTS[readAssessment(d).verdict]:'черновик'} · v${d.revision}`,()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm()}));content.append(list,button(current==='evaluation'?'Новая проверка':'Новый документ',()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm()}),button('Обновить данные',()=>{if(dirty)return;void run(load)}));
  }
  function paintDocumentsForm(){if(current==='evaluation'&&(!editing||readAssessment(editing)))return openAssessment(editing?{...readAssessment(editing),title:editing.title}:{});content.querySelector('.owner-editor')?.remove();const form=el('div','owner-editor'),name=el('input','owner-input'),body=el('textarea','owner-input');name.placeholder='Название';name.setAttribute('aria-label','Название документа');name.maxLength=160;body.placeholder='Содержание';body.setAttribute('aria-label','Содержание документа');body.rows=10;body.maxLength=30000;name.value=editing?.title||'';body.value=editing?.content||'';name.oninput=body.oninput=()=>dirty=true;
  form.append(name,body,button('Сохранить новую версию',()=>run(async()=>{const id=editing?.id||crypto.randomUUID();await request('document',{id,kind:current,revision:editing?.revision||0,title:name.value,content:body.value});dirty=false;editing=null;await load();notice.textContent='Версия сохранена как черновик.'})));
