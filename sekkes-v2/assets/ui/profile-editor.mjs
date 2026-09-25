@@ -33,7 +33,7 @@ export function profileEditor({dialog,data,account,close,save,assetUrl,errorText
  const ai=el('label','pe-toggle');const aiLabel=el('span');aiLabel.append(el('span','','Автор ИИ'),el('small','','Метка для профиля с ИИ-персоной'));const toggle=el('input');toggle.type='checkbox';toggle.name='aiCreator';toggle.checked=data.aiCreator===true;toggle.setAttribute('role','switch');ai.append(aiLabel,toggle);info.append(ai);
  const privacy=group('Личная информация');action(privacy,'Видимость описания','eye','blue');action(privacy,'Видимость дня рождения','birthday','violet');action(privacy,'Настройки личной информации','shield','teal');action(privacy,'Автоматизация чатов','spark','violet');
  const accounts=group('Аккаунты');action(accounts,'Добавить аккаунт','plus','blue');action(accounts,'Выйти из аккаунта','exit','rose','Управление входом · позже');
- const note=el('p','pe-note','Профиль сохраняется на этом устройстве. Публичный показ пока не включён.');content.append(note);form.append(message);
+ const note=el('p','pe-note','Текст анкеты сохраняется в аккаунте и автоматически учитывается AI в общении. Контакты, фото и публикации остаются на устройстве.');content.append(note);form.append(message);
  form.onsubmit=async e=>{e.preventDefault();if(done.disabled)return;done.disabled=true;message.textContent='Сохраняем…';try{const next={...data,avatar,aiCreator:toggle.checked};for(const [key,input] of Object.entries(fields))next[key]=input.value.trim();if(!next.name)throw Error('Введи имя.');if(next.website&&!/^https?:\/\//i.test(next.website))throw Error('Укажи ссылку с https:// или http://.');await save(next); }catch(e){message.textContent=errorText(e);}finally{done.disabled=false;}};
  dialog.replaceChildren(form);return form;
 }

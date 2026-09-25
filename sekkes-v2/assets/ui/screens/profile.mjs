@@ -4,12 +4,12 @@ import {createPostFeed,createSequence,feedPosts} from '../profile-media.mjs';
 import {profileEditor} from '../profile-editor.mjs';
 import {profileCreate} from '../profile-create.mjs';
 import {el,icon,row} from '../components.mjs';
-import {openProfileStore,mediaTypes,validatePostText} from '../profile-store.mjs';
+import {mediaTypes,validatePostText} from '../profile-store.mjs';
 export function create(ctx){
  const node=el('section','screen profile-screen');node.setAttribute('aria-label','Профиль');
  const body=el('div','profile-body'),nav=el('nav','profile-bottom');nav.setAttribute('aria-label','Разделы профиля');
  node.append(body,nav);
- const store=openProfileStore(),urls=new Set();let data=null,uid=null,epoch=0,view='profile',filter='all',feedSaved=false,disposed=false,busy=false,loaded=false,loading=false,accountSeen=false;
+ const urls=new Set();let data=null,uid=null,epoch=0,view='profile',filter='all',feedSaved=false,disposed=false,busy=false,loaded=false,loading=false,accountSeen=false;
  const ownDialog=el('dialog','profile-dialog');ownDialog.setAttribute('aria-label','Редактирование профиля');node.append(ownDialog);
  const dialogUrls=new Set();let inlineFeed=null,viewer=null,storyModal=null,storyViewer=null,storyFocus=null;
  const routeHost=document.querySelector('#routeHost');
@@ -25,7 +25,7 @@ export function create(ctx){
  function empty(title,text){const n=el('div','profile-empty');n.append(el('h2','',title),el('p','',text));body.append(n);}
  function requireAccount(){if(!ctx.account){ctx.runtime()?.accountAction();return false;}if(!loaded){ctx.notify('Профиль ещё загружается.');return false;}return true;}
  function dialog(title){closeDialog();inlineFeed?.setActive(false);ownDialog.setAttribute('aria-label',title);ownDialog.append(button('Закрыть','close',closeDialog,'profile-dialog-close'),el('h2','',title));ownDialog.showModal();}
- async function persist(next,owner,token){if(busy)return false;busy=true;try{await store.save(owner,next);if(token!==epoch||disposed)return false;data=next;return true;}finally{busy=false;}}
+ async function persist(next,owner,token){if(busy)return false;busy=true;try{const saved=await ctx.runtime().saveProfile(owner,next);if(token!==epoch||disposed)return false;data=saved;return true;}finally{busy=false;}}
  function errorText(error){return error?.name==='QuotaExceededError'?'На устройстве недостаточно места. Удали ненужные материалы.':error.message||'Не удалось сохранить. Попробуй ещё раз.';}
  function closeStories(resume=true){
   if(!storyModal)return;const modal=storyModal,session=storyViewer,target=storyFocus;storyModal=null;storyViewer=null;storyFocus=null;session?.dispose();if(modal.open)modal.close();modal.remove();
@@ -37,8 +37,9 @@ export function create(ctx){
   storyViewer=createSequence({posts:data.posts,startId:typeof startId==='string'?startId:stories[0].id,profile:data,account:ctx.account,mode:'story',close:()=>closeStories(),onRemove:removePost});modal.append(storyViewer.node);
   modal.addEventListener('cancel',e=>{e.preventDefault();closeStories();});modal.addEventListener('close',()=>{if(storyModal===modal)closeStories();});modal.showModal();storyViewer.setActive(true);modal.querySelector('.profile-dialog-close')?.focus({preventScroll:true});
  }
- function edit(){
+ async function edit(){
   if(!requireAccount())return;const owner=uid,token=epoch;
+  try{const fresh=await ctx.runtime().loadProfile();if(owner!==uid||token!==epoch||disposed)return;data=fresh;}catch(e){ctx.notify(errorText(e));return;}
   closeDialog();inlineFeed?.setActive(false);ownDialog.setAttribute('aria-label','Редактировать профиль');
   profileEditor({dialog:ownDialog,data,account:ctx.account,close:closeDialog,assetUrl:blob=>url(blob,dialogUrls),errorText,openStory:openStories,
    save:async next=>{if(await persist(next,owner,token)){closeDialog();render();}}});
@@ -134,10 +135,10 @@ export function create(ctx){
   if(accountSeen&&nextUid===uid&&(loaded||loading||!uid))return;
   const token=++epoch;accountSeen=true;uid=nextUid;feedSaved=false;loaded=false;loading=Boolean(uid);data=null;
   closeDialog();render();if(!uid)return;
-  try{const result=await store.load(uid);if(token!==epoch||disposed)return;data=result;loaded=true;render();}
+  try{const result=await ctx.runtime().loadProfile();if(token!==epoch||disposed)return;data=result;loaded=true;render();}
   catch(e){if(token===epoch&&!disposed){empty('Не удалось открыть профиль',errorText(e));}}
   finally{if(token===epoch)loading=false;}
  }
  ctx.profileUpdate=update;update();
- return {node,dispose(){disposed=true;epoch++;routeObserver.disconnect();inlineFeed?.dispose();inlineFeed=null;closeDialog();release(urls);store.close();ctx.profileUpdate=null;}};
+ return {node,dispose(){disposed=true;epoch++;routeObserver.disconnect();inlineFeed?.dispose();inlineFeed=null;closeDialog();release(urls);ctx.profileUpdate=null;}};
 }

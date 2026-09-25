@@ -36,7 +36,7 @@ export class AccountSession {
  async restore(){
   const epoch=this.epoch;const {data,error}=await this.client.auth.getSession();
   if(error||!data?.session)return false;
-  try{const session=await this.validate(data.session,epoch);this.allowed=true;this.mirror(session);return true;}
+  try{const session=await this.validate(data.session,epoch);this.allowed=true;this.mirror(session);void this.api.syncProfile().catch(()=>{});return true;}
   catch(error){if(['AUTH_REQUIRED','OWNER_ONLY'].includes(error.code))await this.signOut();throw error;}
  }
  async admit(session,epoch=this.epoch){
@@ -48,7 +48,7 @@ export class AccountSession {
   const result=await this.client.auth.setSession({access_token:verified.access_token,refresh_token:verified.refresh_token});
   if(result.error)throw result.error;
   if(epoch!==this.epoch){await this.client.auth.signOut({scope:'local'});throw new S3Error('AUTH_CANCELLED');}
-  this.allowed=true;this.mirror({...result.data.session,user:verified.user});return true;
+  this.allowed=true;this.mirror({...result.data.session,user:verified.user});void this.api.syncProfile().catch(()=>{});return true;
  }
  async password(email,password){
   const epoch=this.epoch;const {data,error}=await this.candidate.auth.signInWithPassword({email,password});
