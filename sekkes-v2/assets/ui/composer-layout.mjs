@@ -14,6 +14,8 @@ export function resizeComposer(input, surface, {attachments=false, limit}={}) {
  mirror.value=input.value||input.placeholder||' ';
  document.body.append(mirror);
  const needed=Math.max(32,mirror.scrollHeight);mirror.remove();
- input.style.height=Math.min(cap,needed)+'px';
- input.style.overflowY=needed>cap?'auto':'hidden';
+ const height=Math.min(cap,needed)+'px',overflow=needed>cap?'auto':'hidden';
+ // Rewriting unchanged focused geometry can make iOS reposition its caret.
+ if(input.style.height!==height)input.style.height=height;
+ if(input.style.overflowY!==overflow)input.style.overflowY=overflow;
 }

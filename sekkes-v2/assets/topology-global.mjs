@@ -13,7 +13,8 @@ export function mountTopology(scene,doc=document){
  function refresh(){
   if(disposed)return;
   const active=!doc.hidden&&scene.isConnected;
-  const motion=doc.documentElement.dataset.motion!=='reduced'&&!reduced.matches&&doc.documentElement.dataset.interacting!=='true';
+  const editing=doc.documentElement.dataset.keyboardOpen==='true'||!!doc.activeElement?.matches('input,textarea,select,[contenteditable=true]');
+  const motion=!editing&&doc.documentElement.dataset.motion!=='reduced'&&!reduced.matches&&doc.documentElement.dataset.interacting!=='true';
   try{frame.contentWindow?.postMessage({type:'sekkes-topology-state',active,motion,user:active?levels.user:0,agent:active?levels.agent:0},win.location.origin);}catch{/* Decoration never blocks input. */}
  }
  function message(e){
@@ -22,12 +23,14 @@ export function mountTopology(scene,doc=document){
   if(e.data?.type==='sekkes-topology-palette')applyTopologyChrome(doc,e.data.rgb);
  }
  const observer=new win.MutationObserver(refresh);
- observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion','data-interacting']});
+ observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion','data-interacting','data-keyboard-open']});
 
+ const focusRefresh=()=>win.queueMicrotask(refresh);
+ doc.addEventListener('focusin',refresh);doc.addEventListener('focusout',focusRefresh);
  win.addEventListener('message',message);doc.addEventListener('visibilitychange',refresh);reduced.addEventListener('change',refresh);
  frame.addEventListener('load',refresh);scene.append(frame);
  const controller={setLevels(value){levels={user:bounded(value.user),agent:bounded(value.agent)};refresh();},dispose(){
-  if(disposed)return;disposed=true;observer.disconnect();win.removeEventListener('message',message);doc.removeEventListener('visibilitychange',refresh);reduced.removeEventListener('change',refresh);frame.removeEventListener('load',refresh);frame.remove();chrome.dispose();scenes.delete(scene);
+  if(disposed)return;disposed=true;observer.disconnect();doc.removeEventListener('focusin',refresh);doc.removeEventListener('focusout',focusRefresh);win.removeEventListener('message',message);doc.removeEventListener('visibilitychange',refresh);reduced.removeEventListener('change',refresh);frame.removeEventListener('load',refresh);frame.remove();chrome.dispose();scenes.delete(scene);
  }};
  scenes.set(scene,controller);refresh();return controller;
 }

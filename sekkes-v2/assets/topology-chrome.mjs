@@ -18,8 +18,15 @@ export function chromeColor(rgb){
  // The frame supplies the rendered upper scene, already shaded by the cloth.
  return '#'+rgb.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
 }
+const chromeSamples=new WeakMap();
 export function applyTopologyChrome(doc,rgb){
- const color=chromeColor(rgb);if(!color)return false;
+ if(!chromeColor(rgb))return false;
+ // Do not retint native keyboard/accessory surfaces or the fixed page behind
+ // them during editing. The scene pauses through the same focus lifecycle.
+ if(doc.documentElement.dataset.keyboardOpen==='true'||doc.activeElement?.matches('input,textarea,select,[contenteditable=true]'))return true;
+ const previous=chromeSamples.get(doc),smooth=previous?rgb.map((v,i)=>previous[i]+(v-previous[i])*.18):rgb.slice();
+ chromeSamples.set(doc,smooth);
+ const color=chromeColor(smooth);
  if(doc.documentElement.style.getPropertyValue('--topology-chrome')===color)return true;
  doc.documentElement.style.setProperty('--topology-chrome',color);
  doc.documentElement.style.backgroundColor=color;
