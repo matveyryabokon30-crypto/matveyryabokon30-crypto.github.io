@@ -1,3 +1,4 @@
+import {VoiceSwitch} from './voice-switch.mjs';
 import {retryExisting} from './message-retry.mjs';
 import {ownerRequest,ownerCode} from './owner-api.mjs';
 import {submitChatTurn} from './chat-turn.mjs';
@@ -29,8 +30,8 @@ async function syncHistory(older=false){
   if(older||!historyCursor){historyCursor=data.items[0]||historyCursor;hasMoreHistory=data.hasMore;}
  }finally{historyLoading=false;}
 }
-let startup=null,recoveryNeeded=false,recovering=false;
-let starting=false,closing=null,unclosedId=null,api=null,config=null,accepted=false,pending=null,live=null,textHistory=[],loginBusy=false,selectedVoice='bossa',preferences=null,picker=null,voiceManifest=null;
+let startup=null,recoveryNeeded=false,recovering=false,voiceSwitch=null;
+let starting=false,closing=null,unclosedId=null,api=null,config=null,accepted=false,pending=null,live=null,textHistory=[],loginBusy=false,selectedVoice='vesper',preferences=null,picker=null,voiceManifest=null;
 const draft=$('#draft'),dialog=$('#dialog'),body=$('#dialogContent');
 const status=t=>{if(globalThis.window?.SekkesUI)globalThis.window?.SekkesUI.status(t);else $('#aiStateLabel').textContent=t};
 function note(t){const x=$('#toast');x.textContent=t;x.hidden=false;clearTimeout(note.t);note.t=setTimeout(()=>x.hidden=true,6500)}
@@ -69,6 +70,7 @@ async function sendClarification(){
  finally{queueSending=false;globalThis.window?.SekkesUI?.textBusy(textBusy);}
 }
 async function sendMessage(turn){
+ voiceSwitch?.cancel();
  if(textBusy)return null;
  textBusy=true;activeRun=turn.id;activeReady=false;globalThis.window?.SekkesUI?.textBusy(true);const epoch=api.authEpoch;let acknowledgedText=null;status('');
  try{
@@ -161,7 +163,7 @@ async function waitForIce(pc){
   pc.addEventListener('icegatheringstatechange',changed);changed();
  });
 }
-async function startLive(){
+async function startLive({handoff=false}={}){
  if(textBusy)return note('Дождись ответа на предыдущее сообщение, затем начни голосовой разговор.');
  if(starting||closing||recovering||live)return;
  if(globalThis.window?.SekkesUI?.captureBusy)return note('Сначала заверши запись в чате.');
@@ -219,6 +221,13 @@ async function startLive(){
    x.transcript?.receive(x.id,event);
    if(event.type==='session.closed')voiceTrace('session.closed');
    if(!active()||live!==x)return;
+   if(x.introductionPending&&event.type==='session.output_transcript.delta'&&typeof event.delta==='string'){
+    x.introductionText=(x.introductionText+event.delta).slice(-2000);
+    if(/Вер[ауы]/u.test(x.introductionText)&&/Мариус/u.test(x.introductionText)&&!x.introductionSaving){
+     x.introductionSaving=true;
+     supabaseVoiceProfile(api).markIntroduced().then(()=>{x.introductionPending=false;}).catch(()=>{}).finally(()=>{x.introductionSaving=false;});
+    }
+   }
    if(event.type==='session.started'){x.startedEvent=event;voiceTrace('session.started');}
    x.commands?.receive(event);if(!active())return;
    try{x.identity?.receive(event)}catch{voiceTrace('error','IDENTITY_HANDLER');}
@@ -234,10 +243,10 @@ async function startLive(){
   x.stage='PROFILE';const profileResult=await profileReady;check();if(!profileResult.ok)throw profileResult.error;
   x.stage='CONTEXT';await transcript?.flush();check();
   x.id=crypto.randomUUID();x.stage='PROVIDER';voiceTrace('provider.request');
-  const answer=await api.createLive(sdp,selectedVoice,undefined,'conversation',x.id);check();voiceTrace('provider.ready');x.id=answer.id;
+  const answer=await api.createLive(sdp,selectedVoice,undefined,'conversation',x.id,handoff);check();voiceTrace('provider.ready');x.id=answer.id;x.introductionPending=answer.introductionPending===true;x.introductionText='';
   x.identity=new VoiceIdentityHandshake({send:e=>dc.send(JSON.stringify(e)),instruction:answer.startupInstruction,onReady:()=>voiceTrace('identity.ready'),onError:()=>{voiceTrace('error','IDENTITY');if(live===x)note('Не удалось подтвердить настройки голоса. Заверши разговор и начни заново.')}});
   x.finalization=prepareFinalization(x);
-  x.commands=new VoiceEndCommand({send:event=>dc.send(JSON.stringify(event)),stop:()=>{if(live===x)endLive(undefined,'voice');},onError:()=>{voiceTrace('error','END_COMMAND');if(live===x)note('Голосовая команда завершения недоступна. Используй кнопку завершения.');}});
+  x.commands=new VoiceEndCommand({currentPersona:['bossa','delta'].includes(answer.voice)?'vera':'marius',switchVoice:target=>switchLiveVoice(x,target),send:event=>dc.send(JSON.stringify(event)),stop:()=>{if(live===x)endLive(undefined,'voice');},onError:()=>{voiceTrace('error','END_COMMAND');if(live===x)note('Голосовые команды недоступны. Используй кнопку завершения и ручной выбор голоса.');}});
   x.transcript=transcript;live=x;
   x.timer=setTimeout(()=>{if(live===x)endLive('45 минут завершены','duration');},45*60*1000);
   x.connectTimer=setTimeout(()=>{if(live===x){voiceTrace('error',x.startedEvent?'AUDIO_TIMEOUT':'SESSION_TIMEOUT');endLive('Подключение не завершилось. Попробуй начать заново.','timeout');}},30000);
@@ -262,6 +271,20 @@ async function startLive(){
   if(!live&&!closing&&!starting&&!restartPending){voiceControls(recoveryNeeded?'recovery':'idle');status('');}
  }
 }
+async function switchLiveVoice(x,target){
+ if(live!==x||voiceSwitch?.pending)return false;
+ const uid=api.user?.id,epoch=api.authEpoch,savedTranscript=transcript;
+ voiceSwitch=new VoiceSwitch({
+  isCurrent:()=>api.authEpoch===epoch&&api.user?.id===uid&&logged(),
+  onState:()=>note(target==='vera'?'Подключаю Веру…':'Возвращаю Мариуса…'),
+  close:()=>endLive(undefined,'voice_switch'),
+  flush:async()=>{if(recoveryNeeded)throw Error('CLOSE_FAILED');if(!savedTranscript||savedTranscript.disposed)throw Error('CONTEXT_UNAVAILABLE');await savedTranscript.flush();if(savedTranscript.queue.length)throw Error('CONTEXT_UNSAVED');},
+  select:voice=>preferences.select(voice),
+  start:async()=>{await startLive({handoff:true});if(!live)throw Error('CONNECT_FAILED');},
+  onError:()=>note('Переключение остановлено. Проверь соединение и выбранный голос в настройках, затем повтори подключение.')
+ });
+ return voiceSwitch.run(target);
+}
 async function closeSession(id){unclosedId=id;await api.closeLive(id);if(unclosedId===id)unclosedId=null;}
 async function recoverPrevious(){
  if(starting||live||closing||recovering)return;
@@ -271,6 +294,7 @@ async function recoverPrevious(){
  finally{recovering=false;voiceControls(recoveryNeeded?'recovery':'idle');}
 }
 function endLive(message,reason='button'){
+ if(reason!=='voice_switch')voiceSwitch?.cancel();
  voiceTrace('stop',reason);
  if(restartPending){restartPending=false;voiceControls('idle');status('');}
  if(closing)return closing;
@@ -279,7 +303,7 @@ function endLive(message,reason='button'){
  if(!x){if(startup&&reason==='button')sessionCues?.play('end');else {sessionCues?.cancel();sessionCues?.resetRoute?.();}if(startup){disposeTransport(startup);if(!startup.id){startup=null;starting=false;}voiceControls('idle');status('');}return Promise.resolve();}
  live=null;x.cancelled=true;
  silenceTransport(x);
- if(reason==='button'||reason==='voice'||x.channelReady||x.ready)sessionCues?.play('end');else {sessionCues?.cancel();sessionCues?.resetRoute?.();}
+ if(reason!=='voice_switch'&&(reason==='button'||reason==='voice'||x.channelReady||x.ready))sessionCues?.play('end');else {sessionCues?.cancel();sessionCues?.resetRoute?.();}
  clearTimeout(x.timer);clearTimeout(x.connectTimer);clearTimeout(x.flowTimer);
  try{x.identity?.dispose()}catch{}
  let final;try{final=x.finalization?.finish()}catch{final=Promise.resolve(false)}
@@ -300,6 +324,7 @@ function endLive(message,reason='button'){
 }
 let restartPending=false;
 async function toggleVoice(){
+ if(voiceSwitch?.pending){voiceSwitch.cancel();return endLive(undefined,'button');}
  sessionCues?.unlock();
  if((starting&&!startup?.cancelled)||live)return endLive();
  if(recovering)return;
@@ -315,13 +340,13 @@ async function toggleVoice(){
 function logout(){transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;accountPanel?.cancel();pending=null;retryTurn=null;globalThis.window?.SekkesUI?.reset();journalId=null;dialog.close();picker?.close();preferences?.reset();endLive(undefined,'logout');api?.logout();accepted=false;textHistory=[];draft.value='';$('#s3Transcript')?.remove();status('Войди в AI Marius')}
 function mount(){if(globalThis.window?.SekkesUI)return;const tools=document.createElement('div');tools.className='s3-tools';tools.innerHTML='<button id="s3LoginButton" class="s3-login">Войти в AI Marius</button>';$('#aiFull').append(tools);$('#s3LoginButton').onclick=()=>logged()?logout():login();}
 mount();
-window.SekkesS2={get canClarify(){return Boolean(activeRun&&activeReady&&!queueSending)},retryMessage,loadProfile:()=>api.syncProfile(),saveProfile:(uid,value)=>api.saveProfile(uid,value),chatMedia:body=>api.request('media',body?{method:'POST',body}:{}),ownerRequest:(path,body)=>ownerRequest(api,path,body),ownerCode:code=>ownerCode(account,api,code),ownerPasskey:async()=>{const keys=account.passkeys(()=>{});try{if(!await keys.signIn())throw Error('RECENT_PROOF_REQUIRED');return await ownerRequest(api,'activate',{});}finally{keys.destroy();}},voiceFailed:id=>render('user','Не отправлено',{id:'j:'+id+':user',state:'failed'}),recordingStarted:()=>globalThis.window?.SekkesUI?.beforeText(),voicePending:id=>render('user','…',{id:'j:'+id+':user',state:'pending'}),saveDraft,loadEarlier:()=>hasMoreHistory?syncHistory(true):Promise.resolve(),get voiceActive(){return Boolean(restartPending||(starting&&!startup?.cancelled)||live||recovering||recoveryNeeded)},stopVoice:()=>recoveryNeeded&&!live&&!starting?recoverPrevious():endLive(),toggleMic:toggleVoice,sendText,sendVoice,interrupt:()=>endLive(undefined,'interrupt'),end:logout,login,faceIdSettings,voiceSettings:voicePicker,accountAction:()=>logged()?logout():login(),get updateReady(){return !accountRestore&&!loginBusy&&!historyLoading},get busy(){return Boolean(live||starting||closing||recovering||textBusy)},get dirty(){return Boolean(live||starting||closing||draft.value.trim()||textHistory.length||loginBusy||textBusy)}};
+window.SekkesS2={get canClarify(){return Boolean(activeRun&&activeReady&&!queueSending)},retryMessage,loadProfile:()=>api.syncProfile(),saveProfile:(uid,value)=>api.saveProfile(uid,value),chatMedia:body=>api.request('media',body?{method:'POST',body}:{}),ownerRequest:(path,body)=>ownerRequest(api,path,body),ownerCode:code=>ownerCode(account,api,code),ownerPasskey:async()=>{const keys=account.passkeys(()=>{});try{if(!await keys.signIn())throw Error('RECENT_PROOF_REQUIRED');return await ownerRequest(api,'activate',{});}finally{keys.destroy();}},voiceFailed:id=>render('user','Не отправлено',{id:'j:'+id+':user',state:'failed'}),recordingStarted:()=>globalThis.window?.SekkesUI?.beforeText(),voicePending:id=>render('user','…',{id:'j:'+id+':user',state:'pending'}),saveDraft,loadEarlier:()=>hasMoreHistory?syncHistory(true):Promise.resolve(),get voiceActive(){return Boolean(voiceSwitch?.pending||restartPending||(starting&&!startup?.cancelled)||live||recovering||recoveryNeeded)},stopVoice:()=>recoveryNeeded&&!live&&!starting?recoverPrevious():endLive(),toggleMic:toggleVoice,sendText,sendVoice,interrupt:()=>endLive(undefined,'interrupt'),end:logout,login,faceIdSettings,voiceSettings:voicePicker,accountAction:()=>logged()?logout():login(),get updateReady(){return !accountRestore&&!loginBusy&&!historyLoading},get busy(){return Boolean(voiceSwitch?.pending||live||starting||closing||recovering||textBusy)},get dirty(){return Boolean(voiceSwitch?.pending||live||starting||closing||draft.value.trim()||textHistory.length||loginBusy||textBusy)}};
 addEventListener('sekkes:route',e=>{if(!globalThis.window?.SekkesUI&&!['ai','text'].includes(e.detail.route)&&live)endLive()});
 document.addEventListener('visibilitychange',()=>{if(!globalThis.window?.SekkesUI&&document.hidden&&live)endLive('Голосовой разговор остановлен при уходе из приложения.')});
 addEventListener('pagehide',()=>{endLive(undefined,'pagehide');accountPanel?.cancel();});
 dialog.addEventListener('close',()=>accountPanel?.cancel());
 // Runtime configuration. Generated alongside this exact release; no startup JSON timeout.
-try{config=runtimeConfig;api=new S3Api(config);voiceManifest=voiceCatalog;preferences=new VoicePreferences({profile:supabaseVoiceProfile(api),enabledIds:voiceManifest.voices.filter(v=>v.enabled).map(v=>v.id),defaultVoice:'bossa',storage:{setItem:(k,v)=>localStorage.setItem(k,v)},onChange:id=>{selectedVoice=id;}});status('Войди в AI Marius для разговора')}catch{status('Не удалось загрузить настройки приложения. Обнови AI Marius.')}
+try{config=runtimeConfig;api=new S3Api(config);voiceManifest=voiceCatalog;preferences=new VoicePreferences({profile:supabaseVoiceProfile(api),enabledIds:voiceManifest.voices.filter(v=>v.enabled).map(v=>v.id),defaultVoice:'vesper',storage:{setItem:(k,v)=>localStorage.setItem(k,v)},onChange:id=>{selectedVoice=id;}});status('Войди в AI Marius для разговора')}catch{status('Не удалось загрузить настройки приложения. Обнови AI Marius.')}
 
 if(api){
  account=new AccountSession(api,{onLost:()=>{transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;endLive(undefined,'logout');accepted=false;textHistory=[];journalId=null;globalThis.window?.SekkesUI?.reset();status('Войди в AI Marius');}});

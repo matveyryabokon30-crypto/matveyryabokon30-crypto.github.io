@@ -20,10 +20,10 @@ export class VoicePicker {
     if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
     this.close();this.opened=true;
     const heading=document.createElement('h2');heading.textContent='Выбрать голос';heading.id='dialogTitle';
-    const intro=document.createElement('p');intro.textContent='Женский голос по умолчанию — Bossa, мужской — Vesper. Здесь можно выбрать другой голос для следующих разговоров.';
+    const intro=document.createElement('p');intro.textContent='Мариус — Vesper, его помощница Вера — Bossa. Разговор и память общие. Голос можно сменить здесь или попросить об этом во время разговора.';
     this.activeGender=this.voices.find(v=>v.id===this.preferences.selected)?.gender||'female';
     this.tabs=document.createElement('div');this.tabs.className='voice-tabs';this.tabs.setAttribute('role','tablist');this.tabs.setAttribute('aria-label','Тип голоса');
-    for(const [gender,label] of [['female','Женский'],['male','Мужской']]){
+    for(const [gender,label] of [['female','Вера'],['male','Мариус']]){
       const tab=document.createElement('button');tab.type='button';tab.textContent=label;tab.dataset.gender=gender;tab.id='voice-tab-'+gender;tab.setAttribute('role','tab');tab.setAttribute('aria-controls','voice-options');
       tab.onclick=()=>{this.stopPreview();this.activeGender=gender;this.render();};
       tab.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'female':e.key==='End'?'male':this.activeGender==='female'?'male':'female';this.tabs.querySelector('[data-gender="'+next+'"]').click();this.tabs.querySelector('[data-gender="'+next+'"]').focus();}};

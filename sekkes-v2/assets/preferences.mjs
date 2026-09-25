@@ -33,22 +33,22 @@ export class VoicePreferences {
 }
 
 export function supabaseVoiceProfile(api) {
-  async function request(method,voice) {
+  async function request(method,data) {
     await api.sessionController?.ensureFresh();
     const epoch=api.authEpoch;
     const auth=api.auth();
     const r=await api.transport(api.config.projectUrl+'/auth/v1/user',{
       method,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(10000),
       headers:{...auth,apikey:api.config.publishableKey,'Content-Type':'application/json'},
-      ...(method==='PUT'?{body:JSON.stringify({data:{sekkes_voice:voice}})}:{})
+      ...(method==='PUT'?{body:JSON.stringify({data})}:{})
     });
     if(epoch!==api.authEpoch)throw Error('AUTH_CHANGED');
     if(r.status===401)throw Error('AUTH_REQUIRED');
     if(!r.ok)throw Error('PROFILE_UNAVAILABLE');
     const user=await r.json();
     if(epoch!==api.authEpoch)throw Error('AUTH_CHANGED');
-    return user.user_metadata?.sekkes_voice??null;
+    return user.user_metadata||{};
   }
-  return {read:()=>request('GET'),write:voice=>request('PUT',voice)};
+  return {read:async()=>(await request('GET')).sekkes_voice??null,write:async voice=>(await request('PUT',{sekkes_voice:voice})).sekkes_voice??null,markIntroduced:async()=>{if((await request('PUT',{marius_vera_intro_v1:true})).marius_vera_intro_v1!==true)throw Error('PROFILE_UNAVAILABLE');}};
 }
 

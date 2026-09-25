@@ -20,7 +20,7 @@ export class S3Api{
    }catch(e){if(e.code==='AUTH_REQUIRED')throw e;}
   }
   throw new S3Error('LIVE_CLOSE_FAILED');
- } async createLive(sdp,voice='bossa',signal,mode='conversation',id=crypto.randomUUID()){await this.sessionController?.ensureFresh();if(mode==='conversation')await this.syncProfile();const r=await this.transport(this.live,{method:'POST',cache:'no-store',redirect:'error',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(60000)]):AbortSignal.timeout(60000),headers:{...this.auth(),'Content-Type':'application/json'},body:JSON.stringify({id,sdp,voice,mode,adult:true,consent:'sekkes-s3-live-openai-20260918'})});let d;try{d=await r.json()}catch{throw new S3Error('LIVE_UNAVAILABLE')}if(!r.ok)throw new S3Error(d.code||'LIVE_UNAVAILABLE');if(d.type!=='webrtc'||typeof d.sdp!=='string')throw new S3Error('LIVE_UNAVAILABLE');return d;}
+ } async createLive(sdp,voice='vesper',signal,mode='conversation',id=crypto.randomUUID(),handoff=false){await this.sessionController?.ensureFresh();if(mode==='conversation')await this.syncProfile();const r=await this.transport(this.live,{method:'POST',cache:'no-store',redirect:'error',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(60000)]):AbortSignal.timeout(60000),headers:{...this.auth(),'Content-Type':'application/json'},body:JSON.stringify({id,sdp,voice,mode,handoff:handoff===true,adult:true,consent:'sekkes-s3-live-openai-20260918'})});let d;try{d=await r.json()}catch{throw new S3Error('LIVE_UNAVAILABLE')}if(!r.ok)throw new S3Error(d.code||'LIVE_UNAVAILABLE');if(d.type!=='webrtc'||typeof d.sdp!=='string')throw new S3Error('LIVE_UNAVAILABLE');return d;}
 }
 
 
