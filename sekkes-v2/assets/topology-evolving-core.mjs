@@ -1,7 +1,7 @@
 // AI Marius evolving Topology. Derived from Vanta's particle/flow-field approach.
 // Attribution and MIT terms: topology-LICENSE.txt. Original effect: Kjetil Midtgarden Golid.
 // Original distributions and UI9.12/UI9.13 implementations remain unchanged.
-export const SHAPE_SECONDS=8, COLOR_SECONDS=8, COLOR_TRANSITION=6;
+export const SHAPE_SECONDS=8, COLOR_SECONDS=15, COLOR_TRANSITION=6;
 // Alternate colour families: no nine green/teal anchors before the first blue.
 // Thirty original anchors alternate with thirty new saturated accents.
 export const PALETTE=Object.freeze([
