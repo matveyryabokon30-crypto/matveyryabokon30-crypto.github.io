@@ -180,3 +180,9 @@ body{position:fixed;inset:0;height:100%;}
 body #shell,body #shell[data-route=home]{position:absolute;inset:var(--viewport-top,0px) 0 auto;height:var(--app-height,100dvh);}
 .navigation-layer,.message-menu-overlay{position:absolute;top:var(--viewport-top,0px);height:var(--app-height,100dvh);}
 
+
+/* Clarifications keep the same composer and one send action. */
+#shell #composer #sendButton[data-queue=true]{width:auto!important;min-width:88px!important;max-width:110px!important;flex:0 0 auto!important;aspect-ratio:auto;border-radius:0!important;gap:4px;}
+#shell #composer #sendButton[data-queue=true] svg{display:none;}
+#shell #composer #sendButton .queue-label{font-size:12px;white-space:nowrap;}
+#shell #composer:has(#sendButton[data-queue=true]):not([data-expanded=true]) #draft{padding-right:112px!important;}

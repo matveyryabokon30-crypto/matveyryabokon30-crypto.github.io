@@ -92,7 +92,8 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
   resizeDraft();
   const hasText=draft.value.trim().length>0||files.hasFiles,hasAudio=Boolean(recording?.hasAudio);
   $('#sendButton').hidden=!hasText&&!hasAudio;
-  files.lock(textPending||Boolean(recording?.busy)||Boolean(ctx.runtime()?.voiceActive));$('#sendButton').disabled=textPending||files.busy||(hasAudio?!recording.canSend:!hasText||Boolean(recording?.busy));
+  files.lock(textPending||Boolean(recording?.busy)||Boolean(ctx.runtime()?.voiceActive));$('#sendButton').disabled=(textPending&&!ctx.runtime()?.canClarify)||files.busy||(hasAudio?!recording.canSend:!hasText||Boolean(recording?.busy));
+  let queueLabel=$('#sendButton').querySelector('.queue-label');if(!queueLabel){queueLabel=el('span','queue-label','В очередь');$('#sendButton').append(queueLabel);}queueLabel.hidden=!textPending;$('#sendButton').dataset.queue=String(textPending);$('#sendButton').setAttribute('aria-label',textPending?'Добавить уточнение в очередь':'Отправить сообщение');
   draft.disabled=Boolean(recording?.capturing||hasAudio);composer.dataset.recording=String(Boolean(recording?.busy||hasAudio));
  }
  function updateVoice(state){
@@ -118,7 +119,7 @@ export function initialize({recorderOptions={},dictationOptions={}}={}){
  };
  for(const s of sections.filter(s=>!s.ownerOnly)){const a=el('a','rail-item');a.href=s.route;a.innerHTML=icon(s.icon);a.append(el('span','rail-label',s.title));a.dataset.route=s.id;a.title=s.title;nav.append(a)}
  $('#dialogClose').innerHTML=icon('close');$('#dialogClose').addEventListener('click',()=>dialog.close(),{signal});dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()},{signal});
- composer.addEventListener('submit',async e=>{e.preventDefault();ctx.showConversation();if(textPending)return;try{if(recording.hasAudio)await recording.send();else if((draft.value.trim()||files.hasFiles)&&!recording.busy&&!files.busy)await ctx.runtime()?.sendText();}finally{updateSend()}},{signal});
+ composer.addEventListener('submit',async e=>{e.preventDefault();ctx.showConversation();if(textPending){try{await ctx.runtime()?.sendText();}finally{updateSend()}return;}try{if(recording.hasAudio)await recording.send();else if((draft.value.trim()||files.hasFiles)&&!recording.busy&&!files.busy)await ctx.runtime()?.sendText();}finally{updateSend()}},{signal});
  draft.addEventListener('pointerdown',()=>ctx.showConversation(),{signal});
  draft.addEventListener('focus',()=>{ctx.showConversation();resizeDraft()},{signal});
  draft.addEventListener('input',()=>{ctx.showConversation();sendError('');ctx.runtime()?.saveDraft?.();updateSend();},{signal});
