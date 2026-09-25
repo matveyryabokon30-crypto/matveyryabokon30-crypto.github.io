@@ -1,5 +1,5 @@
 // Shared evolving scene: mounted once outside the route host; audio is read-only.
-import {mountTopologyChrome} from './topology-chrome.mjs';
+import {mountTopologyChrome,applyTopologyChrome} from './topology-chrome.mjs';
 import {readLevels} from './lake-visual.mjs';
 const scenes=new WeakMap();
 const bounded=n=>Number.isFinite(n)?Math.min(1,Math.max(0,n)):0;
@@ -20,6 +20,7 @@ export function mountTopology(scene,doc=document){
  function message(e){
   if(e.source!==frame.contentWindow||e.origin!==win.location.origin)return;
   if(e.data?.type==='sekkes-topology-ready')refresh();
+  if(e.data?.type==='sekkes-topology-color')applyTopologyChrome(doc,e.data.rgb);
  }
  const observer=new win.MutationObserver(refresh);
  observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-motion','data-interacting','data-keyboard-open']});

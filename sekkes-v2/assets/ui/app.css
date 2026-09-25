@@ -198,11 +198,12 @@ html,body,#shell,.home-screen,.home-conversation,.home-conversation .messages,.c
 #shell .world-heading,#shell .world-panel{background:rgba(7,24,35,.78);color:#f2f6ff}
 [data-transparency=off] #shell :is(.home-conversation,.settings-row,.content-card,.profile-bottom,.world-heading,.world-panel,.live-control){background:#10283b;backdrop-filter:none;-webkit-backdrop-filter:none}
 
-/* A single glass safe-area layer reveals the real scene, without sampled
-   colours, opaque edge/fog seams, or repeated native theme-color updates. */
-html,html[data-theme=light],body{background:#1e3c2c;color-scheme:dark}
-.topology-chrome-edge{position:fixed;z-index:60;left:0;right:0;top:0;height:calc(env(safe-area-inset-top,0px) + 28px);pointer-events:none;background:rgba(235,245,250,.06);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);-webkit-mask-image:linear-gradient(#000 0,#000 env(safe-area-inset-top,0px),transparent 100%);mask-image:linear-gradient(#000 0,#000 env(safe-area-inset-top,0px),transparent 100%)}
-[data-transparency=off] .topology-chrome-edge{-webkit-backdrop-filter:none;backdrop-filter:none}
+/* iOS samples this opaque, short edge. Its colour follows the scene clock,
+   while the sibling feather provides glass without disabling native sampling. */
+html,html[data-theme=light],body{background:var(--topology-chrome,#1e3c2c);color-scheme:dark}
+.topology-chrome-edge{position:fixed;z-index:60;left:0;right:0;top:0;height:max(12px,env(safe-area-inset-top,0px));pointer-events:none;background:var(--topology-chrome,#1e3c2c)}
+.topology-chrome-fog{position:fixed;z-index:0;left:0;right:0;top:max(12px,env(safe-area-inset-top,0px));height:70px;pointer-events:none;background:linear-gradient(var(--topology-chrome,#1e3c2c),transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent)}
+[data-transparency=off] .topology-chrome-fog{-webkit-backdrop-filter:none;backdrop-filter:none}
 
 /* UI9.19: depth-lit particle glyphs. Hit targets and labels stay still. */
 .living-icon{position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:var(--icon-size,28px);height:var(--icon-size,28px);vertical-align:middle;pointer-events:none;color:inherit;isolation:isolate}
