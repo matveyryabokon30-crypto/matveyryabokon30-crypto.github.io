@@ -20,6 +20,16 @@ import{S3Api,S3Error}from'./s3-api.mjs?v=2026.09.21-ui.9.20';
 const $=s=>document.querySelector(s),CONSENT='sekkes-s2-openai-20260918';
 const msg={READY_TIMEOUT:'Звук не подключился. Нажми кнопку голосового разговора, чтобы повторить без перезагрузки.',VOICE_PROFILE_CHANGED:'Голос изменён в аккаунте. Настройка обновлена — начни разговор ещё раз.',PROFILE_UNAVAILABLE:'Не удалось загрузить голос из аккаунта. Попробуй ещё раз.',SETUP_REQUIRED:'Сервер AI Marius недоступен.',AUTH_REQUIRED:'Войди в AI Marius.',LOGIN_FAILED:'Почта или пароль не подошли.',LOGIN_RATE_LIMIT:'Слишком много попыток входа. Подожди немного.',OWNER_ONLY:'Этот тест доступен только владельцу.',BUDGET_STOP:'Недостаточно доступного резерва бюджета. Требуется сверка расходов.',LIVE_BUSY:'Голосовая сессия уже активна.',PROVIDER_QUOTA:'OpenAI сообщил об ограничении баланса или квоты.',PROVIDER_AUTH_ERROR:'OpenAI отклонил серверный ключ.',model_not_found:'Текущая голосовая модель недоступна для этого API-проекта.',unsupported_model:'Текущая голосовая модель не поддерживает этот режим.',invalid_request_error:'Голосовая сессия отклонена из-за конфигурации.',LIVE_PROVIDER_UNAVAILABLE:'Голосовой сервис сейчас недоступен.',LIVE_UNAVAILABLE:'Не удалось открыть голосовой разговор.',DUPLICATE_TURN:'Этот запрос уже принят сервером. Не отправляй его повторно. Ответ можно проверить после повторного входа.',SERVICE_UNAVAILABLE:'Сервис сейчас недоступен.'};
 let account=null,accountPanel=null,accountRestore=null;
+let incomingQr=null;
+function captureQr(){const match=/^#qr=([a-f0-9]{64})$/.exec(location.hash);if(!match)return false;incomingQr=match[1];history.replaceState(null,'',location.pathname+location.search+'#home');return true;}
+captureQr();
+function approveIncomingQr(){
+ if(!incomingQr||!account)return;
+ if(live||starting||closing||recovering||textBusy){note('Заверши разговор и снова отсканируй QR.');incomingQr=null;return;}
+ if(!logged()){login();return;}
+ const scan=incomingQr;incomingQr=null;accountPanel?.dispose();accountPanel=openAccountPanel({account,root:body,show:view,qrApproval:scan,onSuccess:()=>dialog.close(),onBusy:value=>{loginBusy=value;}});
+}
+window.addEventListener('hashchange',()=>{if(captureQr()&&!accountRestore)approveIncomingQr();});
 let journalId=null,textBusy=false,retryTurn=null,activeRun=null,activeReady=false,queueSending=false;
 let transcript=null,historyCursor=null,historyLoading=false,hasMoreHistory=false;
 function saveDraft(){if(!api?.user?.id)return;try{const key='sekkes:chat-draft:'+api.user.id;if(draft.value.trim())localStorage.setItem(key,JSON.stringify({text:draft.value,id:retryTurn?.text===draft.value.trim()?retryTurn.id:null}));else localStorage.removeItem(key);}catch{}}
@@ -57,7 +67,7 @@ async function finishAccountLogin(){
  // Keep old drafts stored for recovery, but do not insert stale text into a fresh launch.
  try{await transcript.flush();await syncHistory();await restoreUpdates();}catch{/* Saved outbox retries on network recovery. */}
  globalThis.window?.SekkesUI?.textBusy(false);
- if(epoch===api.authEpoch)resumeAfterLogin();
+ if(epoch===api.authEpoch){if(incomingQr)approveIncomingQr();else resumeAfterLogin();}
 }
 function faceIdSettings(){if(!logged())return login();accountPanel?.dispose();accountPanel=openAccountPanel({account,root:body,show:view,enroll:true,onSuccess:()=>dialog.close(),onBusy:value=>{loginBusy=value;}})}
 function resumeAfterLogin(){globalThis.window?.SekkesUI?.account(api.user);accepted=true;dialog.close();const action=pending;pending=null;if(action==='live')startLive();if(action==='text')sendText();if(action==='voice-message')globalThis.window?.SekkesUI?.sendRecording();if(action==='settings')voicePicker();}
@@ -361,7 +371,7 @@ try{config=runtimeConfig;api=new S3Api(config);voiceManifest=voiceCatalog;prefer
 
 if(api){
  account=new AccountSession(api,{onLost:()=>{transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;endLive(undefined,'logout');accepted=false;textHistory=[];journalId=null;globalThis.window?.SekkesUI?.reset();status('Войди в AI Marius');}});
- accountRestore=account.restore().then(async restored=>{if(restored)await finishAccountLogin();}).catch(()=>{status('Войди в AI Marius для разговора');}).finally(()=>{accountRestore=null;});
+ accountRestore=account.restore().then(async restored=>{if(restored)await finishAccountLogin();}).catch(()=>{status('Войди в AI Marius для разговора');}).finally(()=>{accountRestore=null;if(incomingQr)approveIncomingQr();});
 }
 
 addEventListener('online',()=>{transcript?.flush().then(()=>syncHistory()).catch(()=>{});});

@@ -43,3 +43,14 @@ body dialog.account-card .dialog-close{font-size:0;padding:0;}
 body dialog.account-card .dialog-close>*{display:none;}
 body dialog.account-card .dialog-close::before,body dialog.account-card .dialog-close::after{content:'';position:absolute;left:10px;top:17px;width:16px;height:2px;background:#253942;border-radius:2px;transform:rotate(45deg);}
 body dialog.account-card .dialog-close::after{transform:rotate(-45deg);}
+
+/* auth80: plain, symmetric close glyph; keyboard focus changes glyph, no ring. */
+@layer sekkes-borderless{
+ body dialog.account-card .dialog-close,body dialog.account-card .dialog-close:is(:focus,:focus-visible,:hover,:active){background:transparent!important;border:0!important;box-shadow:none!important;outline:none!important;}
+}
+body dialog.account-card .dialog-close{width:44px;height:44px;min-height:44px;right:12px;top:12px;border-radius:0;}
+body dialog.account-card .dialog-close::before,body dialog.account-card .dialog-close::after{left:12px;top:21px;width:20px;height:2px;transform-origin:center;}
+body dialog.account-card .dialog-close:focus-visible::before,body dialog.account-card .dialog-close:focus-visible::after{background:#00718c;height:3px;}
+body .account-qr{display:grid;place-items:center;min-height:220px;}
+body .account-qr img{width:100%;max-width:256px;image-rendering:pixelated;}
+body #accountQRMatch{font-weight:650;color:#172026;}

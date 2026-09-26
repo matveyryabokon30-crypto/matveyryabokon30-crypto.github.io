@@ -1,9 +1,10 @@
+import {receiveQr,qrRequest} from './qr-login.mjs';
 const errorText=error=>error?.status===429?'Слишком много попыток. Подожди минуту.':({PHONE_INVALID:'Введи российский мобильный номер: +7 и ещё 10 цифр.',SMS_UNAVAILABLE:'SMS пока не подключены. Выбери вход по почте.',OTP_INVALID:'Введи код или скопированную ссылку из письма.',otp_expired:'Код истёк или уже использован. Запроси новый.',invalid_credentials:'Почта или пароль не подошли.',AUTH_CANCELLED:'Вход отменён.',OWNER_ONLY:'У этого аккаунта пока нет доступа к AI Marius.'}[error?.code]||'Не удалось войти. Проверь подключение и попробуй ещё раз.');
-export function openAccountPanel({account,root,show,onSuccess,onAuthenticated=()=>{},onBusy=()=>{},enroll=false,emailMode=false}){
- let disposed=false,busy=false,recoveryConfirmed=false;
+export function openAccountPanel({account,root,show,onSuccess,onAuthenticated=()=>{},onBusy=()=>{},enroll=false,emailMode=false,qrApproval=null}){
+ let disposed=false,busy=false,recoveryConfirmed=false,qrReceiver=null;
  const host=root.closest('dialog');
  if(!document.querySelector('link[data-account-card]')){const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('./account-card.css',import.meta.url).href;link.dataset.accountCard='true';document.head.append(link);}
- const render=html=>{host?.classList.add('account-card');root.classList.add('account-card-content');show(html);};
+ const render=html=>{qrReceiver?.cancel();qrReceiver=null;host?.classList.add('account-card');root.classList.add('account-card-content');show(html);};
  const originalId=account.api?.user?.id,originalEmail=account.api?.user?.email;
  const message=text=>{if(!disposed)root.querySelector('[role="status"]').textContent=text;};
  const passkeys=account.passkeys(state=>message(state.message));
@@ -45,9 +46,17 @@ export function openAccountPanel({account,root,show,onSuccess,onAuthenticated=()
   root.querySelector('#emailBack').onclick=()=>{if(!busy)login();};
  }
  function qrLogin(){
-  render('<div class="kicker">AI Marius</div><h2 id="dialogTitle">С другого устройства</h2><p>Войди ключом доступа, сохранённым на другом телефоне. QR-код покажет защищённое окно браузера.</p><button id="accountQRStart" class="rounded-action primary">Продолжить с QR</button><p class="account-hint">Если QR не появился, выбери в системном окне «Другие варианты» → «Другое устройство». Оба устройства должны быть рядом, с включённым Bluetooth.</p><button id="accountQRBack" class="account-text">Назад</button><p role="status" aria-live="polite"></p>');
-  root.querySelector('#accountQRStart').onclick=()=>run(async()=>{if(await passkeys.signIn({preferNearby:true}))complete(false);});
+  render('<div class="kicker">AI Marius</div><h2 id="dialogTitle">Вход по QR</h2><div class="account-qr"><img id="accountQRImage" alt="QR-код для входа в Мариус" hidden></div><p>Отсканируй камерой телефона, на котором ты уже вошёл в Мариуса.</p><p id="accountQRMatch"></p><button id="accountQRRefresh" class="account-text">Обновить QR</button><button id="accountQRBack" class="account-text">Другой способ входа</button><p role="status" aria-live="polite">Готовим QR…</p>');
+  qrReceiver=receiveQr(account,{onCode:({image,code})=>{if(disposed)return;const img=root.querySelector('#accountQRImage');img.src=image;img.hidden=false;root.querySelector('#accountQRMatch').textContent='Номер для сверки: '+code;message('Действует 2 минуты. Ожидаем подтверждение на телефоне.');},onState:message,onComplete:()=>complete(false)});
+  root.querySelector('#accountQRRefresh').onclick=()=>{if(!busy)qrLogin();};
   root.querySelector('#accountQRBack').onclick=()=>{if(!busy)login();};
+ }
+ function approveQr(){
+  render('<div class="kicker">AI Marius</div><h2 id="dialogTitle">Подтвердить вход</h2><p>Подтверди только QR, который ты сам открыл на другом устройстве. Сверь номер на обоих экранах.</p><p id="accountQRMatch"></p><p id="accountQRIdentity"></p><button id="accountQRApprove" class="rounded-action primary" disabled>Подтвердить вход</button><button id="accountQRCancel" class="account-text">Отмена</button><p role="status" aria-live="polite">Проверяем QR…</p>');
+  root.querySelector('#accountQRIdentity').textContent='Аккаунт: '+(account.api.user?.email||'');
+  qrRequest(account,'inspect',{scan:qrApproval}).then(data=>{if(disposed)return;if(data.state!=='pending'){message('QR истёк или уже использован. Открой новый код на другом устройстве.');return;}root.querySelector('#accountQRMatch').textContent='Номер для сверки: '+data.code;root.querySelector('#accountQRApprove').disabled=false;message('');}).catch(()=>message('Не удалось проверить QR. Попробуй открыть новый код.'));
+  root.querySelector('#accountQRApprove').onclick=()=>run(async()=>{const data=await qrRequest(account,'approve',{scan:qrApproval},true);if(data.state!=='approved')throw Error('QR_FAILED');render('<div class="kicker">AI Marius</div><h2 id="dialogTitle">Вход подтверждён</h2><p>Вернись к устройству с QR-кодом. Этот телефон остаётся в твоём аккаунте.</p><button id="accountQRDone" class="rounded-action primary">Готово</button><p role="status"></p>');root.querySelector('#accountQRDone').onclick=()=>{dispose();onSuccess();};});
+  root.querySelector('#accountQRCancel').onclick=()=>{dispose();onSuccess();};
  }
  function phoneLogin(){
   render('<div class="kicker">AI Marius</div><h2 id="dialogTitle">Вход по SMS</h2><p>Для российских мобильных номеров +7.</p><p id="phoneAvailability" role="status">Проверяем доступность…</p><form id="phoneRequest" hidden><label for="accountPhone">Номер телефона</label><input id="accountPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+7 900 123-45-67" required><label class="account-check"><input id="phoneCreate" type="checkbox"><span>Создать новый аккаунт</span></label><button class="rounded-action primary" type="submit">Получить SMS</button></form><form id="phoneVerify" hidden><label for="phoneProof">Код из SMS</label><input id="phoneProof" class="account-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required><button class="rounded-action primary" type="submit">Войти</button></form><button id="phoneBack" class="account-text">Другой способ входа</button>');
@@ -58,7 +67,7 @@ export function openAccountPanel({account,root,show,onSuccess,onAuthenticated=()
   root.querySelector('#phoneBack').onclick=()=>{if(!busy)login();};
  }
  function login(){
-  render('<div class="kicker">AI Marius</div><h2 id="dialogTitle">Рады тебя видеть</h2><p>Выбери удобный способ входа</p><div class="account-methods"><button id="accountKeyLogin" class="rounded-action primary"><span class="account-symbol" aria-hidden="true">◎</span><span>Face ID или ключ доступа<small>Также Touch ID и код устройства</small></span></button><button id="accountEmailLogin" class="rounded-action"><span class="account-symbol" aria-hidden="true">@</span><span>Электронная почта<small>Одноразовый код, без пароля</small></span></button><button id="accountQRLogin" class="rounded-action"><span class="account-symbol" aria-hidden="true">▦</span><span>QR-код<small>Ключ с другого устройства</small></span></button><button id="accountPhoneLogin" class="rounded-action"><span class="account-symbol" aria-hidden="true">＋</span><span>Номер телефона<small>SMS · проверка доступности</small></span></button></div><button id="accountSetup" class="account-text">Войти с прежним паролем</button><p role="status" aria-live="polite"></p>');
+  render('<div class="kicker">AI Marius</div><h2 id="dialogTitle">Рады тебя видеть</h2><p>Выбери удобный способ входа</p><div class="account-methods"><button id="accountKeyLogin" class="rounded-action primary"><span class="account-symbol" aria-hidden="true">◎</span><span>Face ID или ключ доступа<small>Также Touch ID и код устройства</small></span></button><button id="accountEmailLogin" class="rounded-action"><span class="account-symbol" aria-hidden="true">@</span><span>Электронная почта<small>Одноразовый код, без пароля</small></span></button><button id="accountQRLogin" class="rounded-action"><span class="account-symbol" aria-hidden="true">▦</span><span>QR-код<small>Подтвердить с телефона</small></span></button><button id="accountPhoneLogin" class="rounded-action"><span class="account-symbol" aria-hidden="true">＋</span><span>Номер телефона<small>SMS · проверка доступности</small></span></button></div><button id="accountSetup" class="account-text">Войти с прежним паролем</button><p role="status" aria-live="polite"></p>');
   root.querySelector('#accountEmailLogin').onclick=()=>{if(!busy)emailLogin();};
   root.querySelector('#accountQRLogin').onclick=()=>{if(!busy)qrLogin();};
   root.querySelector('#accountPhoneLogin').onclick=()=>{if(!busy)phoneLogin();};
@@ -67,7 +76,7 @@ export function openAccountPanel({account,root,show,onSuccess,onAuthenticated=()
   const smsHint=root.querySelector('#accountPhoneLogin small');
   account.phoneAvailable().then(enabled=>{if(!disposed&&smsHint.isConnected)smsHint.textContent=enabled?'Одноразовый код по SMS':'SMS · скоро';}).catch(()=>{if(!disposed&&smsHint.isConnected)smsHint.textContent='SMS · временно недоступны';});
  }
- function dispose(){if(disposed)return;disposed=true;host?.classList.remove('account-card');root.classList.remove('account-card-content');passkeys.destroy();onBusy(false);}
- if(enroll)enrollment();else if(emailMode)emailLogin();else login();
+ function dispose(){if(disposed)return;disposed=true;qrReceiver?.cancel();host?.classList.remove('account-card');root.classList.remove('account-card-content');passkeys.destroy();onBusy(false);}
+ if(qrApproval)approveQr();else if(enroll)enrollment();else if(emailMode)emailLogin();else login();
  return {dispose,cancel(){if(disposed)return;account.epoch++;dispose();}};
 }
