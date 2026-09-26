@@ -107,3 +107,10 @@ body #shell .owner-screen:has(.owner-billing)>.owner-tabs{display:grid;grid-temp
 body #shell .owner-screen:has(.owner-billing)>.owner-tabs>.owner-button{width:100%;min-width:0;margin:0;padding-inline:0}
 .bill-block svg rect{stroke:none}
 @media(min-width:700px){.bill-block svg{max-height:260px}.bill-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* billing.75: one bottom stack with 8px clear gaps. */
+body #shell:has(.owner-billing){--billing-base:calc(58px + max(8px,env(safe-area-inset-bottom)));--billing-tools:calc(var(--billing-base) + 64px)}
+body #shell .bill-nav{bottom:var(--billing-base);height:56px}
+body #shell .owner-screen:has(.owner-billing) .owner-document-down{position:fixed;top:auto;bottom:var(--billing-tools);left:50%;z-index:9}
+body #shell:has(.owner-billing) .owner-mode{top:auto;bottom:var(--billing-tools);z-index:9}
+.bill-client>.owner-button{grid-column:1/-1;margin:6px 0 0}
