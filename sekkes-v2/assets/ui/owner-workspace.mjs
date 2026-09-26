@@ -29,7 +29,7 @@ export function create(ctx){
  async function run(fn){if(busy)return;const ticket=epoch;busy=true;node.setAttribute('aria-busy','true');notice.textContent='';try{await fn()}catch(e){if(ticket===epoch)notice.textContent=error(e)}finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false')}}}
  node.append(title,notice,content,tabs);tabs.setAttribute('aria-label','Разделы кабинета');
  const glyph=(name,label,fn)=>{const b=button('',fn);b.classList.add('icon-button');b.innerHTML=icon(name);b.setAttribute('aria-label',label);b.title=label;return b};
- const documentDown=glyph('send','Вниз текущей вкладки',()=>{});documentDown.classList.add('owner-down','owner-document-down');documentDown.hidden=true;node.insertBefore(documentDown,tabs);
+ const documentDown=glyph('send','Вниз текущей вкладки',()=>{});documentDown.classList.add('owner-document-down');documentDown.hidden=true;const jumpAnchor=el('div','owner-jump-anchor');jumpAnchor.append(documentDown);node.insertBefore(jumpAnchor,tabs);
  const documentScroll=documentJump(content,documentDown,{enabled:()=>Boolean(data)&&current!=='chat'&&!disposed});
  function revealEditor(){const target=content.querySelector('.owner-evaluation-controls')||content.querySelector('.owner-editor');if(target)content.scrollTop+=target.getBoundingClientRect().top-content.getBoundingClientRect().top;documentScroll.update();}
  const live=new OwnerLive({request,storageKey:'sekkes:owner-live:'+ctx.account?.id,onState:()=>{const b=node.querySelector('.owner-live');if(b){b.innerHTML=icon(live.active?'stop':'record');b.setAttribute('aria-label',live.active?'Завершить разговор':'Живой разговор с агентом');b.setAttribute('aria-pressed',String(live.active));}node.dataset.live=String(live.active);},onNotice:s=>notice.textContent=s,onSaved:()=>load()});
@@ -85,14 +85,6 @@ export function create(ctx){
  function paintDocuments(){
  const descriptions={instruction:'Действующие серверные настройки и учебные версии загружаются автоматически. Ручные документы ниже сохраняются как черновики.',material:'Учебные материалы и вложения административного диалога загружаются автоматически.',example:'Ответы административного диалога появляются автоматически. Они ещё не оценены как правильные учебные примеры.',evaluation:'Учебные и проверочные запуски появляются автоматически. Завершённый запуск не означает успешную оценку качества.'};
  content.append(hint(descriptions[current]));
- if(current==='evaluation'){
-  const entry=el('section','owner-check-entry');entry.setAttribute('aria-label','Сохранённые проверки');
-  entry.append(button('Новая проверка',()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm();}));
-  const saved=latest().filter(d=>readAssessment(d));
-  entry.append(hint(saved.length?'Сохранённые проверки — выбери, чтобы открыть кнопку «Запустить проверку».':'Сохранённых проверок пока нет. Нажми «Новая проверка», заполни вопрос и ожидаемый результат, затем сохрани. Кнопка запуска появится сразу после сохранения.'));
-  for(const d of saved)entry.append(button(`${d.title} · ${VERDICTS[readAssessment(d).verdict]} · v${d.revision}`,()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm();}));
-  content.append(entry);
- }
  if(current==='evaluation'&&data.evaluations)content.append(evaluationJournal({data:data.evaluations,available:()=>!busy&&!dirty&&!live.active&&!disposed,onRead:id=>evaluationRequest({action:'read',id})}));
  if(current==='instruction'){
   const ticket=epoch;
@@ -119,7 +111,16 @@ export function create(ctx){
  if(current==='material')for(const m of data.media||[]){const detail=el('details','owner-auto-record');detail.append(el('summary','',m.name),hint('Вложение административного диалога · '+m.mime),button('Открыть файл',()=>run(async()=>{const ticket=epoch,blob=await request('content',{id:m.id});if(ticket===epoch&&detail.isConnected){detail.querySelector('.owner-file-preview')?.remove();const box=el('div','owner-file-preview');box.append(preview(m,blob));detail.append(box);}})));automatic.append(detail);}
  if(!automatic.children.length)automatic.append(hint(current==='evaluation'?'Учебных запусков и ответов для ручной оценки пока нет.':'Пока нет записей. Они появятся после загрузки материала или соответствующего запуска.'));
  content.append(automatic);
- const list=el('div','owner-documents');for(const d of latest().filter(x=>x.kind===current&&(current!=='evaluation'||!readAssessment(x))))list.append(button(`${d.title} · ${readAssessment(d)?VERDICTS[readAssessment(d).verdict]:'черновик'} · v${d.revision}`,()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm()}));content.append(list);if(current!=='evaluation')content.append(button('Новый документ',()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm()}));content.append(button('Обновить данные',()=>{if(dirty)return;void run(load)}));
+ const list=el('div','owner-documents');for(const d of latest().filter(x=>x.kind===current&&(current!=='evaluation'||!readAssessment(x))))list.append(button(`${d.title} · ${readAssessment(d)?VERDICTS[readAssessment(d).verdict]:'черновик'} · v${d.revision}`,()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm()}));content.append(list);
+ if(current==='evaluation'){
+  const entry=el('section','owner-check-entry');entry.setAttribute('aria-label','Сохранённые проверки');
+  const saved=latest().filter(d=>readAssessment(d));
+  entry.append(hint(saved.length?'Сохранённые проверки — выбери, чтобы открыть кнопку «Запустить проверку».':'Сохранённых проверок пока нет. Нажми «Новая проверка», заполни вопрос и ожидаемый результат, затем сохрани. Кнопка запуска появится сразу после сохранения.'));
+  for(const d of saved)entry.append(button(`${d.title} · ${VERDICTS[readAssessment(d).verdict]} · v${d.revision}`,()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm();}));
+  entry.append(button('Новая проверка',()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm();}));
+  content.append(entry);
+ }
+ if(current!=='evaluation')content.append(button('Новый документ',()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm()}));content.append(button('Обновить данные',()=>{if(dirty)return;void run(load)}));
  }
  function paintDocumentsForm(){content.querySelector('.owner-evaluation-controls')?.remove();if(current==='evaluation'&&(!editing||readAssessment(editing)))return openAssessment(editing?{...readAssessment(editing),title:editing.title}:{});content.querySelector('.owner-editor')?.remove();const form=el('div','owner-editor'),name=el('input','owner-input'),body=el('textarea','owner-input');name.placeholder='Название';name.setAttribute('aria-label','Название документа');name.maxLength=160;body.placeholder='Содержание';body.setAttribute('aria-label','Содержание документа');body.rows=10;body.maxLength=30000;name.value=editing?.title||'';body.value=editing?.content||'';name.oninput=body.oninput=()=>dirty=true;
  form.append(name,body,button('Сохранить новую версию',()=>run(async()=>{const id=editing?.id||crypto.randomUUID();await request('document',{id,kind:current,revision:editing?.revision||0,title:name.value,content:body.value});dirty=false;editing=null;await load();notice.textContent='Версия сохранена как черновик.'})));
@@ -136,7 +137,7 @@ export function create(ctx){
   catch(e){throw Error(error(e));}
   finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false');}}
  }});content.append(form);
- if(editing&&data.evaluations){const saved=editing;form.before(evaluationControls({document:saved,available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,onRequest:evaluationRequest}));}
+ if(editing&&data.evaluations){const saved=editing;form.after(evaluationControls({document:saved,available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,onRequest:evaluationRequest}));}
  revealEditor();
  }
  async function evaluationRequest(payload){

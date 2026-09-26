@@ -58,7 +58,9 @@ html[data-keyboard-open=true] .owner-screen{padding-bottom:calc(var(--keyboard-i
 
 .owner-assessment-field{display:grid;gap:6px;min-width:0}.owner-assessment .owner-input{box-sizing:border-box;width:100%;min-width:0}
 
-/* Document jump uses the existing viewport and remains outside the scrolling content. */
-.owner-screen .owner-document-down,.owner-screen:has(textarea:focus) .owner-document-down{bottom:calc(78px + env(safe-area-inset-bottom) + var(--keyboard-inset,0px));right:22px;width:44px;height:44px;min-width:44px;min-height:44px;z-index:3}
+/* Anchor to the actual navigation edge, independent of chat viewport coordinates. */
+.owner-jump-anchor{position:relative;flex:0 0 0;height:0;z-index:9}
+.owner-document-down{position:absolute;left:50%;bottom:0;transform:translateX(-50%);margin:0;padding:0;width:44px;height:44px;min-width:44px;min-height:44px;border-radius:50%;display:grid;place-items:center}
+.owner-document-down .living-icon{transform:rotate(180deg)}
 .owner-document-down[hidden]{display:none!important}
-.owner-check-entry{margin-bottom:16px}
+.owner-check-entry{margin:16px 0}

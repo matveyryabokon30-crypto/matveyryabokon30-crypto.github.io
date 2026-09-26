@@ -39,6 +39,6 @@ export function evaluationJournal({data,onRead,available=()=>true}){
  for(const run of data.runs||[]){const detail=el('details','owner-auto-record');detail.append(el('summary','',evaluationSummary(run)));const body=el('div');body.append(evaluationDetails(run));let busy=false;
  const read=button('Открыть результат',async()=>{if(busy||!available())return;busy=true;read.disabled=true;try{const r=await onRead(run.id);if(detail.isConnected)body.replaceChildren(evaluationDetails(r));}catch(e){if(detail.isConnected)body.append(el('p','owner-notice',e.message||'Не удалось прочитать результат.'));}finally{busy=false;read.disabled=false;}});
  detail.append(read,body);box.append(detail);}
- if(!data.runs?.length)box.append(el('p','owner-note','Запусков пока нет. Создай или выбери проверку в начале этой вкладки.'));
+ if(!data.runs?.length)box.append(el('p','owner-note','Запусков пока нет. Создай или выбери проверку внизу этой вкладки.'));
  return box;
 }
