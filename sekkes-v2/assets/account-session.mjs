@@ -92,7 +92,7 @@ export function parseProof(value,projectUrl,email){
  if(/^\d{6,10}$/.test(text))return {email,token:text,type:'email'};
  let url;try{url=new URL(text)}catch{throw new S3Error('OTP_INVALID')}
  if(text.length>4096||url.origin!==projectUrl||url.protocol!=='https:'||url.username||url.password||url.hash||url.pathname!=='/auth/v1/verify')throw new S3Error('OTP_INVALID');
- if(!['email','magiclink'].includes(url.searchParams.get('type'))||url.searchParams.getAll('type').length!==1)throw new S3Error('OTP_INVALID');
+ if(!['email','magiclink','signup'].includes(url.searchParams.get('type'))||url.searchParams.getAll('type').length!==1)throw new S3Error('OTP_INVALID');
  const keys=['token','token_hash'].filter(k=>url.searchParams.has(k));
  if(keys.length!==1||url.searchParams.getAll(keys[0]).length!==1||!/^[A-Za-z0-9_-]{32,256}$/.test(url.searchParams.get(keys[0])))throw new S3Error('OTP_INVALID');
  return {token_hash:url.searchParams.get(keys[0]),type:'email'};
