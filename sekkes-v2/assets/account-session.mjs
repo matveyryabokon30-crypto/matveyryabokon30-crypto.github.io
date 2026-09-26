@@ -54,14 +54,14 @@ export class AccountSession {
   const epoch=this.epoch;const {data,error}=await this.candidate.auth.signInWithPassword({email,password});
   if(error)throw error;return this.admit(data.session,epoch);
  }
- async requestCode(email){
-  const {error}=await this.candidate.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+ async requestCode(email,{createAccount=false}={}){
+  const {error}=await this.candidate.auth.signInWithOtp({email,options:{shouldCreateUser:createAccount,emailRedirectTo:location.origin+location.pathname}});
   if(error)throw error;
  }
- async verifyCode(email,proof){
+ async verifyCode(email,proof,{expectedUid=null}={}){
   const epoch=this.epoch;const {data,error}=await this.candidate.auth.verifyOtp(parseProof(proof,this.api.config.projectUrl,email));
   if(error)throw error;
-  if(data.user?.email?.toLowerCase()!==email.toLowerCase())throw new S3Error('LOGIN_FAILED');
+  if((expectedUid&&data.user?.id!==expectedUid)||data.user?.email?.toLowerCase()!==email.toLowerCase())throw new S3Error('LOGIN_FAILED');
   return this.admit(data.session,epoch);
  }
  async ensureFresh(){
