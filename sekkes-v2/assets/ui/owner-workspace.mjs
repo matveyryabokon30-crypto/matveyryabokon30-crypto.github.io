@@ -1,3 +1,4 @@
+import {billingPanel} from './owner-billing.mjs';
 import {documentJump} from './owner-scroll.mjs';
 import {evaluationControls,evaluationJournal} from './owner-evaluations.mjs';
 import {instructionPanel} from './owner-instructions.mjs';
@@ -79,9 +80,7 @@ export function create(ctx){
  }
  async function poll(){if(polling||disposed)return;polling=true;const ticket=epoch;try{const next=await request('workspace');if(ticket!==epoch)return;const oldRetry=retry;sync(next);if(oldRetry&&!next.turns.some(t=>t.id===oldRetry.id)&&!busy){retry=null;notice.textContent='Задание не принято сервером. Можно повторить отправку.';}if(current==='chat'){if(oldRetry&&!retry)paintChat();else renderMessages();}}finally{polling=false}}
  const timer=setInterval(()=>{if(!disposed&&current==='chat'&&!document.hidden&&(retry||data?.turns?.some(t=>t.status==='pending'))&&pollCount++<50)void poll().catch(()=>{});},3000);
- function paintCosts(){const c=data.costs||{};content.append(hint('Учёт административного диалога и учебных запусков. Обновляется с сервера.'),el('p','',`Входные токены: ${c.input_tokens??'неизвестно'}`),el('p','',`Выходные токены: ${c.output_tokens??'неизвестно'}`),el('p','',`Начислено провайдером: ${c.invoiced_usd==null?'не подтверждено':'$'+Number(c.invoiced_usd).toFixed(2)}`),hint('Токены живого голоса, обычного чата и расходы на распознавание не входят в эти итоги. Исторические резервы не являются списаниями.'));
- if(data.evaluations)content.append(hint('Токены автоматических проверок показаны отдельно в разделе «Проверки», в каждом запуске. В суммы выше они не входят.'));
- content.append(button('Обновить данные',()=>run(load)));}
+ function paintCosts(){content.append(billingPanel({request}));}
  function paintDocuments(){
  const descriptions={instruction:'Действующие серверные настройки и учебные версии загружаются автоматически. Ручные документы ниже сохраняются как черновики.',material:'Учебные материалы и вложения административного диалога загружаются автоматически.',example:'Ответы административного диалога появляются автоматически. Они ещё не оценены как правильные учебные примеры.',evaluation:'Учебные и проверочные запуски появляются автоматически. Завершённый запуск не означает успешную оценку качества.'};
  content.append(hint(descriptions[current]));
