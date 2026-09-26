@@ -1,3 +1,4 @@
+import {organizeHub} from './owner-hub.mjs';
 import {billingPanel} from './owner-billing.mjs';
 import {documentJump} from './owner-scroll.mjs';
 import {evaluationControls,evaluationJournal} from './owner-evaluations.mjs';
@@ -17,7 +18,7 @@ const labels={instruction:'Инструкции',material:'Материалы',e
 const errors={INVALID_EVALUATION:'Нужна структурированная проверка: вопрос до 6000 символов и заполненный эталон.',EVALUATION_UNAVAILABLE:'Автоматические проверки пока не подключены.',PROVIDER_NOT_CONFIGURED:'Модель для проверок пока не подключена.',NOT_FOUND:'Запуск не найден. Обнови кабинет перед новым запуском.',TOO_MANY_FILES:'До 4 вложений в сообщении.',INVALID_MEDIA:'Проверь формат вложений и общий размер: до 20 МБ на сообщение.',OWNER_ONLY:'Доступ только владельцу.',AUTH_REQUIRED:'Сессия завершилась. Войди в аккаунт.',ACTIVATION_REQUIRED:'Подтверди доступ к кабинету.',RECENT_PROOF_REQUIRED:'Подтверди доступ кодом или Face ID.',REVISION_CONFLICT:'Данные уже изменились. Сохрани текст перед обновлением.',S2_BUDGET:'Отправку остановил внутренний лимит AI Marius. Это не подтверждение нулевого баланса OpenAI; нужна сверка расходов и резервов.',S2_BUSY:'Дождись завершения текущего запроса.',TURN_PENDING:'Агент готовит ответ…',TURN_FAILED:'Ответ не получен. Сообщение сохранено; его можно повторить.',OTP_INVALID:'Проверь код или ссылку из письма.',MEDIA_TOO_LARGE:'Файл должен быть не больше 10 МБ.',VIDEO_TOO_LONG:'Прикрепи видео длительностью до 3 минут.',INVALID_VIDEO:'Не удалось подготовить видео. Попробуй MP4.',MEDIA_DECODE_FAILED:'Не удалось прочитать файл на этом устройстве. Для видео попробуй MP4, для фото — JPEG.',UNSUPPORTED_FILE:'Поддерживаются PDF, TXT, MD, CSV, DOCX, PPTX, XLSX, фото, MP4/MOV/WebM и аудио MP3/M4A/WAV/WebM.',MEDIA_QUOTA:'Достигнут лимит хранилища кабинета.',MIC_DENIED:'Разреши доступ к микрофону в настройках браузера.',TRANSCRIPTION_FAILED:'Не удалось распознать звук. Запись сохранена, можно повторить отправку.',NO_SPEECH:'Речь в записи не распознана.',UPLOAD_FAILED:'Файл не загрузился. Повтори отправку.',MEDIA_NOT_READY:'Не все файлы загрузились. Повтори отправку.'};
 export function create(ctx){
  const node=el('section','screen owner-screen');node.setAttribute('aria-label','Админ-кабинет');
- let timeline=null,timelineState=null;
+ let timeline=null,timelineState=null;const hubViews={instruction:{},material:{},example:{},evaluation:{}};
  let epoch=0,disposed=false,busy=false,dirty=false,current='chat',data=null,editing=null,draft='',retry=null,selected=[],polling=false,recording=false,recordDetail='',pollCount=0;
  const loader=mediaLoader(),urls=new Map(),title=el('h1','owner-heading','Админ'),desc=el('p','owner-note','Кабинет владельца'),tabs=el('div','owner-tabs'),content=el('div','owner-content'),notice=el('p','owner-notice');notice.setAttribute('role','status');
  const state=()=>ctx.runtime();const request=(path,body)=>state().ownerRequest(path,body);const hint=s=>el('p','owner-note',s);
@@ -120,12 +121,15 @@ export function create(ctx){
   content.append(entry);
  }
  if(current!=='evaluation')content.append(button('Новый документ',()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm()}));content.append(button('Обновить данные',()=>{if(dirty)return;void run(load)}));
+ organizeHub(content,{kind:current,data,documents:latest(),viewState:hubViews[current],available:()=>!busy&&!dirty&&!live.active});
  }
- function paintDocumentsForm(){content.querySelector('.owner-evaluation-controls')?.remove();if(current==='evaluation'&&(!editing||readAssessment(editing)))return openAssessment(editing?{...readAssessment(editing),title:editing.title}:{});content.querySelector('.owner-editor')?.remove();const form=el('div','owner-editor'),name=el('input','owner-input'),body=el('textarea','owner-input');name.placeholder='Название';name.setAttribute('aria-label','Название документа');name.maxLength=160;body.placeholder='Содержание';body.setAttribute('aria-label','Содержание документа');body.rows=10;body.maxLength=30000;name.value=editing?.title||'';body.value=editing?.content||'';name.oninput=body.oninput=()=>dirty=true;
+ function openDocumentView(){const hub=content.querySelector('.owner-hub');if(hub)hub.hidden=true;content.querySelector('.hub-editor-back')?.remove();const back=button('← К обзору раздела',()=>{if(busy)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paint();});back.classList.add('hub-editor-back');content.append(back);content.scrollTop=0;}
+ function paintDocumentsForm(){openDocumentView();content.querySelector('.owner-evaluation-controls')?.remove();if(current==='evaluation'&&(!editing||readAssessment(editing)))return openAssessment(editing?{...readAssessment(editing),title:editing.title}:{});content.querySelector('.owner-editor')?.remove();const form=el('div','owner-editor'),name=el('input','owner-input'),body=el('textarea','owner-input');name.placeholder='Название';name.setAttribute('aria-label','Название документа');name.maxLength=160;body.placeholder='Содержание';body.setAttribute('aria-label','Содержание документа');body.rows=10;body.maxLength=30000;name.value=editing?.title||'';body.value=editing?.content||'';name.oninput=body.oninput=()=>dirty=true;
  form.append(name,body,button('Сохранить новую версию',()=>run(async()=>{const id=editing?.id||crypto.randomUUID();await request('document',{id,kind:current,revision:editing?.revision||0,title:name.value,content:body.value});dirty=false;editing=null;await load();notice.textContent='Версия сохранена как черновик.'})));
- if(editing){const versions=(data.documents||[]).filter(x=>x.id===editing.id);form.append(hint('Предыдущие версии:'));for(const v of versions)form.append(button(`v${v.revision} · ${new Date(v.created_at).toLocaleString('ru-RU')}`,()=>{body.value=v.content;name.value=v.title;dirty=true;notice.textContent='Содержимое старой версии открыто. Сохранение создаст новую версию.'}));}content.append(form);revealEditor();
+ if(editing){const versions=(data.documents||[]).filter(x=>x.id===editing.id);form.append(hint('Предыдущие версии:'));for(const v of versions)form.append(button(`v${v.revision} · ${new Date(v.created_at).toLocaleString('ru-RU')}`,()=>{body.value=v.content;name.value=v.title;dirty=true;notice.textContent='Содержимое старой версии открыто. Сохранение создаст новую версию.'}));}content.append(form);content.scrollTop=0;documentScroll.update();
  }
  function openAssessment(value){
+ openDocumentView();
  content.querySelector('.owner-editor')?.remove();content.querySelector('.owner-evaluation-controls')?.remove();
  const id=editing?.id||crypto.randomUUID(),revision=editing?.revision||0,ticket=epoch;
  const versions=(data?.documents||[]).filter(d=>d.id===id).sort((a,b)=>b.revision-a.revision);
@@ -137,7 +141,7 @@ export function create(ctx){
   finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false');}}
  }});content.append(form);
  if(editing&&data.evaluations){const saved=editing;form.after(evaluationControls({document:saved,available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,onRequest:evaluationRequest}));}
- revealEditor();
+ content.scrollTop=0;documentScroll.update();
  }
  async function evaluationRequest(payload){
   if(busy||dirty||live.active||disposed)throw Error('Сначала сохрани изменения и заверши текущее действие.');

@@ -114,3 +114,11 @@ body #shell .bill-nav{bottom:var(--billing-base);height:56px}
 body #shell .owner-screen:has(.owner-billing) .owner-document-down{position:fixed;top:auto;bottom:var(--billing-tools);left:50%;z-index:9}
 body #shell:has(.owner-billing) .owner-mode{top:auto;bottom:var(--billing-tools);z-index:9}
 .bill-client>.owner-button{grid-column:1/-1;margin:6px 0 0}
+
+/* workspace.76: the same bounded glass dashboard in every administrative section. */
+.owner-hub[hidden]{display:none!important}.owner-hub .hub-list{display:grid;gap:8px}.owner-hub .hub-list>details,.owner-hub .hub-list>.owner-button,.hub-history{margin:0;padding:14px 12px;border-radius:18px;background:rgba(16,24,39,.28);width:100%;text-align:left;overflow-wrap:anywhere;white-space:normal}
+.owner-hub .hub-list summary{font-size:14px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.owner-hub .hub-list details[open] summary{-webkit-line-clamp:unset;color:#7cdbff}.owner-hub .hub-list p{font-size:13px;line-height:1.55}.owner-hub .owner-auto-text{max-height:48vh;overflow:auto;overscroll-behavior:contain;padding:8px 0}
+.owner-hub .owner-instruction-control{min-width:0}.owner-hub .owner-instruction-control h2{font-size:18px}.owner-hub .bill-footer{padding-bottom:6px}.owner-hub .bill-nav-icon{font-size:20px}.owner-hub .owner-button:focus-visible{color:#7cdbff;text-decoration:underline}
+body #shell .hub-editor-back{position:fixed;z-index:8;bottom:var(--billing-base);left:12px;right:12px;margin:0;height:56px;border-radius:22px;background:rgba(25,30,48,.87);backdrop-filter:blur(18px)}
+body #shell .owner-screen:has(.owner-hub)>.owner-content{overflow-x:hidden;width:100%;padding-bottom:calc(200px + env(safe-area-inset-bottom))}
+.owner-screen:has(.owner-hub) .owner-editor{min-width:0;width:100%;box-sizing:border-box}.owner-screen:has(.owner-hub) .owner-editor .owner-input{width:100%;min-width:0;box-sizing:border-box}.owner-hub .hub-collection{min-width:0}.owner-hub .hub-collection .owner-input{font-size:16px}

@@ -1,7 +1,7 @@
 {
   "qa-media.html": "862e73d6fcdd171962455e568de835a88457f1b214ba40ecee97f6f89e0a4bab",
   "classic.html": "fdb2d5b2b190092cab896d471db0c42db8e5054c918246fc58e4fcc959fc1629",
-  "version.json": "6e27062c686a6f6cf63525af76c882b42a24f6f0a1569af15b6ba89ce3a8b819",
+  "version.json": "c259406d8fb630976397c5b028551a3b4c112e399e82d8ea56320e829ce17c10",
   "qa-media-v2.html": "706e8de86f3a4f99f1ad8dbdde047eca4d80e0a0a4d6cfad4e8fdb3b53378c18",
   "qa-stop.html": "e45fdb2a4b12af62fbfa77ea760adb65cfb04ab0658b41c5b694f6559ada20b0",
   "qa.html": "ea87e04450a76240bc88bebed1b920159180ad2b5c3026a265d5cd2da49ce5c5",
@@ -10,7 +10,7 @@
   "manifest.webmanifest": "35a4ede8417e4d54ce70485cf2a3da8faaa26d9bd4c0b90c7042081424566f0b",
   "voices.json": "61a91c9d5fb7487467412963d3cd187f1273ec3241abe4aa3c2e29ac4795ca01",
   "index.html": "ff07a30f77358b7aac7f87aa2a774b9196c012c0c52f02be7932c0352f47a261",
-  "sw.js": "9e86ac8d867e30d67fe8bfd91c5ff8e8bd0772a037acea0b26e9116a7c2b9a3b",
+  "sw.js": "99af83b05a398238262d141654b9446d581523473e5cecbee94b2eaa71dd3502",
   "qa/chat-time-update.test.mjs": "b6eb3b0bcc141c229007d6f6631da150b04f310bc21b5743ed64f11cb005507b",
   "assets/registry-foundation.mjs": "c5da3e69a58768add40c5bc719470d4946bd82d0ee48a2e4fcb7821970996bab",
   "assets/s2-api-3.mjs": "3d97b64dae109ba2fb38396b06abad6b5f41340db9fc2692d84b9d8049ec6d8b",
@@ -52,7 +52,7 @@
   "assets/preview-player.mjs": "50f56b889614c9fe5d6317bb730f6eb8f58d11a0ab6da6b8fefa1b7ebf9535f2",
   "assets/voice-s3-0.mjs": "686b556459d615416f86888eadbbb58732d2f7a7efdaafcb64370fff79e5610d",
   "assets/topology-chrome.mjs": "0743d401fa45df5364742bf422212407bbf1463392b578c3801d174d651a2f3d",
-  "assets/ui/owner.css": "ee5324739fabcf4aa21abec6eb5720d9ef6f5fed4575536e36d4268f4e46b77f",
+  "assets/ui/owner.css": "4c8e6f5c97eb49821c84c29a993f435a97bf01f900f05d2f86483dfdd8a0bf51",
   "assets/ui/mic-wave.mjs": "53e7d94a2a8e478fd3a579c1c541c6119a459b430a9bdda82db3712dca6bcfce",
   "assets/ui/profile-store.mjs": "7e65bf79444d945f8ebe69858201caadbc524dc8956c70a2bb830b451435ea22",
   "assets/ui/chat-recorder.mjs": "4f1ad2c61f7de28aceec44244869d13d4bb6cdc8bafc21d06e497d9d20f187ce",
@@ -78,7 +78,7 @@
   "assets/ui/tokens.css": "b5277a343b24c7326624e03bd800f2df3cb7c29fd93f17b668b7cea947a4cbe0",
   "assets/ui/preferences.mjs": "73b76044574910feda80e766c712ebfe7dc3a8622eea5716fa1f37ba7343b76d",
   "assets/ui/living-icon-core.mjs": "48209ea82472874570a30bf551f33485fdb952447fa1e611d12ee120d770bbd5",
-  "assets/ui/owner-workspace.mjs": "3a6d3af990a562431e6309eda001bd351c2971164116989d6a09b0c226702b80",
+  "assets/ui/owner-workspace.mjs": "44e12bbabb6956cda11f5744f4ae68468d1a1fe79bf9bab79b26684ccea6555a",
   "assets/ui/icon-shapes.mjs": "042c73965df35397258ea137c7dad7a001ca46efe04f208debc14757e74ecd12",
   "assets/ui/product-adapters.mjs": "ee1b6141d02d22239d83f60d05456eb721fdb6da059496a077e5969c5bc3622f",
   "assets/ui/owner-media.mjs": "b53436dff421671f2506790db8bd1caf0b78a3fd2e48c733b08bb0c66078e9da",
@@ -99,5 +99,6 @@
   "assets/ui/owner-instructions.mjs": "3b3b6823b8a7ab23badad391d3c9c4c39bf9715105903afddbb54e9ae5faae89",
   "assets/ui/owner-evaluations.mjs": "4f68f7950f59054aad39697400a0d89ba931962f0eae412cb59249552a37d432",
   "assets/ui/owner-scroll.mjs": "1dbcee361fc0e6b13acfcacea7716e381c6ff795b01937a06e78239259bd389d",
-  "assets/ui/owner-billing.mjs": "d25c5d18aca4e4a5cebb3aa0fd29c44fe40f3bf9aa0ad76e7df654ce7ea33145"
+  "assets/ui/owner-billing.mjs": "d25c5d18aca4e4a5cebb3aa0fd29c44fe40f3bf9aa0ad76e7df654ce7ea33145",
+  "assets/ui/owner-hub.mjs": "118135a064ef660e21f1632598eb10235aa672cbf81e7ca84b4394eb4f7bc702"
 }
