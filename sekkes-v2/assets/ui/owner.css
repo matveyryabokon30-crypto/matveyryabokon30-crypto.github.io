@@ -77,3 +77,33 @@ body #shell .owner-screen:not(:has(.owner-chat-content))>.owner-jump-anchor{marg
 .owner-billing select.owner-input{appearance:none;-webkit-appearance:none;padding:12px 16px;width:100%;border:0;border-radius:24px;background:var(--ui-control-bg,rgba(255,255,255,.09));color:inherit;font:inherit}
 .owner-billing-report p,.owner-billing-report summary{overflow-wrap:anywhere}
 .owner-billing-actions{padding-top:16px}
+/* billing.74: bounded dashboard panels; preserve the full-height vertical canvas. */
+body #shell .owner-screen:has(.owner-billing)>.owner-content{overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior-x:none;min-width:0;width:100%;padding-bottom:calc(176px + env(safe-area-inset-bottom))}
+.owner-billing,.owner-billing *{box-sizing:border-box;min-width:0}
+.owner-billing{width:100%;max-width:100%;overflow-wrap:anywhere;font-size:15px;line-height:1.45}
+.owner-billing h2{font-size:24px;margin:12px 0 4px;letter-spacing:-.025em}
+.owner-billing h3{font-size:17px;margin:0 0 16px}
+.owner-billing p{margin:6px 0}.bill-note{font-size:12px;line-height:1.5;opacity:.76}
+.bill-report{display:grid;gap:14px;width:100%}.bill-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.bill-metric{padding:15px 12px;border-radius:20px;background:rgba(16,24,39,.28);display:flex;flex-direction:column;gap:7px}
+.bill-label{font-size:12px;opacity:.9}.bill-number{font-size:clamp(18px,5.4vw,28px);font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:-.035em;color:var(--metric-color);overflow-wrap:anywhere}
+.bill-block{padding:18px 16px;border-radius:22px;background:rgba(16,24,39,.3)}
+.bill-block svg{display:block;width:100%;height:auto;max-width:100%;overflow:hidden}
+.bill-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}.bill-row>*{min-width:0;overflow-wrap:anywhere}.bill-row strong{font-variant-numeric:tabular-nums}
+.bill-bar-item{margin:14px 0}.bill-bar-item:last-child{margin-bottom:0}.bill-track{height:9px;background:rgba(255,255,255,.12);border-radius:9px;overflow:hidden;margin-top:7px}.bill-fill{height:100%;border-radius:9px}
+.bill-quality{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.bill-quality-item{display:flex;flex-direction:column;gap:4px}.bill-quality-item strong{font-size:25px}.bill-quality-item span{font-size:11px}
+.owner-billing .good{color:#6fe7b7}.owner-billing .warn{color:#ffcf79}.owner-billing .bad{color:#ff8d9b}
+.bill-nav{position:fixed;z-index:8;left:12px;right:12px;bottom:calc(90px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:rgba(25,30,48,.87);backdrop-filter:blur(18px);border-radius:23px;padding:4px;max-width:650px;margin:auto}
+body #shell .owner-billing .bill-nav .owner-button{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;margin:0;padding:6px 0;min-height:48px;min-width:0;border:0;background:transparent;font-size:10px;color:inherit;opacity:.6;white-space:normal;box-shadow:none}
+body #shell .owner-billing .bill-nav .owner-button[aria-current=true]{opacity:1;color:#7cdbff;background:rgba(124,219,255,.09);border-radius:18px}.bill-nav-icon{font-size:20px;line-height:1}
+.bill-footer{display:grid;gap:10px;margin-top:18px}.bill-footer .owner-input{width:100%;max-width:100%;min-width:0}.bill-footer input[type=date]{display:block;max-width:100%;-webkit-min-logical-width:0}
+.bill-footer .owner-button{max-width:100%;margin:0;white-space:normal}.bill-pager{display:flex;align-items:center;justify-content:space-between;gap:6px}.bill-pager .owner-button{padding:10px;font-size:13px}.bill-pager span{font-size:12px}.bill-footer button:disabled{opacity:.35}
+.bill-operation{padding:13px 0;border-bottom:1px solid rgba(255,255,255,.1)}.bill-operation summary{display:block;cursor:pointer;white-space:normal}.bill-operation summary::-webkit-details-marker{display:none}.bill-operation small{display:block;font-size:11px;opacity:.65;margin-top:5px}.bill-state{display:inline-block;font-size:11px;margin-top:5px}.bill-operation pre{font-size:11px;max-width:100%;white-space:pre-wrap;word-break:break-word}
+.bill-client{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.1)}.bill-client p,.bill-client details{grid-column:1/-1}.bill-client summary{font-size:12px;cursor:pointer}.bill-client details p{word-break:break-all}
+body #shell .owner-screen:has(.owner-billing) .owner-document-down{bottom:64px}
+
+/* Keep all six main actions inside the phone width. */
+body #shell .owner-screen:has(.owner-billing)>.owner-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;overflow:hidden;box-sizing:border-box;padding-inline:4px}
+body #shell .owner-screen:has(.owner-billing)>.owner-tabs>.owner-button{width:100%;min-width:0;margin:0;padding-inline:0}
+.bill-block svg rect{stroke:none}
+@media(min-width:700px){.bill-block svg{max-height:260px}.bill-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
