@@ -12,7 +12,7 @@ export function billingPanel({request}){
  const today=new Date();to.value=today.toISOString().slice(0,10);from.value=new Date(today.getTime()-6*86400000).toISOString().slice(0,10);
  const all=el('option','','Все клиенты');all.value='';client.append(all);
  filters.append(note('Период по UTC — как в отчёте OpenAI'),from,to,note('Клиент'),client);
- root.append(el('h2','','Расходы приложения'),filters,status,report,actions);
+ root.append(el('h2','','Расходы Мариуса'),report,filters,status,actions);
  let revision=0,busy=false,last=null,offset=0;
  const options=()=>({start:from.value+'T00:00:00Z',end:new Date(Date.parse(to.value+'T00:00:00Z')+86400000).toISOString(),client:client.value,offset});
  const row=(title,body)=>{const d=el('details','owner-auto-record');d.append(el('summary','',title),body);return d};
@@ -21,12 +21,13 @@ export function billingPanel({request}){
   const s=d.summary||{},costs=d.provider_costs||[],providerTotal=costs.reduce((n,c)=>n+Number(c.amount?.value||0),0);
   report.append(line('Расчётная сумма известных расходов',money(s.estimated_usd)),note('Это оценка по измеренному использованию и тарифам. Она не равна подтверждённому списанию.'),line('Действия / записи учёта',`${s.actions??0} / ${s.calls??0}`),line('Записи с неполным учётом',s.incomplete??0));
   const imp=d.import;
+  report.append(note('В сверку входят только ключи Мариуса и его учебных проверок. Расходы других приложений и ключей не включаются.'));
   report.append(el('h3','','Сверка с OpenAI'),note(imp?statuses[imp.state]||imp.state:'Первый импорт ещё не запускался'));
   if(imp?.code)report.append(note(codes[imp.code]||'Ошибка импорта: '+imp.code));
   if(imp?.finished_at)report.append(note('Последняя попытка: '+new Date(imp.finished_at).toLocaleString('ru-RU')));
-  if(costs.length){report.append(line('Начисления OpenAI по подключённому проекту',money(providerTotal)));if(!client.value)report.append(line('Разница с известной расчётной суммой',s.estimated_usd==null?'пока не рассчитана':money(providerTotal-Number(s.estimated_usd))));report.append(note('Разница может включать задержку учёта, старые операции и неполные записи. Она не распределяется между клиентами автоматически.'));}
+  if(costs.length){report.append(line('Начисления OpenAI только по ключам Мариуса',money(providerTotal)));if(!client.value)report.append(line('Разница с известной расчётной суммой',s.estimated_usd==null?'пока не рассчитана':money(providerTotal-Number(s.estimated_usd))));report.append(note('Разница может включать задержку учёта, старые операции и неполные записи. Она не распределяется между клиентами автоматически.'));}
   else report.append(note(imp?.state==='complete'?'В сохранённом отчёте за этот период нет строк начислений.':'Подтверждённая сумма пока не загружена.'));
-  if(client.value)report.append(note('OpenAI показывает общую сумму проекта. Расход выбранного клиента определяется по нашему журналу.'));
+  if(client.value)report.append(note('OpenAI показывает общую сумму по ключам Мариуса. Расход выбранного клиента определяется по нашему журналу.'));
   if(d.coverage_start)report.append(note('Самая ранняя запись журнала: '+new Date(d.coverage_start).toLocaleString('ru-RU')+'. Старые данные могут быть неполными.'));
   report.append(el('h3','','По действиям'));
   for(const c of d.categories||[]){const body=el('div');body.append(line('Записей учёта',c.calls),line('Расчётная сумма',money(c.estimated_usd)),line('Неполных записей',c.incomplete));if(c.input_tokens!=null)body.append(line('Входные токены',c.input_tokens));if(c.output_tokens!=null)body.append(line('Выходные токены',c.output_tokens));if(c.seconds!=null)body.append(line('Длительность по данным провайдера',Number(c.seconds).toFixed(1)+' с'));report.append(row(`${names[c.category]||c.category} · ${money(c.estimated_usd)}`,body));}
