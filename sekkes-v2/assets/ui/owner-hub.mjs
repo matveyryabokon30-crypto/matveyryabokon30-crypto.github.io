@@ -23,9 +23,11 @@ export function organizeHub(content,{kind,data,documents,viewState,available=()=
  const saved=original.find(n=>n.classList.contains('owner-check-entry'))||original.find(n=>n.classList.contains('owner-documents'));
  const journal=original.find(n=>n.classList.contains('owner-evaluation-journal'));
  const control=original.find(n=>n.classList.contains('owner-instruction-control'));
+ const knowledge=original.find(n=>n.classList.contains('owner-knowledge-control'));
  const actions=original.filter(n=>n.tagName==='BUTTON'),newCheck=saved?.querySelector('button:last-child');
  if(kind==='evaluation'&&newCheck?.textContent==='Новая проверка'){actions.unshift(newCheck);newCheck.remove();}
  const groups=[{id:'overview',label:'Обзор',glyph:'▥'}];
+ if(knowledge)groups.push({id:'connected',label:'Подключено',glyph:'✓',node:knowledge});
  if(control)groups.push({id:'active',label:'Действует',glyph:'✓',node:control});
  const rows=automatic?[...automatic.children].filter(n=>n.tagName==='DETAILS'):[];
  groups.push({id:'records',label:kind==='material'?'Библиотека':kind==='example'?'Ответы':kind==='instruction'?'Настройки':'Испытания',glyph:'≡',node:pagedCollection(rows,{label:names[kind]})});

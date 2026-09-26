@@ -1,3 +1,4 @@
+import {knowledgePanel} from './owner-knowledge.mjs';
 import {organizeHub} from './owner-hub.mjs';
 import {billingPanel} from './owner-billing.mjs';
 import {documentJump} from './owner-scroll.mjs';
@@ -15,7 +16,7 @@ import {el,icon} from './components.mjs';
 import {ChatRecorder} from './chat-recorder.mjs';
 import {ACCEPT,prepareFile,bundleBlob,base64} from './owner-media.mjs';
 const labels={instruction:'Инструкции',material:'Материалы',example:'Примеры',evaluation:'Проверки'};
-const errors={INVALID_EVALUATION:'Нужна структурированная проверка: вопрос до 6000 символов и заполненный эталон.',EVALUATION_UNAVAILABLE:'Автоматические проверки пока не подключены.',PROVIDER_NOT_CONFIGURED:'Модель для проверок пока не подключена.',NOT_FOUND:'Запуск не найден. Обнови кабинет перед новым запуском.',TOO_MANY_FILES:'До 4 вложений в сообщении.',INVALID_MEDIA:'Проверь формат вложений и общий размер: до 20 МБ на сообщение.',OWNER_ONLY:'Доступ только владельцу.',AUTH_REQUIRED:'Сессия завершилась. Войди в аккаунт.',ACTIVATION_REQUIRED:'Подтверди доступ к кабинету.',RECENT_PROOF_REQUIRED:'Подтверди доступ кодом или Face ID.',REVISION_CONFLICT:'Данные уже изменились. Сохрани текст перед обновлением.',S2_BUDGET:'Отправку остановил внутренний лимит AI Marius. Это не подтверждение нулевого баланса OpenAI; нужна сверка расходов и резервов.',S2_BUSY:'Дождись завершения текущего запроса.',TURN_PENDING:'Агент готовит ответ…',TURN_FAILED:'Ответ не получен. Сообщение сохранено; его можно повторить.',OTP_INVALID:'Проверь код или ссылку из письма.',MEDIA_TOO_LARGE:'Файл должен быть не больше 10 МБ.',VIDEO_TOO_LONG:'Прикрепи видео длительностью до 3 минут.',INVALID_VIDEO:'Не удалось подготовить видео. Попробуй MP4.',MEDIA_DECODE_FAILED:'Не удалось прочитать файл на этом устройстве. Для видео попробуй MP4, для фото — JPEG.',UNSUPPORTED_FILE:'Поддерживаются PDF, TXT, MD, CSV, DOCX, PPTX, XLSX, фото, MP4/MOV/WebM и аудио MP3/M4A/WAV/WebM.',MEDIA_QUOTA:'Достигнут лимит хранилища кабинета.',MIC_DENIED:'Разреши доступ к микрофону в настройках браузера.',TRANSCRIPTION_FAILED:'Не удалось распознать звук. Запись сохранена, можно повторить отправку.',NO_SPEECH:'Речь в записи не распознана.',UPLOAD_FAILED:'Файл не загрузился. Повтори отправку.',MEDIA_NOT_READY:'Не все файлы загрузились. Повтори отправку.'};
+const errors={KNOWLEDGE_TOO_LARGE:'Выбери до 8 материалов общим объёмом до 12000 символов.',INVALID_REQUEST:'Проверь выбранные материалы и способы подключения.',INVALID_EVALUATION:'Нужна структурированная проверка: вопрос до 6000 символов и заполненный эталон.',EVALUATION_UNAVAILABLE:'Автоматические проверки пока не подключены.',PROVIDER_NOT_CONFIGURED:'Модель для проверок пока не подключена.',NOT_FOUND:'Запуск не найден. Обнови кабинет перед новым запуском.',TOO_MANY_FILES:'До 4 вложений в сообщении.',INVALID_MEDIA:'Проверь формат вложений и общий размер: до 20 МБ на сообщение.',OWNER_ONLY:'Доступ только владельцу.',AUTH_REQUIRED:'Сессия завершилась. Войди в аккаунт.',ACTIVATION_REQUIRED:'Подтверди доступ к кабинету.',RECENT_PROOF_REQUIRED:'Подтверди доступ кодом или Face ID.',REVISION_CONFLICT:'Данные уже изменились. Сохрани текст перед обновлением.',S2_BUDGET:'Отправку остановил внутренний лимит AI Marius. Это не подтверждение нулевого баланса OpenAI; нужна сверка расходов и резервов.',S2_BUSY:'Дождись завершения текущего запроса.',TURN_PENDING:'Агент готовит ответ…',TURN_FAILED:'Ответ не получен. Сообщение сохранено; его можно повторить.',OTP_INVALID:'Проверь код или ссылку из письма.',MEDIA_TOO_LARGE:'Файл должен быть не больше 10 МБ.',VIDEO_TOO_LONG:'Прикрепи видео длительностью до 3 минут.',INVALID_VIDEO:'Не удалось подготовить видео. Попробуй MP4.',MEDIA_DECODE_FAILED:'Не удалось прочитать файл на этом устройстве. Для видео попробуй MP4, для фото — JPEG.',UNSUPPORTED_FILE:'Поддерживаются PDF, TXT, MD, CSV, DOCX, PPTX, XLSX, фото, MP4/MOV/WebM и аудио MP3/M4A/WAV/WebM.',MEDIA_QUOTA:'Достигнут лимит хранилища кабинета.',MIC_DENIED:'Разреши доступ к микрофону в настройках браузера.',TRANSCRIPTION_FAILED:'Не удалось распознать звук. Запись сохранена, можно повторить отправку.',NO_SPEECH:'Речь в записи не распознана.',UPLOAD_FAILED:'Файл не загрузился. Повтори отправку.',MEDIA_NOT_READY:'Не все файлы загрузились. Повтори отправку.'};
 export function create(ctx){
  const node=el('section','screen owner-screen');node.setAttribute('aria-label','Админ-кабинет');
  let timeline=null,timelineState=null;const hubViews={instruction:{},material:{},example:{},evaluation:{}};
@@ -96,6 +97,15 @@ export function create(ctx){
   }}));
  }
 
+ if(current==='material'){
+  const ticket=epoch;
+  content.append(knowledgePanel({state:data.knowledge_control,documents:data.documents||[],available:()=>!busy&&!live.active&&!disposed&&ticket===epoch,onDirty:()=>{dirty=true;},onApply:async payload=>{
+   busy=true;node.setAttribute('aria-busy','true');
+   try{const result=await request('knowledge',payload);if(disposed||ticket!==epoch)return;data.knowledge_control=result;dirty=false;paint();notice.textContent='Подключение сохранено. Оно действует для новых запросов и голосовых разговоров.';}
+   catch(e){throw Error(error(e));}
+   finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false');}}
+  }}));
+ }
  if(!data.dashboard)content.append(hint('Серверные настройки пока не загружены.'));
  if(data.dashboard?.catalog_unavailable)content.append(hint('Учебный каталог временно недоступен. Сохранённые документы доступны ниже.'));
  if(data.training_display_unavailable)content.append(hint('Журнал учебных запусков временно недоступен.'));
