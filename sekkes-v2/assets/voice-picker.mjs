@@ -18,9 +18,9 @@ export class VoicePicker {
   }
   open() {
     if(this.isLive())return this.notify('Сначала заверши голосовой разговор.');
-    this.close();this.opened=true;
-    const heading=document.createElement('h2');heading.textContent='Выбрать голос';heading.id='dialogTitle';
-    const intro=document.createElement('p');intro.textContent='Мариус — Vesper, его помощница Вера — Bossa. Разговор и память общие. Голос можно сменить здесь или попросить об этом во время разговора.';
+    this.close();this.opened=true;this.root.classList.add('voice-picker-content');this.root.closest('dialog')?.classList.add('voice-picker-dialog');
+    const heading=document.createElement('h2');heading.textContent='Голос Мариуса';heading.id='dialogTitle';
+    const intro=document.createElement('p');intro.textContent='Выбери звучание для следующего разговора. У Мариуса и Веры общие история и память.';
     this.activeGender=this.voices.find(v=>v.id===this.preferences.selected)?.gender||'female';
     this.tabs=document.createElement('div');this.tabs.className='voice-tabs';this.tabs.setAttribute('role','tablist');this.tabs.setAttribute('aria-label','Тип голоса');
     for(const [gender,label] of [['female','Вера'],['male','Мариус']]){
@@ -30,8 +30,8 @@ export class VoicePicker {
       this.tabs.append(tab);
     }
     this.list=document.createElement('div');this.list.className='voice-list';this.list.id='voice-options';this.list.setAttribute('role','tabpanel');
-    this.message=document.createElement('p');this.message.setAttribute('role','status');this.message.setAttribute('aria-live','polite');
-    this.root.replaceChildren(heading,intro,this.tabs,this.list,this.message);
+    this.message=document.createElement('p');this.message.className='voice-picker-status';this.message.setAttribute('role','status');this.message.setAttribute('aria-live','polite');
+    const kicker=document.createElement('p');kicker.className='voice-picker-kicker';kicker.textContent='AI MARIUS · ГОЛОС';this.root.replaceChildren(kicker,heading,intro,this.tabs,this.list,this.message);
     this.render();
   }
   render() {
@@ -42,7 +42,7 @@ export class VoicePicker {
     for(const voice of this.voices.filter(v=>v.gender===this.activeGender)) {
       const ready=voice.enabled===true&&assessVoice(voice).length===0;
       const selected=voice.id===this.preferences.selected;
-      const row=document.createElement('div');row.className='voice-choice'+(selected?' selected':'');
+      const row=document.createElement('div');row.className='voice-choice'+(selected?' selected':'');row.setAttribute('aria-label',voice.name||voice.id);
       const label=document.createElement('div'),name=document.createElement('strong'),hint=document.createElement('small');
       name.textContent=voice.name||voice.id;hint.textContent=(selected?'Выбран':ready?'Русский пример':'Голос ещё не готов')+(voice.default_for_group?' · По умолчанию':'');label.append(name,hint);
       const play=document.createElement('button');play.type='button';play.dataset.preview=voice.id;paintAction(play,'play','Послушать');play.disabled=!ready;play.setAttribute('aria-label','Послушать '+name.textContent);
@@ -77,5 +77,5 @@ export class VoicePicker {
     this.message.textContent=state.state==='error'?(errors[state.code]||'Не удалось включить звук. Нажми «Послушать» ещё раз.'):'';
   }
   stopPreview(){this.player.stop();this.playback({state:'idle',voice:null});}
-  close(){this.stopPreview();this.opened=false;}
+  close(){this.stopPreview();this.opened=false;this.root.classList.remove('voice-picker-content');this.root.closest('dialog')?.classList.remove('voice-picker-dialog');}
 }

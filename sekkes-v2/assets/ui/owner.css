@@ -122,3 +122,11 @@ body #shell:has(.owner-billing) .owner-mode{top:auto;bottom:var(--billing-tools)
 body #shell .hub-editor-back{position:fixed;z-index:8;bottom:var(--billing-base);left:12px;right:12px;margin:0;height:56px;border-radius:22px;background:rgba(25,30,48,.87);backdrop-filter:blur(18px)}
 body #shell .owner-screen:has(.owner-hub)>.owner-content{overflow-x:hidden;width:100%;padding-bottom:calc(200px + env(safe-area-inset-bottom))}
 .owner-screen:has(.owner-hub) .owner-editor{min-width:0;width:100%;box-sizing:border-box}.owner-screen:has(.owner-hub) .owner-editor .owner-input{width:100%;min-width:0;box-sizing:border-box}.owner-hub .hub-collection{min-width:0}.owner-hub .hub-collection .owner-input{font-size:16px}
+/* Roadmap: bounded sections, explicit task counts, no decorative frames. */
+.owner-roadmap .bill-nav{grid-template-columns:repeat(4,minmax(0,1fr))}
+.owner-roadmap .roadmap-summary{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:start;cursor:pointer;list-style:none}
+.roadmap-summary::-webkit-details-marker{display:none}.roadmap-summary h3{margin:0;font-size:16px;line-height:1.4}.roadmap-number{font-size:15px;color:#69d8ff;font-weight:650}.roadmap-state{font-size:12px;font-weight:600;white-space:nowrap}.roadmap-item{padding:18px 0 8px}.roadmap-item .bill-row{align-items:start;gap:14px;font-size:15px;line-height:1.5}.roadmap-item .owner-button{margin-left:0}.roadmap-stage{margin-bottom:12px}.roadmap-track{margin-top:22px}.roadmap-track h3{font-size:15px}.roadmap-edit{margin-top:10px}.roadmap-edit select option{color:#182e38;background:#edf3f6}.roadmap-skills{margin:16px 0}.roadmap-skills li{margin:10px 0;font-size:14px;line-height:1.5}.owner-roadmap .bill-number{font-size:30px}.owner-roadmap .hub-list{min-width:0}.owner-roadmap .roadmap-stage>p{margin-bottom:0}
+
+body #shell .owner-screen:has(.owner-roadmap)>.owner-content{padding-bottom:calc(200px + env(safe-area-inset-bottom));overflow-x:hidden}
+
+body #shell .owner-screen:has(.owner-billing)>.owner-tabs{grid-template-columns:repeat(7,minmax(0,1fr))}
