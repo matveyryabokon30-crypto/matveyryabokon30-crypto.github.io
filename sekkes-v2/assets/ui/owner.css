@@ -64,3 +64,8 @@ html[data-keyboard-open=true] .owner-screen{padding-bottom:calc(var(--keyboard-i
 .owner-document-down .living-icon{transform:rotate(180deg)}
 .owner-document-down[hidden]{display:none!important}
 .owner-check-entry{margin:16px 0}
+
+/* Document history fills the viewport behind floating chrome, like chat history. */
+body #shell .owner-screen:not(:has(.owner-chat-content))>.owner-content{position:absolute;inset:0;box-sizing:border-box;padding:calc(env(safe-area-inset-top) + 110px) 12px calc(112px + env(safe-area-inset-bottom));scroll-padding-bottom:calc(112px + env(safe-area-inset-bottom));overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+body #shell .owner-screen:not(:has(.owner-chat-content))>.owner-heading,body #shell .owner-screen:not(:has(.owner-chat-content))>.owner-notice,body #shell .owner-screen:not(:has(.owner-chat-content))>.owner-tabs{position:relative;z-index:2}
+body #shell .owner-screen:not(:has(.owner-chat-content))>.owner-jump-anchor{margin-top:auto}
