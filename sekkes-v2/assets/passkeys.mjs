@@ -198,7 +198,7 @@
       } catch (_) { /* Host never admits an unvalidated session, even if cleanup is offline. */ }
     }
 
-    async function signIn() {
+    async function signIn({preferNearby = false} = {}) {
       const task = begin('signIn');
       if (!task) return false;
       let session = null;
@@ -210,7 +210,10 @@
         if (!challenge?.challenge_id) throw stop('invalid_response');
         // The high-level method offers no userVerification override. The
         // documented two-step API lets us require the device's unlock proof.
-        const credential = await env.navigator.credentials.get({publicKey: requestOptions(challenge.options, env), signal: task.controller.signal});
+        const publicKey = requestOptions(challenge.options, env);
+        // Browser-controlled cross-device QR; unsupported hints fall back to native options.
+        if (preferNearby) publicKey.hints = ['hybrid'];
+        const credential = await env.navigator.credentials.get({publicKey, signal: task.controller.signal});
         guard(task);
         if (!credential) throw stop('cancelled');
         update({message: messages.verifying});

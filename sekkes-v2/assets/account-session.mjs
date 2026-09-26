@@ -64,6 +64,25 @@ export class AccountSession {
   if((expectedUid&&data.user?.id!==expectedUid)||data.user?.email?.toLowerCase()!==email.toLowerCase())throw new S3Error('LOGIN_FAILED');
   return this.admit(data.session,epoch);
  }
+ async phoneAvailable(){
+  const response=await this.api.transport(this.api.config.projectUrl+'/auth/v1/settings',{headers:{apikey:this.api.config.publishableKey},signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw new S3Error('AUTH_UNAVAILABLE');
+  return (await response.json()).external?.phone===true;
+ }
+ async requestPhoneCode(value,{createAccount=false}={}){
+  const phone=normalizeRussianPhone(value);
+  if(!await this.phoneAvailable())throw new S3Error('SMS_UNAVAILABLE');
+  const {error}=await this.candidate.auth.signInWithOtp({phone,options:{shouldCreateUser:createAccount}});
+  if(error)throw error;return phone;
+ }
+ async verifyPhoneCode(value,token){
+  const phone=normalizeRussianPhone(value),epoch=this.epoch;
+  if(!/^\d{6,10}$/.test(token))throw new S3Error('OTP_INVALID');
+  const {data,error}=await this.candidate.auth.verifyOtp({phone,token,type:'sms'});
+  if(error)throw error;
+  if(normalizeRussianPhone(data.user?.phone||'')!==phone)throw new S3Error('LOGIN_FAILED');
+  return this.admit(data.session,epoch);
+ }
  async ensureFresh(){
   if(!this.allowed)throw new S3Error('AUTH_REQUIRED');
   if(this.api.token&&this.api.expiresAt>Date.now()+60000)return;
@@ -96,4 +115,11 @@ export function parseProof(value,projectUrl,email){
  const keys=['token','token_hash'].filter(k=>url.searchParams.has(k));
  if(keys.length!==1||url.searchParams.getAll(keys[0]).length!==1||!/^[A-Za-z0-9_-]{32,256}$/.test(url.searchParams.get(keys[0])))throw new S3Error('OTP_INVALID');
  return {token_hash:url.searchParams.get(keys[0]),type:'email'};
+}
+
+export function normalizeRussianPhone(value){
+ let digits=String(value||'').replace(/[\s()+-]/g,'');
+ if(/^8[0-9]{10}$/.test(digits))digits='7'+digits.slice(1);
+ if(!/^79[0-9]{9}$/.test(digits))throw new S3Error('PHONE_INVALID');
+ return '+'+digits;
 }
