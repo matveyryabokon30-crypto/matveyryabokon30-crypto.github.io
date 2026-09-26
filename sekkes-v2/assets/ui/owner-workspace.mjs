@@ -1,3 +1,4 @@
+import {evaluationControls,evaluationJournal} from './owner-evaluations.mjs';
 import {instructionPanel} from './owner-instructions.mjs';
 import {readAssessment,assessmentSource,assessmentEditor,VERDICTS} from './owner-assessment.mjs';
 import {dashboardRecords} from './owner-dashboard.mjs';
@@ -11,7 +12,7 @@ import {el,icon} from './components.mjs';
 import {ChatRecorder} from './chat-recorder.mjs';
 import {ACCEPT,prepareFile,bundleBlob,base64} from './owner-media.mjs';
 const labels={instruction:'Инструкции',material:'Материалы',example:'Примеры',evaluation:'Проверки'};
-const errors={TOO_MANY_FILES:'До 4 вложений в сообщении.',INVALID_MEDIA:'Проверь формат вложений и общий размер: до 20 МБ на сообщение.',OWNER_ONLY:'Доступ только владельцу.',AUTH_REQUIRED:'Сессия завершилась. Войди в аккаунт.',ACTIVATION_REQUIRED:'Подтверди доступ к кабинету.',RECENT_PROOF_REQUIRED:'Подтверди доступ кодом или Face ID.',REVISION_CONFLICT:'Данные уже изменились. Сохрани текст перед обновлением.',S2_BUDGET:'Отправку остановил внутренний лимит AI Marius. Это не подтверждение нулевого баланса OpenAI; нужна сверка расходов и резервов.',S2_BUSY:'Дождись завершения текущего запроса.',TURN_PENDING:'Агент готовит ответ…',TURN_FAILED:'Ответ не получен. Сообщение сохранено; его можно повторить.',OTP_INVALID:'Проверь код или ссылку из письма.',MEDIA_TOO_LARGE:'Файл должен быть не больше 10 МБ.',VIDEO_TOO_LONG:'Прикрепи видео длительностью до 3 минут.',INVALID_VIDEO:'Не удалось подготовить видео. Попробуй MP4.',MEDIA_DECODE_FAILED:'Не удалось прочитать файл на этом устройстве. Для видео попробуй MP4, для фото — JPEG.',UNSUPPORTED_FILE:'Поддерживаются PDF, TXT, MD, CSV, DOCX, PPTX, XLSX, фото, MP4/MOV/WebM и аудио MP3/M4A/WAV/WebM.',MEDIA_QUOTA:'Достигнут лимит хранилища кабинета.',MIC_DENIED:'Разреши доступ к микрофону в настройках браузера.',TRANSCRIPTION_FAILED:'Не удалось распознать звук. Запись сохранена, можно повторить отправку.',NO_SPEECH:'Речь в записи не распознана.',UPLOAD_FAILED:'Файл не загрузился. Повтори отправку.',MEDIA_NOT_READY:'Не все файлы загрузились. Повтори отправку.'};
+const errors={INVALID_EVALUATION:'Нужна структурированная проверка: вопрос до 6000 символов и заполненный эталон.',EVALUATION_UNAVAILABLE:'Автоматические проверки пока не подключены.',PROVIDER_NOT_CONFIGURED:'Модель для проверок пока не подключена.',NOT_FOUND:'Запуск не найден. Обнови кабинет перед новым запуском.',TOO_MANY_FILES:'До 4 вложений в сообщении.',INVALID_MEDIA:'Проверь формат вложений и общий размер: до 20 МБ на сообщение.',OWNER_ONLY:'Доступ только владельцу.',AUTH_REQUIRED:'Сессия завершилась. Войди в аккаунт.',ACTIVATION_REQUIRED:'Подтверди доступ к кабинету.',RECENT_PROOF_REQUIRED:'Подтверди доступ кодом или Face ID.',REVISION_CONFLICT:'Данные уже изменились. Сохрани текст перед обновлением.',S2_BUDGET:'Отправку остановил внутренний лимит AI Marius. Это не подтверждение нулевого баланса OpenAI; нужна сверка расходов и резервов.',S2_BUSY:'Дождись завершения текущего запроса.',TURN_PENDING:'Агент готовит ответ…',TURN_FAILED:'Ответ не получен. Сообщение сохранено; его можно повторить.',OTP_INVALID:'Проверь код или ссылку из письма.',MEDIA_TOO_LARGE:'Файл должен быть не больше 10 МБ.',VIDEO_TOO_LONG:'Прикрепи видео длительностью до 3 минут.',INVALID_VIDEO:'Не удалось подготовить видео. Попробуй MP4.',MEDIA_DECODE_FAILED:'Не удалось прочитать файл на этом устройстве. Для видео попробуй MP4, для фото — JPEG.',UNSUPPORTED_FILE:'Поддерживаются PDF, TXT, MD, CSV, DOCX, PPTX, XLSX, фото, MP4/MOV/WebM и аудио MP3/M4A/WAV/WebM.',MEDIA_QUOTA:'Достигнут лимит хранилища кабинета.',MIC_DENIED:'Разреши доступ к микрофону в настройках браузера.',TRANSCRIPTION_FAILED:'Не удалось распознать звук. Запись сохранена, можно повторить отправку.',NO_SPEECH:'Речь в записи не распознана.',UPLOAD_FAILED:'Файл не загрузился. Повтори отправку.',MEDIA_NOT_READY:'Не все файлы загрузились. Повтори отправку.'};
 export function create(ctx){
  const node=el('section','screen owner-screen');node.setAttribute('aria-label','Админ-кабинет');
  let timeline=null,timelineState=null;
@@ -75,10 +76,12 @@ export function create(ctx){
  async function poll(){if(polling||disposed)return;polling=true;const ticket=epoch;try{const next=await request('workspace');if(ticket!==epoch)return;const oldRetry=retry;sync(next);if(oldRetry&&!next.turns.some(t=>t.id===oldRetry.id)&&!busy){retry=null;notice.textContent='Задание не принято сервером. Можно повторить отправку.';}if(current==='chat'){if(oldRetry&&!retry)paintChat();else renderMessages();}}finally{polling=false}}
  const timer=setInterval(()=>{if(!disposed&&current==='chat'&&!document.hidden&&(retry||data?.turns?.some(t=>t.status==='pending'))&&pollCount++<50)void poll().catch(()=>{});},3000);
  function paintCosts(){const c=data.costs||{};content.append(hint('Учёт административного диалога и учебных запусков. Обновляется с сервера.'),el('p','',`Входные токены: ${c.input_tokens??'неизвестно'}`),el('p','',`Выходные токены: ${c.output_tokens??'неизвестно'}`),el('p','',`Начислено провайдером: ${c.invoiced_usd==null?'не подтверждено':'$'+Number(c.invoiced_usd).toFixed(2)}`),hint('Токены живого голоса, обычного чата и расходы на распознавание не входят в эти итоги. Исторические резервы не являются списаниями.'));
+ if(data.evaluations)content.append(hint('Токены автоматических проверок показаны отдельно в разделе «Проверки», в каждом запуске. В суммы выше они не входят.'));
  content.append(button('Обновить данные',()=>run(load)));}
  function paintDocuments(){
  const descriptions={instruction:'Действующие серверные настройки и учебные версии загружаются автоматически. Ручные документы ниже сохраняются как черновики.',material:'Учебные материалы и вложения административного диалога загружаются автоматически.',example:'Ответы административного диалога появляются автоматически. Они ещё не оценены как правильные учебные примеры.',evaluation:'Учебные и проверочные запуски появляются автоматически. Завершённый запуск не означает успешную оценку качества.'};
  content.append(hint(descriptions[current]));
+ if(current==='evaluation'&&data.evaluations)content.append(evaluationJournal({data:data.evaluations,available:()=>!busy&&!dirty&&!live.active&&!disposed,onRead:id=>evaluationRequest({action:'read',id})}));
  if(current==='instruction'){
   const ticket=epoch;
   content.append(instructionPanel({state:data.instruction_control,documents:data.documents||[],available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,onApply:async payload=>{
@@ -102,16 +105,16 @@ export function create(ctx){
   automatic.append(detail);
  }
  if(current==='material')for(const m of data.media||[]){const detail=el('details','owner-auto-record');detail.append(el('summary','',m.name),hint('Вложение административного диалога · '+m.mime),button('Открыть файл',()=>run(async()=>{const ticket=epoch,blob=await request('content',{id:m.id});if(ticket===epoch&&detail.isConnected){detail.querySelector('.owner-file-preview')?.remove();const box=el('div','owner-file-preview');box.append(preview(m,blob));detail.append(box);}})));automatic.append(detail);}
- if(!automatic.children.length)automatic.append(hint('Пока нет записей. Они появятся после загрузки материала или соответствующего запуска.'));
+ if(!automatic.children.length)automatic.append(hint(current==='evaluation'?'Учебных запусков и ответов для ручной оценки пока нет.':'Пока нет записей. Они появятся после загрузки материала или соответствующего запуска.'));
  content.append(automatic);
  const list=el('div','owner-documents');for(const d of latest().filter(x=>x.kind===current))list.append(button(`${d.title} · ${readAssessment(d)?VERDICTS[readAssessment(d).verdict]:'черновик'} · v${d.revision}`,()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=d;paintDocumentsForm()}));content.append(list,button(current==='evaluation'?'Новая проверка':'Новый документ',()=>{if(busy||live.active)return;if(dirty&&!confirm('Отбросить несохранённые изменения документа?'))return;dirty=false;editing=null;paintDocumentsForm()}),button('Обновить данные',()=>{if(dirty)return;void run(load)}));
  }
- function paintDocumentsForm(){if(current==='evaluation'&&(!editing||readAssessment(editing)))return openAssessment(editing?{...readAssessment(editing),title:editing.title}:{});content.querySelector('.owner-editor')?.remove();const form=el('div','owner-editor'),name=el('input','owner-input'),body=el('textarea','owner-input');name.placeholder='Название';name.setAttribute('aria-label','Название документа');name.maxLength=160;body.placeholder='Содержание';body.setAttribute('aria-label','Содержание документа');body.rows=10;body.maxLength=30000;name.value=editing?.title||'';body.value=editing?.content||'';name.oninput=body.oninput=()=>dirty=true;
+ function paintDocumentsForm(){content.querySelector('.owner-evaluation-controls')?.remove();if(current==='evaluation'&&(!editing||readAssessment(editing)))return openAssessment(editing?{...readAssessment(editing),title:editing.title}:{});content.querySelector('.owner-editor')?.remove();const form=el('div','owner-editor'),name=el('input','owner-input'),body=el('textarea','owner-input');name.placeholder='Название';name.setAttribute('aria-label','Название документа');name.maxLength=160;body.placeholder='Содержание';body.setAttribute('aria-label','Содержание документа');body.rows=10;body.maxLength=30000;name.value=editing?.title||'';body.value=editing?.content||'';name.oninput=body.oninput=()=>dirty=true;
  form.append(name,body,button('Сохранить новую версию',()=>run(async()=>{const id=editing?.id||crypto.randomUUID();await request('document',{id,kind:current,revision:editing?.revision||0,title:name.value,content:body.value});dirty=false;editing=null;await load();notice.textContent='Версия сохранена как черновик.'})));
  if(editing){const versions=(data.documents||[]).filter(x=>x.id===editing.id);form.append(hint('Предыдущие версии:'));for(const v of versions)form.append(button(`v${v.revision} · ${new Date(v.created_at).toLocaleString('ru-RU')}`,()=>{body.value=v.content;name.value=v.title;dirty=true;notice.textContent='Содержимое старой версии открыто. Сохранение создаст новую версию.'}));}content.append(form);
  }
  function openAssessment(value){
- content.querySelector('.owner-editor')?.remove();
+ content.querySelector('.owner-editor')?.remove();content.querySelector('.owner-evaluation-controls')?.remove();
  const id=editing?.id||crypto.randomUUID(),revision=editing?.revision||0,ticket=epoch;
  const versions=(data?.documents||[]).filter(d=>d.id===id).sort((a,b)=>b.revision-a.revision);
  const form=assessmentEditor({value,versions,onDirty:()=>{dirty=true;},onSave:async encoded=>{
@@ -121,6 +124,14 @@ export function create(ctx){
   catch(e){throw Error(error(e));}
   finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false');}}
  }});content.append(form);
+ if(editing&&data.evaluations){const saved=editing;content.append(evaluationControls({document:saved,available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,onRequest:evaluationRequest}));}
+ }
+ async function evaluationRequest(payload){
+  if(busy||dirty||live.active||disposed)throw Error('Сначала сохрани изменения и заверши текущее действие.');
+  const ticket=epoch;busy=true;node.setAttribute('aria-busy','true');
+  try{const result=await request('evaluation',payload);if(disposed||ticket!==epoch)throw Error('Сессия изменилась.');return result;}
+  catch(e){throw Object.assign(Error(error(e)),{code:e.code||e.message});}
+  finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false');}}
  }
  async function refresh(){if(isDirty()||busy||recording)return;await run(async()=>{const s=await request('status');if(s.active)await load();else activation()})}
  function reset(){timeline?.dispose();timeline=null;timelineState=null;content.querySelector('.owner-composer')?._resizeObserver?.disconnect();epoch++;loader.reset();void live.stop();recorder.cancel();for(const u of urls.values())URL.revokeObjectURL(u);urls.clear();data=null;draft='';retry=null;selected=[];dirty=false;busy=false;editing=null;node.setAttribute('aria-busy','false');content.replaceChildren(hint('Войди в аккаунт владельца.'));tabs.replaceChildren()}
