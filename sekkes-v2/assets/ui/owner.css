@@ -130,3 +130,19 @@ body #shell .owner-screen:has(.owner-hub)>.owner-content{overflow-x:hidden;width
 body #shell .owner-screen:has(.owner-roadmap)>.owner-content{padding-bottom:calc(200px + env(safe-area-inset-bottom));overflow-x:hidden}
 
 body #shell .owner-screen:has(.owner-billing)>.owner-tabs{grid-template-columns:repeat(7,minmax(0,1fr))}
+
+/* editor.85: use the available reading height; keep actions above both nav rows. */
+body #shell .owner-screen:has(.owner-editor)>.owner-content{display:flex;flex-direction:column;overflow:hidden;padding-bottom:calc(128px + max(8px,env(safe-area-inset-bottom)))}
+body #shell .owner-screen .owner-editor{display:flex;flex-direction:column;flex:1;min-height:0;gap:10px}
+body #shell .owner-editor>.owner-input{margin:0;flex-shrink:0}
+body #shell .owner-editor>textarea.owner-input{flex:1;min-height:80px;height:0;resize:none;overflow-y:auto;overscroll-behavior:contain;line-height:1.55;-webkit-overflow-scrolling:touch}
+.owner-editor-actions{flex:0 0 auto;min-height:80px;padding-right:60px;box-sizing:border-box}
+.owner-editor-actions>.owner-button{margin:0 0 4px}
+.owner-editor-history>summary{cursor:pointer;min-height:32px;display:flex;align-items:center;font-size:13px;opacity:.8;list-style:none}
+.owner-editor-history>summary::-webkit-details-marker{display:none}
+.owner-editor-history>summary::after{content:'⌄';margin-left:8px}
+.owner-editor-history[open]>summary::after{content:'⌃'}
+.owner-editor-versions{max-height:88px;overflow:auto;overscroll-behavior:contain;display:flex;flex-wrap:wrap;gap:4px}
+.owner-editor-versions>.owner-button{margin:0;font-size:12px;min-height:36px;padding:6px 10px}
+body #shell .owner-screen:has(.owner-editor) .owner-document-down{display:none}
+@media(max-height:550px){body #shell .owner-screen:has(.owner-editor)>.owner-content{overflow-y:auto}.owner-screen .owner-editor{min-height:230px!important}}
