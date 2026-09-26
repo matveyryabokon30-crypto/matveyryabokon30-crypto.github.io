@@ -500,3 +500,10 @@ body .profile-library-links .profile-action{display:inline-flex;align-items:cent
 }
 /* Blur the scene once at the outside of each floating control group. */
 body :is(.menu-trigger,.navigation-panel,.live-control,.composer,.owner-composer-pill,.profile-bottom,.owner-mode,.owner-tabs){-webkit-backdrop-filter:blur(16px) saturate(120%);backdrop-filter:blur(16px) saturate(120%);}
+
+/* Retry is a text action; preserve its touch target without a visible tile. */
+@layer sekkes-borderless{
+ body #shell .message-retry,body #shell .message-retry:is(:hover,:active,:focus,:focus-visible,:disabled){background:transparent!important;border:0!important;outline:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-decoration:none!important;color:#91e8ff!important;border-radius:0!important;}
+ body #shell .message-retry{font-weight:600;}
+ body #shell .message-retry:focus-visible{color:#fff!important;text-decoration:underline!important;text-underline-offset:4px;}
+}
