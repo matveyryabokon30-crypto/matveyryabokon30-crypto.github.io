@@ -1,6 +1,9 @@
 import {el} from './components.mjs';
 import {pagedCollection} from './owner-hub.mjs';
 export const STATES={planned:'Впереди',active:'В работе',done:'Готово'};
+export const AGENTS={codex:'Codex · разработка',work:'Работа · содержание'};
+export function assignedGroups(groups,agent){return groups.map(g=>({...g,items:g.items.filter(i=>i.assignee===agent)})).filter(g=>g.items.length);}
+export function activityCounts(history){return {codex:history.filter(h=>/^\[Codex\]/.test(h.note||'')).length,work:history.filter(h=>/^\[Работа\]/.test(h.note||'')).length};}
 const COLORS={planned:'#a9b9cc',active:'#ffcd79',done:'#6fe7b7'};
 export function progress(groups){const items=groups.flatMap(g=>g.items),done=items.filter(i=>i.status==='done').length;return {total:items.length,done,active:items.filter(i=>i.status==='active').length,percent:items.length?Math.round(done/items.length*100):0};}
 export function groupState(group){return group.items.every(i=>i.status==='done')?'done':group.items.some(i=>i.status!=='planned')?'active':'planned';}
@@ -19,10 +22,13 @@ export function roadmapPanel({request,available=()=>true,onBusy=()=>{},onDirty=(
   catch(e){if(alive()){message.textContent=fail(e);if(!data)report.replaceChildren(button('Повторить загрузку',load));}}
   finally{working=false;if(alive())onBusy(false);}
  }
- async function save(item,status,text){
+ async function save(item,status,text,agent){
   if(!can())return;
   if(status==='done'&&text.trim().length<3){message.textContent='Добавь краткий результат: что выполнено или чем проверено.';return;}
-  const payload={action:'update',expected:data.current.revision,item:item.id,status,note:text.trim()};
+  const attribution=agent==='work'?'Работа':'Codex';
+  const clean=text.trim().replace(/^\[(?:Codex|Работа)\]\s*/,'');
+  if(clean.length<3){message.textContent='Добавь действие, результат и подтверждение.';return;}
+  const payload={action:'update',expected:data.current.revision,item:item.id,status,note:'['+attribution+'] '+clean};
   const key=JSON.stringify(payload);if(!pending||pending.key!==key)pending={key,body:{...payload,operation:crypto.randomUUID()}};
   working=true;onBusy(true);message.textContent='Сохраняем отметку…';
   try{const next=await request('roadmap',pending.body);if(!alive())return;data=next;pending=null;edit=null;onDirty(false);message.textContent='Сохранено на сервере.';paint();}
@@ -36,14 +42,16 @@ export function roadmapPanel({request,available=()=>true,onBusy=()=>{},onDirty=(
    head.append(el('h3','',g.title),el('span','bill-note',p.done+' / '+p.total+' выполнено'+(g.parallel?' · параллельно':'')));summary.append(num,head,tag);card.append(summary,bar(p.percent),note(g.description));
    for(const item of g.items){
     const row=el('div','roadmap-item'),line=el('div','bill-row'),label=el('span','',item.title),s=el('span','roadmap-state',STATES[item.status]);s.style.color=COLORS[item.status];line.append(label,s);row.append(line);
+    row.append(note('Ответственный: '+(AGENTS[item.assignee]||'Не назначен')));
     if(item.note)row.append(note(item.note));
     if(edit?.id===item.id){
      const form=el('form','roadmap-edit'),select=el('select','owner-input'),input=el('textarea','owner-input');
      select.setAttribute('aria-label','Статус: '+item.title);for(const [v,t]of Object.entries(STATES)){const o=el('option','',t);o.value=v;select.append(o);}select.value=edit.status;
-     input.setAttribute('aria-label','Результат или комментарий');input.placeholder='Что выполнено или что осталось';input.rows=3;input.maxLength=1500;input.value=edit.note;
+     input.setAttribute('aria-label','Результат или комментарий');input.placeholder='Что выполнено или что осталось';input.rows=5;input.maxLength=1450;input.value=edit.note;
+     const actor=el('select','owner-input');actor.setAttribute('aria-label','Исполнитель действия');for(const [v,t] of Object.entries(AGENTS)){const o=el('option','',t);o.value=v;actor.append(o);}actor.value=edit.agent;actor.onchange=()=>{edit.agent=actor.value;pending=null;onDirty(true);};
      select.onchange=()=>{edit.status=select.value;pending=null;onDirty(true);};input.oninput=()=>{edit.note=input.value;pending=null;onDirty(true);};
-     const submit=button('Сохранить',()=>{});submit.type='submit';const cancel=button('Отмена',()=>{if(!can())return;edit=null;pending=null;onDirty(false);paint();});form.onsubmit=e=>{e.preventDefault();void save(item,select.value,input.value);};form.append(select,input,submit,cancel);row.append(form);card.open=true;
-    }else row.append(button('Изменить статус',()=>{if(!can())return;if(edit&&!confirm('Отбросить несохранённую правку?'))return;edit={id:item.id,status:item.status,note:item.note||''};onDirty(true);paint();}));
+     const submit=button('Сохранить',()=>{});submit.type='submit';const cancel=button('Отмена',()=>{if(!can())return;edit=null;pending=null;onDirty(false);paint();});form.onsubmit=e=>{e.preventDefault();void save(item,select.value,input.value,actor.value);};form.append(select,actor,input,submit,cancel);row.append(form);card.open=true;
+    }else row.append(button('Изменить статус',()=>{if(!can())return;if(edit&&!confirm('Отбросить несохранённую правку?'))return;edit={id:item.id,status:item.status,note:(item.note||'').replace(/^\[(?:Codex|Работа)\]\s*/,''),agent:item.assignee||'codex'};onDirty(true);paint();}));
     card.append(row);
    }
    if(g.skills){const d=el('details','roadmap-skills');d.append(el('summary','','10 навыков M1'));const list=el('ol');g.skills.forEach(s=>list.append(el('li','',s)));d.append(list);card.append(d);}
@@ -56,12 +64,18 @@ export function roadmapPanel({request,available=()=>true,onBusy=()=>{},onDirty=(
  }
  function paint(){
   if(!data)return;const doc=data.current.document,view=viewState.view||'overview';report.replaceChildren(el('h2','','План развития'));
-  nav.replaceChildren();for(const [id,name,glyph]of [['overview','Обзор','▥'],['product','Этапы','≡'],['psychology','Психология','◇'],['history','История','◷']]){
+  nav.replaceChildren();for(const [id,name,glyph]of [['overview','Обзор','▥'],['codex','Codex','⌘'],['work','Работа','✎'],['product','Этапы','≡'],['psychology','Психология','◇'],['history','История','◷']]){
    const b=button('',()=>{if(!can())return;if(edit&&!confirm('Отбросить несохранённую правку?'))return;edit=null;pending=null;onDirty(false);viewState.view=id;paint();root.closest('.owner-content')?.scrollTo({top:0});});
    b.setAttribute('aria-label',name);b.setAttribute('aria-current',String(view===id));b.append(el('span','bill-nav-icon',glyph),el('span','',name));nav.append(b);
   }
   if(view==='overview'){
    report.append(metrics(doc.groups));
+   const agents=el('section','bill-block');agents.append(el('h3','','Два агента · общий план'));
+   const counts=activityCounts(data.history);
+   for(const [id,label] of Object.entries(AGENTS)){const gs=assignedGroups(doc.groups,id);agents.append(el('h3','',label),note(doc.coordination?.agents?.[id]?.scope||''),metrics(gs),note('Отметок с подписью исполнителя в последних '+data.history.length+' записях: '+counts[id]),button('Открыть '+label,()=>{viewState.view=id;paint();}));}
+   for(const rule of doc.coordination?.rules||[])agents.append(note(rule));
+   agents.append(note('Распределение пунктов показывает ответственность. Старые выполненные пункты не считаются действиями нового исполнителя. Число отметок не измеряет трудоёмкость или качество.'));
+   report.append(agents);
    const overview=el('section','bill-block');overview.append(el('h3','','Общий маршрут'),bar(progress(doc.groups).percent),note('Процент — доля завершённых подпунктов. Все подпункты имеют одинаковый вес; это не оценка времени, качества модели или бюджета.'));
    for(const [track,title]of [['product','Продукт · 22 этапа'],['psychology','Психология · M0–M8']]){const gs=doc.groups.filter(g=>g.track===track),p=progress(gs),r=el('div','roadmap-track');r.append(el('h3','',title),note(p.done+' из '+p.total+' пунктов · '+p.percent+'%'),bar(p.percent));overview.append(r);}
    const current=doc.groups.find(g=>g.id==='P4'&&groupState(g)!=='done')||doc.groups.find(g=>g.track==='product'&&!g.parallel&&groupState(g)!=='done');const learning=doc.groups.find(g=>g.track==='psychology'&&groupState(g)!=='done');const next=el('section','bill-block');next.append(el('h3','','Следующие шаги'),el('p','',current?'Этап '+current.number+' · '+current.title:'Все продуктовые этапы отмечены готовыми.'),note(learning?'Учебная линия — '+learning.number+': '+learning.title+'.':'Все учебные модули отмечены готовыми.'),note('Нативный голос и собственная модель — параллельные направления. Незавершённые подпункты ранних этапов остаются видимыми.'));
@@ -70,10 +84,10 @@ export function roadmapPanel({request,available=()=>true,onBusy=()=>{},onDirty=(
   }else if(view==='history'){
    report.append(note('Изменений: '+data.history_total+'. Показаны последние '+data.history.length+'. Первоначальные отметки основаны на отчётах приёмки.'));
    const items=doc.groups.flatMap(g=>g.items);
-   report.append(pagedCollection(data.history.map(h=>{const r=el('div','bill-block');r.append(el('h3','',items.find(i=>i.id===h.item)?.title||h.item),note(STATES[h.status]+' · '+new Date(h.created_at).toLocaleString('ru-RU')),el('p','',h.note));return r;}),{label:'История плана',size:5}));
+   report.append(pagedCollection(data.history.map(h=>{const r=el('div','bill-block');r.append(el('h3','',items.find(i=>i.id===h.item)?.title||h.item),note((STATES[h.status]||'Изменение плана')+' · '+new Date(h.created_at).toLocaleString('ru-RU')),el('p','',h.note));return r;}),{label:'История плана',size:5}));
   }else{
-   const groups=doc.groups.filter(g=>g.track===view);report.append(metrics(groups));
-   const cards=rows(groups),collection=pagedCollection(cards,{label:view==='product'?'Этапы продукта':'Психологическая программа',size:5});report.append(collection);
+   const groups=AGENTS[view]?assignedGroups(doc.groups,view):doc.groups.filter(g=>g.track===view);report.append(metrics(groups));
+   const cards=rows(groups),collection=pagedCollection(cards,{label:AGENTS[view]|| (view==='product'?'Этапы продукта':'Психологическая программа'),size:5});report.append(collection);
    // Editing remains reachable after pagination/search: render the edited group separately.
    if(edit){const g=groups.find(g=>g.items.some(i=>i.id===edit.id));if(g){report.replaceChildren(el('h2','',g.number+' · '+g.title),...rows([g]));}}
   }
