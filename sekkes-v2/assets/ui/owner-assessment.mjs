@@ -6,6 +6,7 @@ export function readAssessment(document){
  try{const v=JSON.parse(document.content);if(v.schema!==ASSESSMENT_SCHEMA||v.method!=='owner_manual'||!Object.hasOwn(VERDICTS,v.verdict)||['question','expected','actual','notes'].some(k=>typeof v[k]!=='string'))return null;return v;}catch{return null;}
 }
 export function assessmentSource(data,id){
+ if(id.startsWith('dialogue:')){const r=data.multiturn?.runs?.find(r=>'dialogue:'+r.id===id);if(!r||r.state!=='completed'||!r.reply)return null;return {question:r.prompt,actual:r.reply,source:{type:'multiturn_run',id:r.id,dialogue_id:r.dialogue_id,turn:r.turn,at:r.created_at}};}
  if(id.startsWith('run:')){const r=data.training_runs?.find(r=>'run:'+r.id===id);if(!r||r.hidden||r.state!=='completed'||!r.reply)return null;return {question:r.prompt||r.request_text||'',actual:r.reply,source:{type:'training_run',id:r.id,at:r.created_at||null}};}
  if(id.startsWith('turn:')||id.startsWith('trial:')){const t=data.turns?.find(t=>id.split(':').slice(1).join(':')===t.id);if(!t||t.status!=='completed'||!t.reply)return null;return {question:t.user_text||'',actual:t.reply,source:{type:'admin_turn',id:t.id,at:t.answered_at||t.created_at||null}};}
  return null;

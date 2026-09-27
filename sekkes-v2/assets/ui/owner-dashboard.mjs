@@ -6,6 +6,7 @@ export function dashboardRecords(data,kind){
   rows.push({id:'turn:'+t.id,title:(t.user_text||'Диалог').slice(0,100),label:'Из административного диалога · не оценён как учебный образец',content:`Запрос:\n${t.user_text}\n\nОтвет:\n${t.reply}`,at:t.answered_at||t.created_at});
  }
  if(kind==='evaluation'){
+  for(const r of data.multiturn?.runs||[])rows.push({id:'dialogue:'+r.id,title:`M1 · ход ${r.turn} · ${r.prompt.slice(0,100)}`,label:`Диалог M1 · ${r.state} · качество требует оценки`,content:`Запрос:\n${r.prompt}\n\nОтвет:\n${r.reply||'Подтверждённого ответа нет.'}\n\nДиалог: ${r.dialogue_id}\nID: ${r.id}`,at:r.created_at});
   const runs=data.training_runs||[];
   for(const r of runs)rows.push({id:'run:'+r.id,title:r.prompt||r.request_text||r.id,label:`${r.mode==='evaluation'?'Проверочный':'Учебный'} запуск · ${r.state} · оценка качества не выставлена`,content:`Запрос:\n${r.prompt||r.request_text||''}\n\nОтвет:\n${r.hidden?'Скрыт после отзыва материала.':r.reply||'Ответ не получен.'}\n\nВходные токены: ${r.usage?.input_tokens??'неизвестно'}\nВыходные токены: ${r.usage?.output_tokens??'неизвестно'}\nID: ${r.id}`,at:r.created_at});
   for(const t of data.turns||[]){

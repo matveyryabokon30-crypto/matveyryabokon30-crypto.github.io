@@ -1,5 +1,5 @@
 import {el} from './components.mjs';
-const names={voice_message:'Голосовые сообщения',text:'Текстовый чат',chat:'Админ-диалог',training:'Обучение',evaluation:'Проверки',memory_test:'Память',context_test:'Контекст',live:'Живой голос',live_backend:'Ответы в голосе',transcription:'Распознавание',speech:'Озвучивание','sekkes-voice-archive':'Анализ разговора'};
+const names={voice_message:'Голосовые сообщения',text:'Текстовый чат',chat:'Админ-диалог','training-dialogue':'Диалоги M1',training:'Обучение',evaluation:'Проверки',memory_test:'Память',context_test:'Контекст',live:'Живой голос',live_backend:'Ответы в голосе',transcription:'Распознавание',speech:'Озвучивание','sekkes-voice-archive':'Анализ разговора'};
 const states={pending:'Ожидаем данные',active:'Разговор идёт',complete:'Учтено',unknown:'Неполные данные',failed:'Ошибка'};
 const money=x=>x==null?'—':'$'+Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:6});
 const num=x=>Number(x||0).toLocaleString('ru-RU'),note=s=>el('p','bill-note',s);

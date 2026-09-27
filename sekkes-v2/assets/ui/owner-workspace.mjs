@@ -1,3 +1,4 @@
+import {multiturnPanel} from './owner-multiturn.mjs';
 import {roadmapPanel} from './owner-roadmap.mjs';
 import {knowledgePanel} from './owner-knowledge.mjs';
 import {organizeHub} from './owner-hub.mjs';
@@ -88,6 +89,15 @@ export function create(ctx){
  function paintDocuments(){
  const descriptions={instruction:'Действующие серверные настройки и учебные версии загружаются автоматически. Ручные документы ниже сохраняются как черновики.',material:'Учебные материалы и вложения административного диалога загружаются автоматически.',example:'Ответы административного диалога появляются автоматически. Они ещё не оценены как правильные учебные примеры.',evaluation:'Учебные и проверочные запуски появляются автоматически. Завершённый запуск не означает успешную оценку качества.'};
  content.append(hint(descriptions[current]));
+ if(current==='evaluation'){
+  const ticket=epoch;
+  content.append(multiturnPanel({initial:data.multiturn,request,documents:latest,
+   available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,
+   onBusy:value=>{if(ticket===epoch){busy=value;node.setAttribute('aria-busy',String(value));}},
+   onReport:value=>{if(ticket===epoch)data.multiturn=value;},
+   onAssess:r=>{const prior=latest().find(d=>{const a=readAssessment(d);return a?.source?.type==='multiturn_run'&&a.source.id===r.id;});editing=prior||null;dirty=!prior;openAssessment(prior?{...readAssessment(prior),title:prior.title}:{title:`M1 · ход ${r.turn} · ${r.prompt.slice(0,120)}`,question:r.prompt,actual:r.reply,source:{type:'multiturn_run',id:r.id,dialogue_id:r.dialogue_id,turn:r.turn,at:r.created_at}});}
+  }));
+ }
  if(current==='evaluation'&&data.evaluations)content.append(evaluationJournal({data:data.evaluations,available:()=>!busy&&!dirty&&!live.active&&!disposed,onRead:id=>evaluationRequest({action:'read',id})}));
  if(current==='instruction'){
   const ticket=epoch;
@@ -148,11 +158,11 @@ export function create(ctx){
  const form=assessmentEditor({value,versions,onDirty:()=>{dirty=true;},onSave:async encoded=>{
   if(busy||disposed||ticket!==epoch)throw Error('Действие недоступно. Открой проверку заново.');
   busy=true;node.setAttribute('aria-busy','true');
-  try{const saved=await request('document',{id,kind:'evaluation',revision,...encoded});if(disposed||ticket!==epoch)return;dirty=false;await load();if(disposed||ticket!==epoch)return;editing=(data.documents||[]).find(d=>d.id===id&&d.revision===revision+1)||saved;paintDocumentsForm();notice.textContent='Проверка сохранена. Теперь её можно запустить.';}
+  try{const saved=await request('document',{id,kind:'evaluation',revision,...encoded});if(disposed||ticket!==epoch)return;dirty=false;await load();if(disposed||ticket!==epoch)return;editing=(data.documents||[]).find(d=>d.id===id&&d.revision===revision+1)||saved;paintDocumentsForm();notice.textContent=readAssessment(editing)?.source?.type==='multiturn_run'?'Оценка хода сохранена и включена в отчёт диалога.':'Проверка сохранена. Теперь её можно запустить.';}
   catch(e){throw Error(error(e));}
   finally{if(ticket===epoch){busy=false;node.setAttribute('aria-busy','false');}}
  }});content.append(form);
- if(editing&&data.evaluations){const saved=editing;form.after(evaluationControls({document:saved,available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,onRequest:evaluationRequest}));}
+ if(editing&&data.evaluations&&readAssessment(editing)?.source?.type!=='multiturn_run'){const saved=editing;form.after(evaluationControls({document:saved,available:()=>!busy&&!dirty&&!live.active&&!disposed&&ticket===epoch,onRequest:evaluationRequest}));}
  content.scrollTop=0;documentScroll.update();
  }
  async function evaluationRequest(payload){
