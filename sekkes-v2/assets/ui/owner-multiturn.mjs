@@ -7,7 +7,7 @@ export function nextDialogueTurn(report,dialogue){
  if(!dialogue?.can_continue||!report.enabled)return {reason:'Версия диалога закрыта для продолжения.'};
  if(runs.some((r,i)=>r.state!=='completed'||r.turn!==i+1))return {reason:'Предыдущий ход не подтверждён. Обнови журнал; повторная отправка заблокирована.'};
  if(runs.length>=3)return {reason:'Все три хода завершены. Ответы готовы к оценке.'};
- if(report.used_calls>=report.max_calls)return {reason:`Лимит исчерпан: ${report.used_calls} из ${report.max_calls}. Новый вызов недоступен.`};
+ if(report.max_calls!==null&&report.used_calls>=report.max_calls)return {reason:`Лимит исчерпан: ${report.used_calls} из ${report.max_calls}. Новый вызов недоступен.`};
  const scenario=report.scenarios?.[dialogue.scenario_id];
  if(!scenario||scenario.sha256!==dialogue.scenario_sha256)return {reason:'Сценарий изменился. Продолжение недоступно.'};
  const parent=runs.at(-1);if(parent&&!parent.pair_sha256)return {reason:'Связь с предыдущим ответом не подтверждена.'};
@@ -23,7 +23,7 @@ export function multiturnPanel({initial,request,available,onBusy,onReport,docume
  function paint(){body.replaceChildren();
   if(!report){body.append(hint('Журнал диалогов недоступен.'),button('Загрузить журнал',()=>perform(()=>refresh())));return;}
   const stats=report.summary||{};
-  body.append(hint(`M1 · ${report.instruction_id} · диалогов: ${report.total_dialogues} · ходов: ${stats.total||0}`),hint(`Ответ получен: ${stats.completed||0} · ошибок: ${stats.failed||0} · не подтверждено: ${stats.unconfirmed||0}`),hint(`Общий лимит учебных вызовов: ${report.used_calls} / ${report.max_calls}. Один ход использует один вызов.`));
+  body.append(hint(`M1 · ${report.instruction_id} · диалогов: ${report.total_dialogues} · ходов: ${stats.total||0}`),hint(`Ответ получен: ${stats.completed||0} · ошибок: ${stats.failed||0} · не подтверждено: ${stats.unconfirmed||0}`),hint(`Учебных вызовов: ${report.used_calls}. ${report.max_calls===null?'Лимит количества отключён.':`Лимит: ${report.max_calls}.`} Расходы продолжают учитываться.`));
   body.append(hint(`Токены всех ходов: вход ${stats.input_tokens??'нет данных'}, выход ${stats.output_tokens??'нет данных'}. Без полных данных о токенах: ${stats.usage_missing||0}. Расходы учитываются в разделе «Расходы» → «Диалоги M1».`));
   const scenarios=el('select','owner-input');scenarios.setAttribute('aria-label','Сценарий диалога');for(const id of Object.keys(report.scenarios||{})){const option=el('option','',labels[id]||id);option.value=id;scenarios.append(option);}
   const start=button('Создать диалог без вызова модели',()=>perform(async()=>{const id=crypto.randomUUID(),scenario_id=scenarios.value;await request('training-dialogue',{action:'start',dialogue_id:id,scenario_id,scenario_sha256:report.scenarios[scenario_id].sha256});await refresh(0);selected=id;notice.textContent='Диалог создан. Модель ещё не вызывалась.';}));start.disabled=working||!report.enabled;scenarios.disabled=start.disabled;
