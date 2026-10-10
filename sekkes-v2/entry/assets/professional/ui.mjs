@@ -1,5 +1,5 @@
 import {createLiveHead} from '../workspace/character.mjs?v=4559a1782292654a225039f014978bf8aad22e2c022c35a4c4ab2c06bd859c2d';
-import {renderIntake} from './intake-ui.mjs?v=17833ec7d3c223bf0ce7251475fe9a40b3b8613c0edb07c628c641bb48273e9d';
+import {renderIntake} from './intake-ui.mjs?v=b3d38350847055b0b5bbd3f9832beaf4139fef51e3463ff08ade338d3b460a8a';
 import {appendHistory,rebaseProposal,validateProposal} from './intake-model.mjs?v=e15dd5f18b70938c02a591d08ed072ab331b07c5ca7108ccd64efa5a1019b6dd';
 import {formField,choice,GUIDE,icon,iconButton,sectionIntro} from '../account/form-kit.mjs?v=e517eb719b5765e47495e1ef0af9d7d44ecc77f0a42f2cfd4b1917efb967463a';
 import {scanDocument} from '../account/document-scan.mjs?v=c51109276308a7a83a8ba994c618e3599bf11cdff0733282bd237225d64105bf';

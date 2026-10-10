@@ -1,5 +1,5 @@
 import {formField,sectionIntro,icon,iconButton,GUIDE} from './form-kit.mjs?v=e517eb719b5765e47495e1ef0af9d7d44ecc77f0a42f2cfd4b1917efb967463a';
-import {createProfessionalWorkspace} from '../professional/ui.mjs?v=c17dd20d97a3739a81c4efcb9e5adb8e9bb78399106c64032efd7fd5beec4ec9';
+import {createProfessionalWorkspace} from '../professional/ui.mjs?v=1c931e0038efb6eb3c1a5daf273400403adfeaf14d4657782236a9f355d7c2b1';
 import {DEFAULTS,ROLES,PROFILE_FIELDS,EXTRA_FIELDS,accountMessage} from './model.mjs?v=f5f28edbbebc28207659c61c1afed773c3843413f7ec955e7274935b94a4313d';
 const node=(tag,attrs={},...children)=>{const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='text')e.textContent=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2).toLowerCase(),v);else if(k in e)e[k]=v;else e.setAttribute(k,v);}e.append(...children.filter(Boolean));return e;};
 const action=(text,fn)=>node('button',{type:'button',className:'account-action',text,onClick:fn});
