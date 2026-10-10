@@ -39,7 +39,7 @@ export function renderIntake(ctx,state){
   }
   if(!ctx.readonly){const index=steps.indexOf(step);const footer=el('div',{className:'intake-footer'});if(index>0)footer.append(action('Назад',()=>{state.step=steps[index-1].id;ctx.render();},{quiet:true}));footer.append(action(step.id==='review'?'Отправить на проверку':step.optional?'Продолжить':'Далее',()=>ctx.next(step.id,steps[Math.min(index+1,steps.length-1)].id),{primary:true}));main.append(footer);}
  }
- if(ctx.readonly)root.querySelectorAll('input,textarea,button').forEach(e=>{if(e.closest('.intake-form')||e.closest('.intake-conversation'))e.disabled=true;});return root;
+ if(ctx.readonly)root.querySelectorAll('input,textarea,button').forEach(e=>{if(e.closest('.intake-conversation')||e.closest('.intake-fields')||(e.closest('.intake-form')&&!['documents','review'].includes(step.id)))e.disabled=true;});return root;
 }
 function renderField(ctx,section,f,row=-1){
  const get=()=>row<0?ctx.data()[section]?.[f.id]:ctx.data()[section]?.[row]?.[f.id];

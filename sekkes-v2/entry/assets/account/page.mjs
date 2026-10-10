@@ -1,9 +1,9 @@
 import {icon} from './form-kit.mjs?v=e517eb719b5765e47495e1ef0af9d7d44ecc77f0a42f2cfd4b1917efb967463a';
-import {createProfessionalWorkspace} from '../professional/ui.mjs?v=1c931e0038efb6eb3c1a5daf273400403adfeaf14d4657782236a9f355d7c2b1';
+import {createProfessionalWorkspace} from '../professional/ui.mjs?v=934360916ae6e42a446a26aa501927bc87efcd6f56f3292dcc44a77c5fef2010';
 import {AuthSession,accountStorage,authMessage} from '../auth/session.mjs?v=0a8014629e5d0ed29e1f9ae51a154358cc0047201795876483fe3f017c0117f8';
 import {authConfig} from '../auth/config.mjs?v=5fec9d163c92bca6718a1263cf258cfb2a716700ef013fcc3947fe48d2cb0dc8';
 import {AccountSync} from './sync.mjs?v=3abd0257c999d1f7ce7dec3c918c6b9e0ae44d13b0376ddc4f3554f5b6021165';
-import {createAccountProfile,createAccountSettings,COLORS} from './ui.mjs?v=0de303f6dc2147889e33e974328aa315dddac17c5261c25fb4a8e057207f20a9';
+import {createAccountProfile,createAccountSettings,COLORS} from './ui.mjs?v=e658ddbd69cfea0579558ef900b9c43df10a832a2345b22406b662aa94a8c725';
 const published=document.documentElement.dataset.published==='true';
 const entry=published?'../?entry=1':'./';
 document.getElementById('back').replaceChildren(icon('arrow-down'),document.createTextNode('В пространство'));
