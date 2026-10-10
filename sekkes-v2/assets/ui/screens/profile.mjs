@@ -37,7 +37,8 @@ export function create(ctx){
   storyViewer=createSequence({posts:data.posts,startId:typeof startId==='string'?startId:stories[0].id,profile:data,account:ctx.account,mode:'story',close:()=>closeStories(),onRemove:removePost});modal.append(storyViewer.node);
   modal.addEventListener('cancel',e=>{e.preventDefault();closeStories();});modal.addEventListener('close',()=>{if(storyModal===modal)closeStories();});modal.showModal();storyViewer.setActive(true);modal.querySelector('.profile-dialog-close')?.focus({preventScroll:true});
  }
- async function edit(){
+ function edit(){ if(!requireAccount())return; location.assign(new URL('entry/account.html',location.href).href); }
+ async function localPhotos(){
   if(!requireAccount())return;const owner=uid,token=epoch;
   try{const fresh=await ctx.runtime().loadProfile();if(owner!==uid||token!==epoch||disposed)return;data=fresh;}catch(e){ctx.notify(errorText(e));return;}
   closeDialog();inlineFeed?.setActive(false);ownDialog.setAttribute('aria-label','Редактировать профиль');
@@ -109,7 +110,7 @@ export function create(ctx){
  function settings(){header('Настройки профиля');const group=el('div','settings-group');
   group.append(row({title:'Мой прогресс',description:'Личный путь',iconName:'progress',action:()=>setView('progress')}),row({title:'Сохранённые разговоры',description:'Твоя переписка с AI Marius',iconName:'chat',action:()=>ctx.showConversation()}),row({title:'Любимые пространства',iconName:'heart',action:()=>setView('favorites')}),row({title:'Достижения',iconName:'spark',action:()=>setView('achievements')}),row({title:'Личные настройки',description:'Анкета, вход и голос помощника',iconName:'profile',action:()=>setView('personal')}));body.append(group);
  }
- function personal(){header('Личные настройки');if(ctx.account?.email)body.append(el('p','profile-note','Почта аккаунта: '+ctx.account.email));const group=el('div','settings-group');group.append(row({title:'Редактировать анкету и аватар',iconName:'edit',action:edit}),row({title:'Вход в аккаунт',iconName:'shield',action:()=>ctx.runtime()?.login()}),row({title:'Голос помощника',iconName:'sound',action:()=>ctx.runtime()?.voiceSettings()}),row({title:'Оформление приложения',iconName:'settings',action:()=>ctx.navigate('settings')}),row({title:ctx.account?'Выйти из аккаунта':'Войти в AI Marius',iconName:'profile',action:()=>ctx.runtime()?.accountAction()}));body.append(group);}
+ function personal(){header('Личные настройки');if(ctx.account?.email)body.append(el('p','profile-note','Почта аккаунта: '+ctx.account.email));const group=el('div','settings-group');group.append(row({title:'Анкета, роли и фото аккаунта',iconName:'edit',action:edit}),row({title:'Фото на этом устройстве',description:'Сохранённая локальная галерея',iconName:'profile',action:localPhotos}),row({title:'Вход в аккаунт',iconName:'shield',action:()=>ctx.runtime()?.login()}),row({title:'Голос помощника',iconName:'sound',action:()=>ctx.runtime()?.voiceSettings()}),row({title:'Оформление приложения',iconName:'settings',action:()=>ctx.navigate('settings')}),row({title:ctx.account?'Выйти из аккаунта':'Войти в AI Marius',iconName:'profile',action:()=>ctx.runtime()?.accountAction()}));body.append(group);}
  function setView(next){if(next==='feed'&&view==='feed'&&!feedSaved){body.scrollTo({top:0,behavior:'instant'});return;}closeDialog();if(next==='feed')feedSaved=false;view=next;body.scrollTop=0;render();}
  function render(){
   if(disposed)return;inlineFeed?.dispose();inlineFeed=null;body.dataset.profileView=view;body.querySelectorAll('video').forEach(v=>v.pause());release(urls);body.replaceChildren();
