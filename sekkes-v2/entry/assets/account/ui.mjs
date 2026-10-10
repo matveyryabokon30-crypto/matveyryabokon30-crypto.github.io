@@ -1,3 +1,4 @@
+import {createProfessionalWorkspace} from '../professional/ui.mjs?v=231ee56263f44905c56fddad87e91e0ab362888d5b02ff76f2085e6bbd001186';
 import {DEFAULTS,ROLES,PROFILE_FIELDS,EXTRA_FIELDS,accountMessage} from './model.mjs?v=f5f28edbbebc28207659c61c1afed773c3843413f7ec955e7274935b94a4313d';
 const node=(tag,attrs={},...children)=>{const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='text')e.textContent=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2).toLowerCase(),v);else if(k in e)e[k]=v;else e.setAttribute(k,v);}e.append(...children.filter(Boolean));return e;};
 const action=(text,fn)=>node('button',{type:'button',className:'account-action',text,onClick:fn});
@@ -34,7 +35,9 @@ function editor(sync,type){
 }
 export function createAccountProfile(sync){
  const edit=editor(sync,'profile'),avatar=accountAvatar(sync),heading=node('h1',{text:'Личный кабинет'}),identity=node('div',{className:'account-identity'},avatar.element,node('div',{},heading,node('p',{className:'account-caption',text:'Ваша анкета на всех устройствах'})));
- edit.element.prepend(identity);
+ let professional;
+ const launch=action('Профессиональные анкеты · услуги и товары',()=>{const nodes=[...edit.element.childNodes];professional=createProfessionalWorkspace(sync,{onBack:()=>{professional.destroy();professional=null;edit.element.replaceChildren(...nodes);}});edit.element.replaceChildren(professional.element);});
+ edit.element.prepend(identity,launch);
  const component=edit.setup(({body,field,options,remember,updateChoices,profile,account})=>{
   const picker=node('input',{type:'file',accept:'image/jpeg,image/png,image/webp,image/heic,image/heif',hidden:true});
   const photo=action('Изменить фото',()=>picker.click()),photoStatus=node('span',{role:'status',className:'account-caption'});
@@ -46,8 +49,8 @@ export function createAccountProfile(sync){
   for(const[id,title]of ROLES){const b=action(title,()=>{const set=new Set(account.roles);if(set.has(id)){if(set.size===1)return;set.delete(id);}else set.add(id);account.roles=[...set];if(!set.has(account.activeRole))account.activeRole=account.roles[0];remember();updateChoices();activeChoices();});roles.append(b);choicesPush();function choicesPush(){b.setAttribute('aria-pressed',String(account.roles.includes(id)));const refresh=()=>b.setAttribute('aria-pressed',String(account.roles.includes(id)));roles.addEventListener('click',refresh);}}
   activeChoices();body.append(node('section',{className:'account-wide account-group'},node('h3',{text:'Ваши роли'}),node('p',{className:'account-caption',text:'Можно выбрать несколько. Статус специалиста и доступ к организации подтверждаются отдельно.'}),roles,node('h3',{text:'Основная роль'}),active));
   for(const[key,title,multiline]of [['headline','Коротко о вас'],['specialization','Направления работы',true],['education','Образование',true],['experience','Опыт',true],['phone','Контактный телефон'],['contactEmail','Контактная почта'],['website','Сайт']])body.append(field(key,title,account,{max:EXTRA_FIELDS[key],multiline,type:key==='contactEmail'?'email':key==='phone'?'tel':'text'}));
-  body.append(node('p',{className:'account-wide account-caption',text:'Анкета и контакты сейчас доступны только вам. Выбор роли не публикует данные.'}));
- });return{...component,destroy(){component.destroy();avatar.destroy();}};
+  body.append(node('p',{className:'account-wide account-caption',text:'Анкета и контакты доступны вам, владельцу и уполномоченной команде AI Marius. Другим участникам они автоматически не публикуются.'}));
+ });return{...component,destroy(){professional?.destroy();component.destroy();avatar.destroy();}};
 }
 export function createAccountSettings(sync){
  const edit=editor(sync,'settings');edit.element.prepend(node('h2',{text:'Настройки аккаунта'}));
