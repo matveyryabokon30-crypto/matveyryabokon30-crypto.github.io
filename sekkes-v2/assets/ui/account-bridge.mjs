@@ -18,3 +18,10 @@ export async function watchAccountPreferences(signal, receive) {
   sync.start();
  } catch { /* Local preferences remain available when the server is offline. */ }
 }
+
+export function openAccount(ctx, settings=false, destination=globalThis.location, page=globalThis.document) {
+ const runtime=ctx.runtime?.();
+ if(runtime?.busy||page.querySelector('#recordingPanel:not([hidden])')) {ctx.notify('Сначала завершите разговор или запись.');return false;}
+ runtime?.saveDraft?.();
+ destination.assign(new URL('entry/account.html'+(settings?'#settings':''),destination.href).href);return true;
+}

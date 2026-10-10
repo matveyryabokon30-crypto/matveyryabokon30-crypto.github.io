@@ -1,3 +1,4 @@
+import {openAccount} from '../account-bridge.mjs';
 import {normalizeStory} from '../story-composition.mjs';
 import {activeStories,markStoryAvatar,smallStoryAvatar} from '../story-avatar.mjs';
 import {createPostFeed,createSequence,feedPosts} from '../profile-media.mjs';
@@ -37,7 +38,7 @@ export function create(ctx){
   storyViewer=createSequence({posts:data.posts,startId:typeof startId==='string'?startId:stories[0].id,profile:data,account:ctx.account,mode:'story',close:()=>closeStories(),onRemove:removePost});modal.append(storyViewer.node);
   modal.addEventListener('cancel',e=>{e.preventDefault();closeStories();});modal.addEventListener('close',()=>{if(storyModal===modal)closeStories();});modal.showModal();storyViewer.setActive(true);modal.querySelector('.profile-dialog-close')?.focus({preventScroll:true});
  }
- function edit(){ if(!requireAccount())return; location.assign(new URL('entry/account.html',location.href).href); }
+ function edit(){ if(!requireAccount())return; openAccount(ctx); }
  async function localPhotos(){
   if(!requireAccount())return;const owner=uid,token=epoch;
   try{const fresh=await ctx.runtime().loadProfile();if(owner!==uid||token!==epoch||disposed)return;data=fresh;}catch(e){ctx.notify(errorText(e));return;}

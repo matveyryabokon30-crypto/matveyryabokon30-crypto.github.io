@@ -1,7 +1,7 @@
 {
   "qa-media.html": "862e73d6fcdd171962455e568de835a88457f1b214ba40ecee97f6f89e0a4bab",
   "classic.html": "fdb2d5b2b190092cab896d471db0c42db8e5054c918246fc58e4fcc959fc1629",
-  "version.json": "cfbdccac786f2f9d3a95069e590063f9f9a48d25c02751b1d9e9ef246aa3510d",
+  "version.json": "2b936bc59697920376cb07c9dea1e2fd84afba294741b4d21ed46b55d6d83abd",
   "qa-media-v2.html": "706e8de86f3a4f99f1ad8dbdde047eca4d80e0a0a4d6cfad4e8fdb3b53378c18",
   "qa-stop.html": "e45fdb2a4b12af62fbfa77ea760adb65cfb04ab0658b41c5b694f6559ada20b0",
   "qa.html": "ea87e04450a76240bc88bebed1b920159180ad2b5c3026a265d5cd2da49ce5c5",
@@ -10,7 +10,7 @@
   "manifest.webmanifest": "35a4ede8417e4d54ce70485cf2a3da8faaa26d9bd4c0b90c7042081424566f0b",
   "voices.json": "61a91c9d5fb7487467412963d3cd187f1273ec3241abe4aa3c2e29ac4795ca01",
   "index.html": "7dffc42a93ed197a52e21c6cfb46c553ce9c596740a68d42fd8bd2fcfef89756",
-  "sw.js": "2639b2ea2338e28a246bd252db43e063702c2ef8cfaf0591ec30e307b1c8578d",
+  "sw.js": "dead9dbd3d484b85941397d92c2875bebaf573196312ea03fd04d705a9df3a32",
   "qa/chat-time-update.test.mjs": "b6eb3b0bcc141c229007d6f6631da150b04f310bc21b5743ed64f11cb005507b",
   "assets/registry-foundation.mjs": "c5da3e69a58768add40c5bc719470d4946bd82d0ee48a2e4fcb7821970996bab",
   "assets/s2-api-3.mjs": "3d97b64dae109ba2fb38396b06abad6b5f41340db9fc2692d84b9d8049ec6d8b",
@@ -87,11 +87,11 @@
   "assets/ui/message-order.mjs": "67c4dba991fff29a77b260f80b39e21155cad3cff6285b4632368139f1d0d358",
   "assets/brand/sekkes-approved-icon.jpeg": "bdc01cc2f24b853966f39a99281358bb92c14201798239e883c8d6b2fb8d819e",
   "assets/ui/screens/games.mjs": "bb95bf2e994f0c66f1635da88ec6fd6173aa3e07d4d7a0373b32628be9ce8384",
-  "assets/ui/screens/profile.mjs": "b3f5d8b7251f63e2fcff544e60cdf7d0d51f696a3c8d1a81bc8f7e3921a82d46",
+  "assets/ui/screens/profile.mjs": "ed944edbdd1bb4e1be7fc53d825550e9933db6455df94b7865ba3daa81a8d6b1",
   "assets/ui/screens/chat.mjs": "1d9ae1cb8a457115c42624bd46c8c61ad1b84822edfcc2e5f0cde23dd7744da0",
   "assets/ui/screens/world.mjs": "5cc5f87dfa85d16ae87b253fc49f25d6d042186c3ef64e9803f2e112afc3f677",
   "assets/ui/screens/home.mjs": "4dd551340c03819ba64199419673cd552eb2921d9fed83bcc39bde9e68ee50b7",
-  "assets/ui/screens/settings.mjs": "5acefbc7f1484775ae917173482174fe2885295d19716d3727577e2ed7e1c8f3",
+  "assets/ui/screens/settings.mjs": "c541e89b2f89118f5c164acb98ef36551ca9f9752b2e045ead983c5e85c9cc5a",
   "assets/ui/owner-dashboard.mjs": "fce6b7a4b6dd9411e7b7498262503ecc0466fec6d8c0db5e067f0d571ec45750",
   "assets/voice-switch.mjs": "48cace8e092c3940d435c54e1c6208a3378230e3b627ed7822bad911389cb7d0",
   "assets/voice-handoff-media.mjs": "212d83d2228afb00141f74d4f200d7fab643a623c2eeeca6800a31c62691d46e",
@@ -121,5 +121,5 @@
   "entry/assets/fonts/Manrope-Variable.ttf": "3ae11c49db0455a3cc33e37d380f20fdb8c7f8b41dc07625c177e3d87a9d6ae6",
   "entry/assets/vendor/supabase.mjs": "4eecaf1050cef8cc64c9b347c3a31e511209d3c40c1b11debd06ccd7efadb447",
   "entry/assets/vendor/LICENSE.supabase": "fdb243e5b2475ac0a6ecbf774e386a5dfa37d6072c295cdc88227b895d9c8537",
-  "assets/ui/account-bridge.mjs": "15015252ab35b81a409f37bb7464cfa358f16b56d7dc59bd7cda40ef5a1dcbcd"
+  "assets/ui/account-bridge.mjs": "d3a0abc16a8ca43d9cdb23e15612b834ab780280f4fe366a8280b0949cc9b9c8"
 }
