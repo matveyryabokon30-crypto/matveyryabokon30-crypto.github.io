@@ -1,38 +1,14 @@
 <!doctype html>
-<html lang="ru" data-build="2026.09.21-ui.9.20" data-theme="dark">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#1e3c2c">
-<style>html,body{margin:0;background-color:#1e3c2c;color-scheme:dark}html{--topology-chrome:#1e3c2c}</style>
-<meta name="referrer" content="no-referrer">
-<meta name="description" content="AI Marius — личное пространство для разговора">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="assets/ui/tokens.css">
-<link rel="stylesheet" href="assets/ui/app.css">
-<title>AI Marius</title>
-<link rel="stylesheet" href="./assets/ui/owner.css">
-<link rel="icon" type="image/jpeg" href="assets/brand/sekkes-approved-icon.jpeg">
-<link rel="apple-touch-icon" href="assets/brand/sekkes-approved-icon.jpeg">
-<link rel="stylesheet" href="assets/ui/composer.css">
-<link rel="stylesheet" href="assets/ui/surface.css">
-<link rel="stylesheet" data-account-card="true" href="assets/account-card.css">
-</head>
-<body>
-<div id="shell" data-route="home" data-voice="idle">
-<header class="app-header"><button id="chatBackButton" class="menu-trigger chat-back" type="button" aria-label="Свернуть чат" title="Свернуть чат" aria-controls="homeConversation" aria-expanded="false" hidden></button></header>
-<main id="routeHost" tabindex="-1"></main>
-<div class="session-dock" id="sessionDock"><p id="aiStateLabel" role="status">Подключение сервисов…</p><button id="voiceEnableAudio" class="rounded-action" type="button" hidden>Включить звук</button>
-<p id="dictationStatus" class="dictation-status" role="status" hidden></p><div id="recordingPanel" class="recording-panel" hidden></div><div class="conversation-controls" id="conversationControls"><form id="composer" class="composer" hidden><label for="draft" class="sr-only">Сообщение</label><textarea autocorrect="off" spellcheck="false" id="draft" rows="1" maxlength="2000" placeholder="Сообщение…"></textarea><button id="micButton" type="button" class="icon-button" aria-label="Голосовой набор" title="Голосовой набор"></button><button id="sendButton" hidden type="submit" class="icon-button send" aria-label="Отправить сообщение"></button></form><button id="micTestLink" type="button" class="live-control" aria-label="Начать голосовой разговор" title="Начать голосовой разговор"></button></div><div hidden id="recordButtonParking"><button id="recordButton" type="button" class="icon-button record-button" aria-label="Записать голосовое сообщение" title="Записать голосовое сообщение"></button></div></div>
-<div id="toast" class="toast" role="status" hidden></div><div id="chatAnnouncement" class="sr-only" aria-live="polite"></div>
-</div>
-<div id="navigationLayer" class="navigation-layer" aria-label="Навигация AI Marius"><div id="menuBackdrop" class="menu-backdrop" hidden></div><button id="menuTrigger" class="menu-trigger" type="button" aria-label="Открыть меню" aria-controls="navigationPanel" aria-expanded="false"></button><nav id="navigationPanel" class="navigation-panel" aria-label="Разделы AI Marius" hidden inert><div id="menuItems"></div></nav></div>
-<dialog id="dialog" aria-labelledby="dialogTitle"><button id="dialogClose" class="icon-button dialog-close" aria-label="Закрыть окно"></button><div id="dialogContent"></div></dialog>
-<script type="module" src="assets/ui/boot.mjs"></script>
-</body></html>
-
-
+<html lang="ru"><head>
+<meta charset="utf-8"><base href="./entry/"><link rel="manifest" href="../manifest.webmanifest"><link rel="apple-touch-icon" href="../assets/brand/sekkes-approved-icon.jpeg"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content"><meta name="theme-color" content="#f4f3f1"><meta name="description" content="AI Marius — ваше пространство для общения, развития и психологического здоровья."><title>AI Marius — вход</title><link rel="canonical" href="https://matveyryabokon30-crypto.github.io/sekkes-v2/"><link rel="stylesheet" href="assets/auth.css?v=b03a68cfaa7b1ccb0aec6eb6b5ffbf1fdca493d1fbdffbceef489ca28df4fa20"><script type="module" src="assets/auth/pwa-start.mjs"></script>
+</head><body class="auth-page"><main id="auth-scene">
+<a class="auth-brand" href="../?entry=1" aria-label="AI Marius — главная">AI Marius</a>
+<section id="auth-surface" class="auth-surface" aria-label="Вход в AI Marius">
+<div id="auth-character" aria-hidden="true"></div>
+<button id="enter" class="enter-button" type="button" aria-expanded="false" aria-controls="auth-panel">Войти</button>
+<div id="auth-panel" class="auth-panel" hidden>
+<header class="auth-panel-header"><button id="auth-back" class="round-control" type="button" aria-label="Назад" hidden></button><span id="auth-caption">Войти</span><button id="auth-close" class="round-control" type="button" aria-label="Свернуть вход"></button></header>
+<div id="auth-scroll" class="auth-scroll"><div id="auth-content"></div><p id="auth-status" class="auth-status" role="status" aria-live="polite" hidden></p>
+<footer class="auth-legal"><button type="button" id="terms">Условия</button><span aria-hidden="true">·</span><button type="button" id="privacy">Конфиденциальность</button></footer></div>
+</div></section><div id="entry-status" class="sr-only" role="status"></div>
+</main><noscript><p>Включите JavaScript, чтобы войти в AI Marius.</p></noscript></body></html>

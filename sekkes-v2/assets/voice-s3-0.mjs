@@ -53,11 +53,9 @@ function logged(){return api?.token&&(Date.now()<api.expiresAt||account?.allowed
 async function ensure(action){pending=action;if(!api){fail(new S3Error('SETUP_REQUIRED'));return false}if(!logged()&&accountRestore)await accountRestore;if(!logged()){login();return false}try{await account?.ensureFresh();return true}catch(e){fail(e);return false}}
 function login(emailMode=false){
  if((emailMode||logged())&&(live||starting||closing||recovering||recoveryNeeded||textBusy||historyLoading||activeRun||queueSending||globalThis.window?.SekkesUI?.captureBusy)){note('Сначала заверши разговор или отправку сообщения.');return;}
- const previousUid=api?.user?.id;saveDraft();accountPanel?.dispose();accountPanel=openAccountPanel({account,root:body,show:view,emailMode,onAuthenticated:()=>{
-  if(previousUid&&previousUid!==api.user?.id){transcript?.dispose();transcript=null;historyCursor=null;hasMoreHistory=false;pending=null;retryTurn=null;activeRun=null;activeReady=false;journalId=null;textHistory=[];draft.value='';picker?.close();preferences?.reset();globalThis.window?.SekkesUI?.reset();}
-  accepted=true;globalThis.window?.SekkesUI?.account(api.user);status('');
- },onSuccess:()=>finishAccountLogin(),onBusy:value=>{loginBusy=value;}})
+ saveDraft();location.assign(new URL('./?entry=1',location.href).href);
 }
+
 async function finishAccountLogin(){
  if(!logged())return;const epoch=api.authEpoch;
  globalThis.window?.SekkesUI?.account(api.user);accepted=true;status('');
