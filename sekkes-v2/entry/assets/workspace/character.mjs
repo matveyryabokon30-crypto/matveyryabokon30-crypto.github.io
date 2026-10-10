@@ -1,4 +1,4 @@
-import {el} from './dom.mjs?v=b6f0181932abbec0bb8575d4b6ee617fbdb4d456b5ce0fd10ef6b98a822c9769';
+import {el} from './dom.mjs?v=cf6b20f89e01cf5be8c8ac2abbe882311875b2edaded62b3add8157f361f4031';
 const COLORS={iris:'#bbb1cb',ocean:'#a7c3d5',mint:'#acbeb1',rose:'#cdb3bf',apricot:'#cec2ae',graphite:'#b4bdc8'};
 export const MARIUS_HEADS=Object.freeze({graphite:{title:'Графитовый',src:'assets/media/marius-head-graphite.png'},cream:{title:'Кремовый',src:'assets/media/marius-head-cream.png'},blue:{title:'Синий',src:'assets/media/marius-head-blue.png'}});
 let portrait='';

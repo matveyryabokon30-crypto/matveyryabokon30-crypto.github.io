@@ -1,5 +1,6 @@
 // Original Marius interface drawings. Standard UI metaphors, authored independently.
 const paths={
+ eye:['M2 12q10-14 20 0-10 14-20 0Z','M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'],
  'arrow-up':['M12 20V4','m6 10 6-6 6 6'],'arrow-down':['M12 4v16','m6 14 6 6 6-6'],
  float:['M8 3h12v13M4 8h12v13H4Z','M8 12h4m-4 4h4'],
  more:['M4 12h.01M12 12h.01M20 12h.01','M4 11.9v.2m8-.2v.2m8-.2v.2'],

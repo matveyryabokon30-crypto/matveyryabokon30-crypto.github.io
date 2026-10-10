@@ -1,4 +1,4 @@
-import {mergeData,inspectDocument} from './model.mjs?v=1416beac53532d6f24a553d0422abbc202f1b386feab54572a10efeebc7df119';
+import {mergeData,inspectDocument} from './model.mjs?v=733ad495211fd9070f41e4b72313613b5025a6234e97be0f25373845ab316974';
 export class ProfessionalStore {
  constructor(account){this.account=account;this.session=account.session;this.backing=account.backing;this.current=null;this.disposed=false;}
  guard(){this.account.current?.();if(this.disposed)throw Error('AUTH_CHANGED');}
@@ -29,5 +29,9 @@ export class ProfessionalStore {
   return this.action('confirm_document',{documentId:doc.id});
  }
  async download(doc){this.guard();const{data,error}=this.account.professionalDownload?await this.account.professionalDownload(doc):await this.session.client.storage.from('marius-credentials').download(doc.path);this.guard();if(error)throw error;return data;}
+ async assist(message){this.guard();const p=this.current.profile;
+  const result=this.account.professionalAssistant?await this.account.professionalAssistant({id:p.id,revision:p.revision,message}):await this.session.client.functions.invoke('marius-profile-assistant',{body:{id:p.id,revision:p.revision,message}});this.guard();
+  if(result.error){let code;try{code=(await result.error.context.json()).code;}catch{}throw Error(code||'ASSISTANT_UNAVAILABLE');}return result.data;
+ }
  destroy(){this.disposed=true;}
 }

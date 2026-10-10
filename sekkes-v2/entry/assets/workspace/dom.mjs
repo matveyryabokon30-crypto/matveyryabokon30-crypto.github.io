@@ -1,4 +1,4 @@
-import {motionIcon} from './motion-icons.mjs?v=7c14e3c7fc8e53426f848d2256b1b4107b43b2d150586bf125147ef81f12f779';
+import {motionIcon} from './motion-icons.mjs?v=8b84efbcbbf0189b5f7dc104e167ea7774bb86ceba96e6d13261487488eaa310';
 export function el(tag,attributes={},...children){
   const node=document.createElement(tag);
   for(const [key,value]of Object.entries(attributes)){
